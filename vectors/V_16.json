@@ -1,0 +1,41 @@
+{
+  "id": "V-16",
+  "scenario_id": "VEC-SC15",
+  "name": "AI draft wrong",
+  "behaviour": "Structured entry primary; critical fields verified; works with AI off",
+  "final_referral_state": {
+    "id": "ref_sc_16",
+    "origin_facility": "PHC_CHANNAPATNA",
+    "chain": [
+      "CHC_RAMANAGARA",
+      "DH_MANDYA",
+      "MC_BENGALURU_OB"
+    ],
+    "mode": "SEQUENTIAL",
+    "need_class": "OB_HEMORRHAGE",
+    "version": 1,
+    "lease_epoch": 0,
+    "lease_facility": null,
+    "hs_state": "CANCELLED",
+    "tr_state": "TR_CANCELLED",
+    "open_offers": 0,
+    "outcome": "PATIENT_REFUSED"
+  },
+  "events_emitted": [
+    {
+      "seq": 1,
+      "type": "REFERRAL_CREATED",
+      "detail": {},
+      "server_ts": 1000
+    },
+    {
+      "seq": 2,
+      "type": "CANCELLED",
+      "detail": {
+        "outcome": "PATIENT_REFUSED"
+      },
+      "server_ts": 1000
+    }
+  ],
+  "invariants_passed": true
+}

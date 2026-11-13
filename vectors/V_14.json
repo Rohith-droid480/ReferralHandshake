@@ -1,0 +1,50 @@
+{
+  "id": "V-14",
+  "scenario_id": "VEC-SC13",
+  "name": "Slip arrives with no digital record",
+  "behaviour": "Desk enters paper code and links or creates paper-first record",
+  "final_referral_state": {
+    "id": "ref_sc_14",
+    "origin_facility": "PHC_CHANNAPATNA",
+    "chain": [
+      "CHC_RAMANAGARA",
+      "DH_MANDYA",
+      "MC_BENGALURU_OB"
+    ],
+    "mode": "SEQUENTIAL",
+    "need_class": "OB_HEMORRHAGE",
+    "version": 1,
+    "lease_epoch": 1,
+    "lease_facility": "CHC_RAMANAGARA",
+    "hs_state": "ACCEPTED",
+    "tr_state": "REQUESTED",
+    "open_offers": 0,
+    "outcome": null
+  },
+  "events_emitted": [
+    {
+      "seq": 1,
+      "type": "REFERRAL_CREATED",
+      "detail": {},
+      "server_ts": 1000
+    },
+    {
+      "seq": 2,
+      "type": "OFFER_ACKED",
+      "detail": {
+        "offer_id": "off_1"
+      },
+      "server_ts": 1000
+    },
+    {
+      "seq": 3,
+      "type": "OFFER_ACCEPTED",
+      "detail": {
+        "offer_id": "off_1",
+        "epoch": 1
+      },
+      "server_ts": 1000
+    }
+  ],
+  "invariants_passed": true
+}

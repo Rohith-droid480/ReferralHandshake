@@ -1,0 +1,75 @@
+{
+  "id": "V-07",
+  "scenario_id": "VEC-SC06b",
+  "name": "Late accept after successor ACK",
+  "behaviour": "k evicted to TIMED_OUT; late ACCEPT rejected with 409",
+  "final_referral_state": {
+    "id": "ref_sc_07",
+    "origin_facility": "PHC_CHANNAPATNA",
+    "chain": [
+      "CHC_RAMANAGARA",
+      "DH_MANDYA",
+      "MC_BENGALURU_OB"
+    ],
+    "mode": "SEQUENTIAL",
+    "need_class": "OB_HEMORRHAGE",
+    "version": 1,
+    "lease_epoch": 1,
+    "lease_facility": "DH_MANDYA",
+    "hs_state": "ACCEPTED",
+    "tr_state": "REQUESTED",
+    "open_offers": 0,
+    "outcome": null
+  },
+  "events_emitted": [
+    {
+      "seq": 1,
+      "type": "REFERRAL_CREATED",
+      "detail": {},
+      "server_ts": 1000
+    },
+    {
+      "seq": 2,
+      "type": "OFFER_SOFT_OPEN",
+      "detail": {
+        "offer_id": "off_1"
+      },
+      "server_ts": 1000
+    },
+    {
+      "seq": 3,
+      "type": "OFFER_CREATED",
+      "detail": {
+        "offer_id": "off_2",
+        "facility_id": "DH_MANDYA"
+      },
+      "server_ts": 1000
+    },
+    {
+      "seq": 4,
+      "type": "OFFER_TIMED_OUT_EVICTED",
+      "detail": {
+        "offer_id": "off_1"
+      },
+      "server_ts": 1000
+    },
+    {
+      "seq": 5,
+      "type": "OFFER_ACKED",
+      "detail": {
+        "offer_id": "off_2"
+      },
+      "server_ts": 1000
+    },
+    {
+      "seq": 6,
+      "type": "OFFER_ACCEPTED",
+      "detail": {
+        "offer_id": "off_2",
+        "epoch": 1
+      },
+      "server_ts": 1000
+    }
+  ],
+  "invariants_passed": true
+}

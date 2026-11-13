@@ -1,0 +1,59 @@
+{
+  "id": "V-03",
+  "scenario_id": "VEC-SC03",
+  "name": "Receiver can take partly",
+  "behaviour": "COUNTER; referrer confirms or escalates within bounded deadline",
+  "final_referral_state": {
+    "id": "ref_sc_03",
+    "origin_facility": "PHC_CHANNAPATNA",
+    "chain": [
+      "CHC_RAMANAGARA",
+      "DH_MANDYA",
+      "MC_BENGALURU_OB"
+    ],
+    "mode": "SEQUENTIAL",
+    "need_class": "OB_HEMORRHAGE",
+    "version": 1,
+    "lease_epoch": 1,
+    "lease_facility": "CHC_RAMANAGARA",
+    "hs_state": "ACCEPTED",
+    "tr_state": "REQUESTED",
+    "open_offers": 0,
+    "outcome": null
+  },
+  "events_emitted": [
+    {
+      "seq": 1,
+      "type": "REFERRAL_CREATED",
+      "detail": {},
+      "server_ts": 1000
+    },
+    {
+      "seq": 2,
+      "type": "OFFER_ACKED",
+      "detail": {
+        "offer_id": "off_1"
+      },
+      "server_ts": 1000
+    },
+    {
+      "seq": 3,
+      "type": "OFFER_COUNTERED",
+      "detail": {
+        "offer_id": "off_1",
+        "round": 1
+      },
+      "server_ts": 1000
+    },
+    {
+      "seq": 4,
+      "type": "OFFER_ACCEPTED",
+      "detail": {
+        "offer_id": "off_1",
+        "counter_accepted": true
+      },
+      "server_ts": 1000
+    }
+  ],
+  "invariants_passed": true
+}

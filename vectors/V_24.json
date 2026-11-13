@@ -1,0 +1,91 @@
+{
+  "id": "V-24",
+  "scenario_id": "VEC-SC23",
+  "name": "SIM theft / PIN guess",
+  "behaviour": "Lockout after repeated failures; alert dispatched",
+  "final_referral_state": {
+    "id": "ref_sc_24",
+    "origin_facility": "PHC_CHANNAPATNA",
+    "chain": [
+      "CHC_RAMANAGARA",
+      "DH_MANDYA",
+      "MC_BENGALURU_OB"
+    ],
+    "mode": "SEQUENTIAL",
+    "need_class": "OB_HEMORRHAGE",
+    "version": 1,
+    "lease_epoch": 1,
+    "lease_facility": "MC_BENGALURU_OB",
+    "hs_state": "ACCEPTED",
+    "tr_state": "REQUESTED",
+    "open_offers": 0,
+    "outcome": null
+  },
+  "events_emitted": [
+    {
+      "seq": 1,
+      "type": "REFERRAL_CREATED",
+      "detail": {},
+      "server_ts": 1000
+    },
+    {
+      "seq": 2,
+      "type": "OFFER_DECLINED",
+      "detail": {
+        "offer_id": "off_1"
+      },
+      "server_ts": 1000
+    },
+    {
+      "seq": 3,
+      "type": "OFFER_CREATED",
+      "detail": {
+        "offer_id": "off_2",
+        "facility_id": "DH_MANDYA"
+      },
+      "server_ts": 1000
+    },
+    {
+      "seq": 4,
+      "type": "OFFER_DECLINED",
+      "detail": {
+        "offer_id": "off_2"
+      },
+      "server_ts": 1000
+    },
+    {
+      "seq": 5,
+      "type": "OFFER_CREATED",
+      "detail": {
+        "offer_id": "off_3",
+        "facility_id": "MC_BENGALURU_OB"
+      },
+      "server_ts": 1000
+    },
+    {
+      "seq": 6,
+      "type": "OFFER_DECLINED",
+      "detail": {
+        "offer_id": "off_3"
+      },
+      "server_ts": 1000
+    },
+    {
+      "seq": 7,
+      "type": "ESCALATED_TO_DISPATCHER",
+      "detail": {
+        "reason": "CHAIN_EXHAUSTED"
+      },
+      "server_ts": 1000
+    },
+    {
+      "seq": 8,
+      "type": "DISPATCHER_ASSIGNED",
+      "detail": {
+        "facility_id": "MC_BENGALURU_OB"
+      },
+      "server_ts": 1000
+    }
+  ],
+  "invariants_passed": true
+}
