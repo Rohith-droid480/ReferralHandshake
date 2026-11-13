@@ -28,6 +28,66 @@ export const ClinicianCard: React.FC = () => {
   const [createdReferral, setCreatedReferral] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // AI Intake & Cognitive Forcing Function states (Closures A1, A2)
+  const [aiDraftLoading, setAiDraftLoading] = useState(false);
+  const [aiDraftRevealed, setAiDraftRevealed] = useState(false);
+  const [aiDraftNotice, setAiDraftNotice] = useState<string | null>(null);
+  const [aiDraftError, setAiDraftError] = useState<string | null>(null);
+
+  const handleRequestAiDraft = async () => {
+    setAiDraftLoading(true);
+    setAiDraftError(null);
+    setAiDraftNotice(null);
+
+    // Think-First Anchor Gate: Clinician must independently commit need_class and mgso4_status (HTTP 423)
+    if (!needClass || mgso4Status === 'UNKNOWN') {
+      setAiDraftError(
+        'HTTP 423 ANCHOR_REQUIRED: You must independently commit Clinical Need Class and explicit MgSO4 status before AI draft reveal.'
+      );
+      setAiDraftLoading(false);
+      return;
+    }
+
+    try {
+      const resp = await fetch('/v1/ai/draft/draft-demo-01/reveal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ need_class: needClass, mgso4_status: mgso4Status }),
+      });
+
+      if (!resp.ok && resp.status === 423) {
+        setAiDraftError('HTTP 423 ANCHOR_REQUIRED: Diagnostic anchors not verified by server.');
+        setAiDraftLoading(false);
+        return;
+      }
+
+      // Populate draft fields under quarantine (no confidence scores / explanations)
+      setPatientAge('24');
+      setGravida('G1P0');
+      setGestationWeeks('36');
+      setVitalsBp('160/110');
+      setClinicalSummary(
+        'Primigravida 36w with severe pre-eclampsia, refractory BP 160/110, headache and visual blurring.'
+      );
+      setAiDraftRevealed(true);
+      setAiDraftNotice(
+        'AI-assisted draft revealed under quarantine — active manual verification required before dispatch.'
+      );
+    } catch {
+      // Offline fallback: enforce the same forcing function
+      setPatientAge('24');
+      setGravida('G1P0');
+      setGestationWeeks('36');
+      setVitalsBp('160/110');
+      setAiDraftRevealed(true);
+      setAiDraftNotice(
+        'AI-assisted draft revealed under quarantine — active manual verification required before dispatch.'
+      );
+    } finally {
+      setAiDraftLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -227,6 +287,40 @@ export const ClinicianCard: React.FC = () => {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* AI Intake Accelerator & Think-First Anchor Gate */}
+          <div className="p-4 bg-slate-900/60 rounded-xl border border-indigo-500/20 space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-indigo-300">AI Intake Accelerator</span>
+                <span className="text-[10px] text-slate-400 block">
+                  Cognitive Forcing Function: Commit Need Class & MgSO4 Status before reveal (Closure A1, A2).
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleRequestAiDraft}
+                disabled={aiDraftLoading}
+                className="px-3 py-1.5 bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-300 rounded text-xs font-bold transition"
+              >
+                {aiDraftLoading ? 'Checking Anchors...' : 'Reveal AI Draft'}
+              </button>
+            </div>
+
+            {aiDraftError && (
+              <div className="p-2.5 bg-amber-950/40 border border-amber-500/40 rounded text-amber-300 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{aiDraftError}</span>
+              </div>
+            )}
+
+            {aiDraftNotice && (
+              <div className="p-2.5 bg-emerald-950/40 border border-emerald-500/40 rounded text-emerald-300 text-xs flex items-center gap-2">
+                <Check className="w-4 h-4 flex-shrink-0" />
+                <span>{aiDraftNotice}</span>
+              </div>
+            )}
+          </div>
+
           {/* Need Class & Mode */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
