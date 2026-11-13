@@ -34,6 +34,7 @@ from api.rhp.commands.ack_confirm import execute_ack, execute_resource_confirm
 from api.rhp.commands.counter import execute_confirm_counter, execute_counter
 from api.rhp.commands.create import execute_create
 from api.rhp.commands.decline_advance import advance, execute_decline
+from api.rhp.commands.timeout import execute_timeout
 from api.rhp.commands.lifecycle import (
     execute_arrival_rejected,
     execute_cancel,
@@ -543,102 +544,13 @@ def apply_command(
 
         # 8. TIMEOUT
         elif cmd.type == "TIMEOUT" and referral is not None:
-            kind = cmd.kind
-            conn.execute(
-                "UPDATE deadline SET status = 'DONE' WHERE id = %s;",
-                (str(cmd.deadline_id),),
-            )
-            if kind in ("ACK", "DECISION", "COUNTER_CONFIRM"):
-                event_type = "DEADLINE_TIMEOUT"
-                if referral.mode == "SEQUENTIAL":
-                    conn.execute(
-                        "UPDATE offer SET status = 'TIMED_OUT' WHERE referral_id = %s AND status = 'SOFT_OPEN' AND id != %s;",
-                        (str(ref_id), str(target_offer.id) if target_offer else ""),
-                    )
-                    if referral.ladder_cursor + 1 < len(referral.chain):
-                        if target_offer:
-                            conn.execute(
-                                "UPDATE offer SET status = 'SOFT_OPEN' WHERE id = %s;",
-                                (str(target_offer.id),),
-                            )
-                        referral.ladder_cursor += 1
-                        next_fac = referral.chain[referral.ladder_cursor]
-                        next_off_id = uuid4()
-                        conn.execute(
-                            """
-                            INSERT INTO offer (id, referral_id, facility_id, step, source, status, counter_round, counter_mask, created_epoch, created_at)
-                            VALUES (%s, %s, %s, %s, 'CHAIN', 'OPEN', 0, 0, %s, %s);
-                            """,
-                            (str(next_off_id), str(ref_id), str(next_fac), referral.ladder_cursor, referral.lease_epoch, ts),
-                        )
-                        conn.execute(
-                            """
-                            INSERT INTO deadline (id, referral_id, offer_id, kind, step, epoch, due_at, created_at)
-                            VALUES (%s, %s, %s, 'ACK', %s, %s, %s, %s);
-                            """,
-                            (str(uuid4()), str(ref_id), str(next_off_id), referral.ladder_cursor, referral.lease_epoch, ts + timedelta(seconds=60), ts),
-                        )
-                        conn.execute(
-                            """
-                            INSERT INTO payload_grant (id, referral_id, facility_id, status, granted_at)
-                            VALUES (%s, %s, %s, 'ACTIVE', %s);
-                            """,
-                            (str(uuid4()), str(ref_id), str(next_fac), ts),
-                        )
-                        referral.hs_state = "OFFERED"
-                        referral.open_offers = 2
-                    else:
-                        if target_offer:
-                            conn.execute(
-                                "UPDATE offer SET status = 'TIMED_OUT' WHERE id = %s;",
-                                (str(target_offer.id),),
-                            )
-                        referral.hs_state = "ESCALATED_TO_DISPATCHER"
-                        referral.open_offers = 0
-                        conn.execute(
-                            """
-                            INSERT INTO deadline (id, referral_id, offer_id, kind, step, epoch, due_at, created_at)
-                            VALUES (%s, %s, NULL, 'DISPATCH_ACTION', 0, %s, %s, %s);
-                            """,
-                            (str(uuid4()), str(ref_id), referral.lease_epoch, ts + timedelta(seconds=300), ts),
-                        )
-                else:
-                    if target_offer:
-                        conn.execute(
-                            "UPDATE offer SET status = 'TIMED_OUT' WHERE id = %s;",
-                            (str(target_offer.id),),
-                        )
-                event_detail = {"kind": kind, "step": int(cmd.step or 0)}
-            elif kind == "HANDOVER":
-                event_type = "HANDOVER_OVERDUE"
-                event_detail = {"kind": "HANDOVER", "step": int(cmd.step or 0)}
-                conn.execute(
-                    """
-                    INSERT INTO deadline (id, referral_id, offer_id, kind, step, epoch, due_at, created_at)
-                    VALUES (%s, %s, %s, 'HANDOVER', %s, %s, %s, %s);
-                    """,
-                    (str(uuid4()), str(ref_id), str(target_offer.id) if target_offer else None, int(cmd.step or 0), referral.lease_epoch, ts + timedelta(minutes=30), ts),
-                )
-            elif kind == "CLOSURE":
-                event_type = "CLOSURE_OVERDUE"
-                event_detail = {"kind": "CLOSURE", "step": int(cmd.step or 0)}
-                conn.execute(
-                    """
-                    INSERT INTO deadline (id, referral_id, offer_id, kind, step, epoch, due_at, created_at)
-                    VALUES (%s, %s, %s, 'CLOSURE', %s, %s, %s, %s);
-                    """,
-                    (str(uuid4()), str(ref_id), str(target_offer.id) if target_offer else None, int(cmd.step or 0), referral.lease_epoch, ts + timedelta(hours=2), ts),
-                )
-            elif kind in ("NOTICE_VOICE", "NOTICE_PROXY"):
-                event_type = "NOTICE_SENT"
-                event_detail = {
-                    "channel": "VOICE" if kind == "NOTICE_VOICE" else "PROXY",
-                    "rung": 1 if kind == "NOTICE_VOICE" else 2,
-                    "slot": 0,
-                }
+            ev_type, ev_detail = execute_timeout(conn, referral, target_offer, session, cmd, ts)
+            if ev_type is not None:
+                event_type = ev_type
+                event_detail = ev_detail
             else:
                 event_type = "DEADLINE_TIMEOUT"
-                event_detail = {"kind": kind, "step": int(cmd.step or 0)}
+                event_detail = {"kind": getattr(cmd, "kind", "ACK"), "step": int(getattr(cmd, "step", 0) or 0)}
 
         # 9. ARRIVAL_REJECTED
         elif cmd.type == "ARRIVAL_REJECTED" and referral is not None:

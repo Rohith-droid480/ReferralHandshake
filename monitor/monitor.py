@@ -779,6 +779,37 @@ class MonitorService:
             self.server = None
 
 
+    def upsert_heartbeat(self, conn: Any, subject_id: str = "monitor-1", ntp_offset_ms: int = 0) -> None:
+        """Upserts monitor liveness into the database heartbeat table (Closure F11)."""
+        now = datetime.now(timezone.utc)
+        if hasattr(conn, "db"):
+            if not hasattr(conn.db, "heartbeats"):
+                conn.db.heartbeats = {}
+            conn.db.heartbeats[("MONITOR", subject_id)] = {
+                "subject_kind": "MONITOR",
+                "subject_id": subject_id,
+                "last_seen": now,
+                "ntp_offset_ms": ntp_offset_ms,
+            }
+            return
+
+        cur = conn.cursor() if hasattr(conn, "cursor") else conn
+        cur.execute(
+            """
+            INSERT INTO heartbeat (subject_kind, subject_id, last_seen, ntp_offset_ms)
+            VALUES ('MONITOR', %s, clock_timestamp(), %s)
+            ON CONFLICT (subject_kind, subject_id)
+            DO UPDATE SET last_seen = EXCLUDED.last_seen, ntp_offset_ms = EXCLUDED.ntp_offset_ms;
+            """,
+            (subject_id, ntp_offset_ms),
+        )
+
+
+def upsert_monitor_heartbeat(conn: Any, subject_id: str = "monitor-1", ntp_offset_ms: int = 0) -> None:
+    """Standalone helper to upsert monitor heartbeat."""
+    GLOBAL_MONITOR_SERVICE.upsert_heartbeat(conn, subject_id=subject_id, ntp_offset_ms=ntp_offset_ms)
+
+
 GLOBAL_MONITOR_SERVICE = MonitorService()
 
 
