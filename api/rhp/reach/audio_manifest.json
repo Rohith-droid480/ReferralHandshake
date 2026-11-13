@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0",
+  "languages": ["kn", "hi", "en"],
+  "prompts": {
+    "press_1_gate": {
+      "en": "Emergency referral call. Press 1 to hear the referral.",
+      "hi": "Aapaatkaaleen referral call. Referral sunne ke liye 1 dabaayein.",
+      "kn": "Turtu referral kare. Referral kelalu 1 otti.",
+      "max_wait_seconds": 8
+    },
+    "dtmf_menu": {
+      "en": "Press 1 to Accept, Press 2 to Counter, Press 3 to Decline.",
+      "hi": "Sveekaar karne ke liye 1, Counter ke liye 2, Asveekaar karne ke liye 3 dabaayein.",
+      "kn": "Oppikollalu 1, Counter maadalu 2, Tiraskarislalu 3 otti."
+    },
+    "pin_prompt": {
+      "en": "Please enter your 4-digit PIN followed by hash.",
+      "hi": "Kripya apna 4-digit PIN darj karein aur hash dabaayein.",
+      "kn": "Dayavittu nimma 4-digit PIN mattu hash otti."
+    },
+    "deidentified_summary_template": {
+      "format": "Referral from {origin_facility_name}. Need class {need_class}. Estimated arrival time {eta_minutes} minutes.",
+      "contains_phi": false
+    }
+  }
+}
+

@@ -184,3 +184,4 @@ def evaluate_benchmark_gate(
         "silent_omission_rate_pct": round(omission_rate * 100.0, 2),
         "gate_passed": (rubber_stamp_rate <= 0.05) and (omission_rate <= 0.01),
     }
+

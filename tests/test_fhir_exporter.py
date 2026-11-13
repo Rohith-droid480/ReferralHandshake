@@ -95,3 +95,4 @@ def test_fhir_r4_state_mappings():
         bundle = export_referral_to_fhir_r4(referral, [])
         task = next(e["resource"] for e in bundle["entry"] if e["resource"]["resourceType"] == "Task")
         assert task["status"] == expected_task_status
+

@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import queue
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Any, AsyncGenerator, Dict, List, Optional
@@ -23,6 +24,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, StreamingResponse
 
 from api.rhp.auth import AuthError, Session, load_session
+from api.rhp.commands.judge_join import router as judge_router
 from api.rhp.config import check_boot_guards, get_settings
 from api.rhp.db import get_main_connection
 from api.rhp.sse import SSESubscriber, format_heartbeat_frame, get_sse_hub
@@ -122,6 +124,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(judge_router)
+
+
+@app.get("/mode")
+def get_mode():
+    """Returns runtime deployment mode flags for PWA banner and judge onboarding."""
+    settings = get_settings()
+    return {
+        "broken_build": settings.broken_build,
+        "lan_mode": settings.lan_mode,
+        "profile": settings.profile,
+        "real_data": settings.real_data,
+    }
 
 
 @app.get("/healthz")

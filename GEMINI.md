@@ -9,7 +9,7 @@
 
 ## 1. Strict Input Precedence & Tag Discipline (Non-Negotiable)
 
-All AI agents (Google Antigravity, Gemini Pro, Gem 1 CONDUCTOR, Gem 2 MILESTONE VALIDATOR) operating in this repository must resolve any conflict or ambiguity using this exact hierarchy:
+All AI agents (Google Antigravity, Gemini Pro, Gem 1 CONDUCTOR & MASTER VALIDATION AUDITOR) operating in this repository must resolve any conflict or ambiguity using this exact hierarchy:
 
 1. **`ReferralHandshake_LOCKED_Problem_Statement_v7.md`:** Highest authority on problem framing, evidence register, operational scope, and claims discipline.
 
@@ -23,7 +23,7 @@ All AI agents (Google Antigravity, Gemini Pro, Gem 1 CONDUCTOR, Gem 2 MILESTONE 
 4. **`ReferralHandshake_FINAL_LOCKED_Architecture.md`:** Ultimate technical authority on F1–F20 closures, I1–I16 invariants, the 24-table PostgreSQL 16 DDL, the 10-step `apply_command()` pipeline, timing math, Quint specification (`rhp1.qnt`), independent Python runtime monitor, and T0–T3 feature tiers.
 
 
-5. **`ReferralHandshake_3Gem_Antigravity_Workflow.md` & `AGENTS.md`:** Authority on the 2-Gem Milestone Validation Workflow, lane isolation, packet formats, and verification gates.
+5. **`ReferralHandshake_3Gem_Antigravity_Workflow.md` & `AGENTS.md`:** Authority on the 1-Gem Direct Post-Build Validation Loop, lane isolation, packet formats, and verification gates.
 
 
 
@@ -128,11 +128,11 @@ Anything outside `(a)`, `(b)`, or `(c)` is **strictly out of scope** and must be
 
 ---
 
-## 3. Multi-Agent Governance: The 2-Gem Milestone Validation Workflow
+## 3. Multi-Agent Governance: The 1-Gem Direct Post-Build Validation Loop
 
-Development is governed by a high-speed Milestone Validation separation of powers across two human-operated parallel lanes:
+All 12 modules (`MODULE 1` through `MODULE 12`) are built. The repository operates under the direct **1-Gem Loop (`Gem 1 <-> Antigravity`)** focused on post-build validation, testing, bug fixing, and integration completion.
 
-* **Lane A (Person A — Backend & Formal Spec):** Owns PostgreSQL DDL (`db/schema.sql`), `spec/transitions.yaml`, `spec/rhp1.qnt`, FastAPI `apply_command()` pipeline, 2-phase poller, outbox relay, hash chain, Merkle witness/signer, and concurrency/mutation test suites.
+* **Lane A (Person A — Backend & Formal Spec):** Owns PostgreSQL DDL (`db/01_schema.sql`), `spec/transitions.yaml`, `spec/rhp1.qnt`, FastAPI `apply_command()` pipeline, 2-phase poller, outbox relay, hash chain, Merkle witness/signer, and concurrency/mutation test suites.
 
 * **Lane B (Person B — Clients, Reach & Independent Monitor):** Owns the independent Python runtime monitor (`monitor/`), React PWA desks, SSE consumer, pure-JS browser verifier, `BROKEN_BUILD` scratch orchestration, dispatcher console, Exotel IVR & paper code adapters, and demo fallbacks.
 
@@ -146,21 +146,18 @@ To prevent the server and runtime monitor from sharing a common-mode bug:
 
 * The monitor **must never** import server packages, share helper functions with `/api`, or read `/api` source files; it connects exclusively via the read-only PostgreSQL role `rhp_monitor`.
 
-### 3.2 Agent Responsibilities & Prohibitions
+### 3.2 Agent Responsibilities & Direct Loop
 
 | Agent Role | Owns | Strictly Prohibited From |
 | --- | --- | --- |
-| **Google Antigravity (Builder)** | Executing atomic tasks from the current `AG-PROMPT`, writing implementation code and tests inside `FILES YOU MAY TOUCH`, running commands, pasting raw outputs into the `BUILD REPORT`, committing tags `step-<ID>-loop<n>`, and outputting the mandatory routing banner (Case A for sub-step, Case B for completed feature/milestone). | Deciding architecture, touching `FILES YOU MUST NOT TOUCH`, editing `/spec` or `AGENTS.md`, claiming tests pass without raw terminal output, routing the user to Gem 2 before a feature/milestone is completed. |
-| **Gem 1 — CONDUCTOR (Unchanged)** | Maintaining the `STATE LEDGER`, sequencing steps (`Phase P` and `Phase E`), writing `AG-PROMPT` blocks, enforcing the 2-fix-loop cap and tier cut order (`T3 → T2 → T1`; never `T0`). Accepts standard `DECISION PACKET` inputs. | Writing product code, advancing a step with open `S1` defects, modifying the spec without a user-approved `SPEC-DEVIATION`. |
-| **Gem 2 — MILESTONE VALIDATOR (Merged Auditor + Adversary)** | Invoked **ONLY when a feature or milestone/gate is completed**. Performs line-by-line spec conformance auditing, invariant sweep (`I1–I16`), code review, high-impact red-team attacks (`A-n`), claims integrity checks, and outputs the ready-to-paste `DECISION PACKET` prompt for Gem 1. | Writing fixes or product code, validating half-built micro-steps, approving without raw test output. (Gem 3 is retired). |
+| **Google Antigravity (Builder, Fixer & Test Runner)** | Executing surgical tasks from `AG-PROMPT`, diagnosing issues, applying clean fixes inside permitted files, running test/audit commands, pasting raw outputs into the report, committing tags `step-<ID>-loop<n>`, and outputting the single mandatory completion banner. | Deciding architecture, editing `/spec` or `db/01_schema.sql`, claiming tests pass without raw terminal output. |
+| **Gem 1 — CONDUCTOR & MASTER VALIDATION AUDITOR** | Sole reviewing agent (Gem 2 & Gem 3 retired). Maintains the `STATE LEDGER`, sequences validation stages (V1..V5), performs root-cause analysis, writes targeted `AG-PROMPT` fix blocks, and enforces gate acceptance criteria. | Writing product code directly, advancing stages without raw verification output. |
 
-### 3.3 Loop Routing Rules & Antigravity Mandatory Banners
+### 3.3 Loop Cadence & Mandatory Banner
 
-* **Milestone Validation (`G1 → AG → G2 → G1`, ~10–14 min):** Invoked **ONLY when a Feature or Milestone/Gate (`P1–P6`, `E0–E8`, `G0–G3`) is completed**, or when verifying an S1 fix. Antigravity emits:
-  `🛑 HALF-MODULE M<N>-<A|B> COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!`
-* **Sub-Step Fast-Advance (`G1 → AG → G1`):** Used when a sub-step/task is completed but the full feature/milestone is NOT yet finished. Skips Gem 2. Antigravity emits:
-  `🟢 SUB-STEP COMPLETE (FEATURE / MILESTONE NOT YET FINISHED) — DO NOT GO TO GEM 2 YET. Paste the FAST-ADVANCE PACKET below directly into Gem 1.`
-* **Reject Short-Circuit (`G2 → G1`):** Triggered immediately when Gem 2 returns `REJECT` (code does not run, raw test output missing, or forbidden files touched). Gem 2 outputs an immediate REDO/FIX `DECISION PACKET` for Gem 1.
+* **Direct Post-Build Loop (`Gem 1 -> Antigravity -> Gem 1`):** Every cycle goes directly between Gem 1 and Antigravity.
+* **Mandatory Antigravity Completion Banner:**
+  `🛑 VALIDATION & FIX STEP COMPLETED — PASTE THIS REPORT DIRECTLY BACK INTO GEM 1!`
 
 
 
@@ -607,12 +604,12 @@ ASSUMPTIONS
 OPEN QUESTIONS
 SELF-RATED RISK + the 3 things most likely to be wrong
 
-=== AUDIT-REQUEST FOR GEM 2 ===
-Step: <id> | Loop: #<n> (<FULL|FAST>)
+=== VALIDATION & FIX REPORT FOR GEM 1 ===
+Step: <id> | Stage: <V1..V5> | Loop: #<n>
 Spec Anchors: <§ numbers, I# invariants, T-# tests>
 Acceptance Criteria: <list from AG-PROMPT>
-<Paste BUILD REPORT above>
-Question: Audit this against the anchors.
+<Paste Report above>
+Banner: 🛑 VALIDATION & FIX STEP COMPLETED — PASTE THIS REPORT DIRECTLY BACK INTO GEM 1!
 
 ```
 

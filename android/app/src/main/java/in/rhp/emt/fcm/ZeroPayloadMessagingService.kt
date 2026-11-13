@@ -61,3 +61,4 @@ class ZeroPayloadMessagingService : FirebaseMessagingService() {
         // Registers push token with backend using device enrollment session
     }
 }
+

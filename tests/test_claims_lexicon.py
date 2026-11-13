@@ -18,3 +18,4 @@ def test_st5_claims_lexicon_zero_violations():
 
     assert res.returncode == 0, f"ST-5 Claims Linter detected violations:\n{res.stderr}\n{res.stdout}"
     assert "PASS (0 violations)" in res.stdout
+

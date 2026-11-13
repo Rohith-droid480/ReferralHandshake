@@ -83,3 +83,4 @@ def test_android_outbox_idempotency_retry_model():
     outbox_item["attempts"] = 8
     outbox_item["status"] = "DEAD"
     assert outbox_item["status"] == "DEAD"
+
