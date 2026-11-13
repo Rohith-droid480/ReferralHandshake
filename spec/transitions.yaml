@@ -1,0 +1,645 @@
+# =============================================================================
+# ReferralHandshake Protocol RHP-1 — Canonical State Transition Table
+# Specification Anchor: Architecture §4, §5, §6; Solution v8 §4
+# Protocol: RHP-1 | Architecture Version: FINAL_LOCKED | Status: FROZEN
+# =============================================================================
+
+protocol: "RHP-1"
+version: "1.0.0"
+architecture_ref: "spec/ReferralHandshake_FINAL_LOCKED_Architecture.md#§4"
+solution_ref: "spec/ReferralHandshake_v8_LOCKED_Solution.md#§4"
+
+# -----------------------------------------------------------------------------
+# 1. State Sets & Status Definitions (§4)
+# -----------------------------------------------------------------------------
+states:
+  handshake:
+    initial: "CREATED"
+    terminal:
+      - "CANCELLED"
+      - "CLOSED"
+    all:
+      - "CREATED"
+      - "OFFERED"
+      - "ACKNOWLEDGED"
+      - "ACCEPTED"
+      - "COUNTERED"
+      - "ESCALATED_TO_DISPATCHER"
+      - "CANCELLED"
+      - "CLOSED"
+
+  transport:
+    initial: "REQUESTED"
+    terminal:
+      - "HANDED_OVER"
+      - "TR_CANCELLED"
+    all:
+      - "REQUESTED"
+      - "DISPATCHED"
+      - "EN_ROUTE"
+      - "ARRIVED"
+      - "HANDED_OVER"
+      - "TR_CANCELLED"
+
+  offer:
+    initial: "OPEN"
+    all:
+      - "OPEN"
+      - "ACKED"
+      - "COUNTERED"
+      - "SOFT_OPEN"
+      - "ACCEPTED"
+      - "DECLINED"
+      - "TIMED_OUT"
+      - "SUPERSEDED"
+      - "ARRIVAL_REJECTED"
+      - "WITHDRAWN"
+    open_set:
+      - "OPEN"
+      - "ACKED"
+      - "COUNTERED"
+      - "SOFT_OPEN"
+    terminal_set:
+      - "ACCEPTED"
+      - "DECLINED"
+      - "TIMED_OUT"
+      - "SUPERSEDED"
+      - "ARRIVAL_REJECTED"
+      - "WITHDRAWN"
+
+# -----------------------------------------------------------------------------
+# 2. Protocol Invariants & Guard Bounds (§4, §6, I1–I16)
+# -----------------------------------------------------------------------------
+invariants:
+  max_open_offers: 2             # I12, CHECK (open_offers BETWEEN 0 AND 2)
+  max_active_leases: 1           # I2, partial unique index one_lease on offer(referral_id) WHERE status='ACCEPTED'
+  max_counter_rounds: 2          # F13, counter_round BETWEEN 0 AND 2
+  counter_confirm_deadline_formula: "min(C, remaining_D)" # F13, counters never extend facility window
+  track_independence: true       # I3, tr_state never reads or mutates hs_state
+  two_phase_closure_rearm: 1     # F6, CLOSURE deadline fires once (CLOSURE_OVERDUE), re-arms once, then system auto-closes
+  closure_auto_outcome: "UNKNOWN_COUNTER_REFERRAL" # F6, explicit unknown, never fabricated clinical outcome
+
+# -----------------------------------------------------------------------------
+# 3. Outcome Taxonomy (9 Outcomes, §4, F6)
+# -----------------------------------------------------------------------------
+outcomes:
+  ADMITTED_STABLE:
+    requires_handed_over: true
+    description: "Patient admitted to ward/ICU in stable condition"
+  ADMITTED_CRITICAL:
+    requires_handed_over: true
+    description: "Patient admitted to critical care/OT in critical condition"
+  DELIVERED_AT_RECEIVER:
+    requires_handed_over: true
+    description: "Delivery occurred at receiving hospital post-handover"
+  DELIVERED_EN_ROUTE:
+    requires_handed_over: false
+    description: "Delivery occurred inside ambulance during transport"
+  PATIENT_REFUSED:
+    requires_handed_over: false
+    description: "Patient or family refused transfer/treatment"
+  TRANSPORT_CANCELLED:
+    requires_handed_over: false
+    description: "Ambulance transport cancelled before handover"
+  DETERIORATED_OR_DIED_PRE_HANDOVER:
+    requires_handed_over: false
+    description: "Patient deteriorated severely or expired prior to handover"
+  REDIRECTED_ON_ARRIVAL:
+    requires_handed_over: false
+    description: "Ambulance redirected upon physical arrival due to unforeseen emergency"
+  UNKNOWN_COUNTER_REFERRAL:
+    requires_handed_over: false
+    description: "System auto-closure after 2x unclosed deadlines without human outcome confirmation"
+
+# -----------------------------------------------------------------------------
+# 4. Arrival Semantics (6 Cases, §4, F5)
+# -----------------------------------------------------------------------------
+arrival_cases:
+  case_a_lease_holder:
+    trigger: "Geofence 200m + dwell"
+    system_action: "EMIT ARRIVAL_SUGGESTED"
+    human_action: "Human EMT or desk confirms TR_UPDATE(ARRIVED)"
+  case_b_open_offer:
+    trigger: "Ambulance arrives at facility with OPEN/ACKED/SOFT_OPEN offer"
+    system_action: "Desk may immediately ACCEPT with required resource confirmations"
+    guard: "I15 staleness check applies"
+  case_c_unannounced_non_owner:
+    trigger: "Physical arrival at facility without active lease or offer"
+    system_action: "EMIT ARRIVAL_AT_NON_OWNER urgent alert; page dispatcher; never block treatment"
+    remedy: "Dispatcher issues DISPATCHER_ASSIGN"
+  case_d_en_route_destination_change:
+    trigger: "Crew or dispatcher requests reroute before ARRIVED"
+    action: "TR_DESTINATION_CHANGE with reason enum logged; never autonomous reroute"
+  case_e_crew_refuses_redirect:
+    trigger: "Advisory redirect refused by crew"
+    action: "TR_DESTINATION_CHANGE(accepted=false) logged; lease unchanged; dispatcher paged"
+  case_f_detour_advisory:
+    trigger: "Detour advisory past turn-off"
+    action: "Advisory shows detour ETA from cached Matrix; crew decides; fallback case_c"
+
+# -----------------------------------------------------------------------------
+# 5. v7 → RHP-1 State Mapping (§4, F19, T-F19)
+# -----------------------------------------------------------------------------
+v7_mapping:
+  CREATED:
+    hs_state: "CREATED"
+    tr_state: "REQUESTED"
+    offer_status: null
+    event_type: "REFERRAL_CREATED"
+  OFFERED:
+    hs_state: "OFFERED"
+    tr_state: "any"
+    offer_status: "OPEN"
+    event_type: "OFFER_CREATED"
+  ACKNOWLEDGED:
+    hs_state: "ACKNOWLEDGED"
+    tr_state: "any"
+    offer_status: "ACKED"
+    event_type: "OFFER_ACKED"
+  ACCEPTED:
+    hs_state: "ACCEPTED"
+    tr_state: "any"
+    offer_status: "ACCEPTED"
+    event_type: "OFFER_ACCEPTED"
+  COUNTERED:
+    hs_state: "COUNTERED"
+    tr_state: "any"
+    offer_status: "COUNTERED"
+    event_type: "OFFER_COUNTERED"
+  DECLINED:
+    hs_state: ["OFFERED", "ESCALATED_TO_DISPATCHER"]
+    tr_state: "any"
+    offer_status: "DECLINED"
+    event_type: "OFFER_DECLINED"
+  TIMED_OUT:
+    hs_state: ["OFFERED", "ESCALATED_TO_DISPATCHER"]
+    tr_state: "any"
+    offer_status: ["TIMED_OUT", "SOFT_OPEN"]
+    event_type: "DEADLINE_TIMEOUT"
+  ESCALATED:
+    hs_state: "OFFERED"
+    tr_state: "any"
+    offer_status: "OPEN"
+    event_type: "OFFER_CREATED"
+  ARRIVAL_REJECTED:
+    hs_state: ["OFFERED", "ESCALATED_TO_DISPATCHER"]
+    tr_state: "ARRIVED"
+    offer_status: "ARRIVAL_REJECTED"
+    event_type: "ARRIVAL_REJECTED"
+  ESCALATED_TO_DISPATCHER:
+    hs_state: "ESCALATED_TO_DISPATCHER"
+    tr_state: "any"
+    offer_status: null
+    event_type: "ESCALATED_TO_DISPATCHER"
+  CANCELLED:
+    hs_state: "CANCELLED"
+    tr_state: ["any", "TR_CANCELLED"]
+    offer_status: "WITHDRAWN"
+    event_type: "CANCELLED"
+  CLOSED:
+    hs_state: "CLOSED"
+    tr_state: "HANDED_OVER"
+    offer_status: null
+    event_type: "CLOSED"
+
+# -----------------------------------------------------------------------------
+# 6. Canonical 15 Commands (§4, §5)
+# -----------------------------------------------------------------------------
+commands:
+  CREATE:
+    id: 1
+    actor_roles: ["CLINICIAN"]
+    requires_pin: true             # D-P1-2 / Architecture §5: User Verified PIN required
+    needs_pin: true
+    pre_state:
+      referral_exists: false
+    effects:
+      referral:
+        version: 1
+        lease_epoch: 0
+        hs_state: "OFFERED"         # or ESCALATED_TO_DISPATCHER if chain is empty
+        tr_state: "REQUESTED"
+        open_offers: 1              # 2 if PARALLEL2, 0 if empty chain
+      offers:
+        create: "chain[0]"          # or chain[0..1] if PARALLEL2
+        initial_status: "OPEN"
+      payload_grants:
+        - "origin_facility"
+        - "offered_facility"
+      deadlines:
+        - kind: "ACK"
+          due: "ts + A"
+        - kind: "NOTICE_VOICE"
+          due: "ts + A/4"
+        - kind: "NOTICE_PROXY"
+          due: "ts + 3A/4"
+      on_empty_chain:
+        hs_state: "ESCALATED_TO_DISPATCHER"
+        open_offers: 0
+        deadlines:
+          - kind: "DISPATCH_ACTION"
+            due: "ts + DISPATCH_ACTION_MS"
+    errors:
+      401: "SESSION_INVALID"
+      403: "PIN_INVALID"
+      422: "SCHEMA_VALIDATION_FAILED"
+
+  ACK:
+    id: 2
+    actor_roles: ["NURSE", "CMO", "CONSULTANT", "CLINICIAN", "RECEIVING_ROLE"]
+    requires_pin: false            # Rung 0 push/voice acknowledgement (session only)
+    needs_pin: false
+    pre_state:
+      referral_exists: true
+      target_offer_status: "OPEN"
+    effects:
+      target_offer:
+        status: "ACKED"
+      referral:
+        hs_state: "ACKNOWLEDGED"    # unless already ACCEPTED
+      deadlines:
+        mark_done: ["ACK", "NOTICE_VOICE", "NOTICE_PROXY"]
+        create:
+          - kind: "DECISION"
+            due: "ts + D"
+      soft_open_eviction:
+        rule: "In SEQUENTIAL mode, any prior SOFT_OPEN offer transitions to TIMED_OUT"
+    errors:
+      409: "INVALID_TRANSITION"
+
+  RESOURCE_CONFIRM:
+    id: 3
+    actor_roles: ["NURSE", "CMO", "CONSULTANT", "CLINICIAN", "RECEIVING_ROLE"]
+    requires_pin: true
+    needs_pin: true
+    pre_state:
+      referral_exists: true
+      target_offer_status: ["OPEN", "ACKED", "SOFT_OPEN"]
+    effects:
+      resource_confirmation:
+        action: "UPSERT"
+        expires_at: "ts + confirm_ttl"
+    errors:
+      401: "SESSION_INVALID"
+      403: "PIN_INVALID"
+      409: "INVALID_OFFER_STATE"
+      422: "MISSING_CAPABILITY"
+
+  ACCEPT:
+    id: 4
+    actor_roles: ["NURSE", "CMO", "CONSULTANT", "CLINICIAN", "RECEIVING_ROLE"]
+    requires_pin: true
+    needs_pin: true
+    pre_state:
+      referral_exists: true
+      target_offer_status: ["OPEN", "ACKED", "SOFT_OPEN"]
+      no_active_lease: true
+      all_requirements_confirmed: true
+      successor_not_acked: true     # if SOFT_OPEN, successor must not be ACKed
+    effects:
+      target_offer:
+        status: "ACCEPTED"
+      referral:
+        lease_facility: "target_offer.facility_id"
+        lease_epoch: "lease_epoch + 1"
+        hs_state: "ACCEPTED"
+        open_offers: 0
+      other_open_offers:
+        status: "SUPERSEDED"
+      payload_grants:
+        revoke: "superseded_facilities"
+      deadlines:
+        mark_done: ["ACK", "DECISION", "COUNTER_CONFIRM", "NOTICE_VOICE", "NOTICE_PROXY"]
+        create:
+          - kind: "HANDOVER"
+            due: "ts + H"
+    errors:
+      401: "SESSION_INVALID"
+      403: "PIN_INVALID"
+      409_lease: "LEASE_HELD"
+      409_late: "LATE_ACCEPT_REJECTED"
+      409_stale: "STALE_CONFIRMATION_RECONFIRM_REQUIRED"
+      412: "STALE_PRECONDITION"
+
+  COUNTER:
+    id: 5
+    actor_roles: ["NURSE", "CMO", "CONSULTANT", "CLINICIAN", "RECEIVING_ROLE"]
+    requires_pin: true
+    needs_pin: true
+    pre_state:
+      referral_exists: true
+      target_offer_status: ["OPEN", "ACKED"]
+      counter_round_lt: 2
+    effects:
+      target_offer:
+        status: "COUNTERED"
+        counter_round: "counter_round + 1"
+      referral:
+        hs_state: "COUNTERED"
+      deadlines:
+        mark_done: ["DECISION", "ACK", "NOTICE_VOICE", "NOTICE_PROXY"]
+        create:
+          - kind: "COUNTER_CONFIRM"
+            due: "min(ts + C, remaining_D)"
+    errors:
+      401: "SESSION_INVALID"
+      403: "PIN_INVALID"
+      409_limit: "COUNTER_LIMIT_EXCEEDED"
+      409_invalid: "INVALID_TRANSITION"
+      422: "INVALID_PAYLOAD"
+
+  CONFIRM_COUNTER:
+    id: 6
+    actor_roles: ["CLINICIAN", "DISPATCHER"]
+    requires_pin: true             # D-P1-2 / Architecture §5: Mutating acceptance requires PIN
+    needs_pin: true
+    pre_state:
+      referral_exists: true
+      target_offer_status: "COUNTERED"
+    branch_confirmed_true:
+      check:
+        no_active_lease: true
+        all_requirements_confirmed: true
+      effects:
+        target_offer:
+          status: "ACCEPTED"
+        referral:
+          lease_facility: "target_offer.facility_id"
+          lease_epoch: "lease_epoch + 1"
+          hs_state: "ACCEPTED"
+          open_offers: 0
+        other_open_offers:
+          status: "SUPERSEDED"
+        deadlines:
+          mark_done: ["COUNTER_CONFIRM"]
+          create:
+            - kind: "HANDOVER"
+              due: "ts + H"
+      errors:
+        401: "SESSION_INVALID"
+        403: "PIN_INVALID"
+        409_lease: "LEASE_HELD"
+        409_stale: "STALE_CONFIRMATION_RECONFIRM_REQUIRED"
+    branch_confirmed_false:
+      effects:
+        target_offer:
+          status: "DECLINED"
+        payload_grants:
+          revoke: "target_facility"
+        deadlines:
+          mark_done: ["COUNTER_CONFIRM"]
+        trigger_advance: true
+    errors:
+      401: "SESSION_INVALID"
+      403: "PIN_INVALID"
+      409: "INVALID_TRANSITION"
+
+  DECLINE:
+    id: 7
+    actor_roles: ["NURSE", "CMO", "CONSULTANT", "CLINICIAN", "RECEIVING_ROLE"]
+    requires_pin: true
+    needs_pin: true
+    pre_state:
+      referral_exists: true
+      target_offer_status: ["OPEN", "ACKED", "SOFT_OPEN", "COUNTERED"]
+    effects:
+      target_offer:
+        status: "DECLINED"
+      payload_grants:
+        revoke: "target_facility"
+      deadlines:
+        mark_done: ["ACK", "DECISION", "COUNTER_CONFIRM", "NOTICE_VOICE", "NOTICE_PROXY"]
+      trigger_advance: true
+    errors:
+      401: "SESSION_INVALID"
+      403: "PIN_INVALID"
+      409: "INVALID_TRANSITION"
+
+  TIMEOUT:
+    id: 8
+    actor_roles: ["SYSTEM"]
+    requires_pin: false
+    needs_pin: false
+    pre_state:
+      referral_exists: true
+      deadline_status: "PENDING"
+    cases:
+      ACK_TIMEOUT:
+        sequential:
+          current_offer: "SOFT_OPEN" # or TIMED_OUT if cap reached or last target
+          older_soft_open: "TIMED_OUT" # evict older SOFT_OPEN to maintain open_offers <= 2
+          advance_next: true
+        parallel2:
+          current_offer: "TIMED_OUT"
+          advance_next: true
+      DECISION_TIMEOUT:
+        sequential:
+          current_offer: "SOFT_OPEN"
+          older_soft_open: "TIMED_OUT"
+          advance_next: true
+        parallel2:
+          current_offer: "TIMED_OUT"
+          advance_next: true
+      COUNTER_CONFIRM_TIMEOUT:
+        current_offer: "DECLINED"
+        advance_next: true
+      NOTICE_VOICE_TIMEOUT:
+        action: "TRIGGER_VOICE_CALL"
+        offer_status_change: false
+      NOTICE_PROXY_TIMEOUT:
+        action: "TRIGGER_PROXY_PAGE"
+        offer_status_change: false
+      HANDOVER_TIMEOUT:
+        action: "EMIT_HANDOVER_OVERDUE"
+        rearm_deadline: "HANDOVER"
+      CLOSURE_TIMEOUT:
+        stage_1:
+          action: "EMIT_CLOSURE_OVERDUE"
+          rearm_deadline: "CLOSURE"
+        stage_2:
+          action: "AUTO_CLOSE"
+          outcome: "UNKNOWN_COUNTER_REFERRAL"
+          proxy: true
+          actor: "SYSTEM"
+      DISPATCH_ACTION_TIMEOUT:
+        action: "EMIT_DISPATCH_ACTION_OVERDUE"
+        rearm_deadline: "DISPATCH_ACTION"
+    errors:
+      200: "NO_OP"                   # if deadline already DONE or cancelled
+
+  ARRIVAL_REJECTED:
+    id: 9
+    actor_roles: ["EMT", "RECEIVING_ROLE", "DISPATCHER"]
+    requires_pin: true
+    needs_pin: true
+    pre_state:
+      referral_exists: true
+      hs_state: "ACCEPTED"
+    effects:
+      current_accepted_offer:
+        status: "ARRIVAL_REJECTED"
+      referral:
+        lease_facility: null
+        lease_epoch: "lease_epoch + 1"
+        hs_state: "OFFERED"          # or ESCALATED_TO_DISPATCHER if advance exhausts
+      payload_grants:
+        revoke: "rejected_facility"
+      deadlines:
+        mark_done: ["HANDOVER"]
+      trigger_advance: true
+    errors:
+      401: "SESSION_INVALID"
+      403: "PIN_INVALID"
+      409: "INVALID_TRANSITION"
+
+  DISPATCHER_ASSIGN:
+    id: 10
+    actor_roles: ["DISPATCHER"]
+    requires_pin: true
+    needs_pin: true
+    pre_state:
+      referral_exists: true
+      allowed_hs: ["ESCALATED_TO_DISPATCHER", "OFFERED", "ACKNOWLEDGED", "COUNTERED"]
+    effects:
+      new_offer:
+        status: "ACCEPTED"
+        source: "DISPATCHER"
+        proxy: true
+      other_open_offers:
+        status: "SUPERSEDED"
+      payload_grants:
+        revoke: "superseded_facilities"
+        grant: "assigned_facility"
+      referral:
+        lease_facility: "assigned_facility"
+        lease_epoch: "lease_epoch + 1"
+        hs_state: "ACCEPTED"
+        open_offers: 0
+      deadlines:
+        mark_done: ["ACK", "DECISION", "COUNTER_CONFIRM", "DISPATCH_ACTION"]
+        create:
+          - kind: "HANDOVER"
+            due: "ts + H"
+    errors:
+      401: "SESSION_INVALID"
+      403: "PIN_INVALID"
+      409: "LEASE_HELD"
+
+  TR_UPDATE:
+    id: 11
+    actor_roles: ["EMT", "DISPATCHER", "SYSTEM"]
+    requires_pin: false
+    needs_pin: false
+    pre_state:
+      referral_exists: true
+      hs_non_terminal: true          # hs_state not in ['CANCELLED', 'CLOSED']
+    valid_transitions:
+      REQUESTED: ["DISPATCHED", "TR_CANCELLED"]
+      DISPATCHED: ["EN_ROUTE", "TR_CANCELLED"]
+      EN_ROUTE: ["ARRIVED", "TR_CANCELLED"]
+      ARRIVED: ["HANDED_OVER"]
+      HANDED_OVER: []
+      TR_CANCELLED: []
+    guards:
+      ARRIVED:
+        actor_must_be_human: true    # EMT or desk, never autonomous system
+        geofence_action: "EMIT ARRIVAL_SUGGESTED only"
+      ARRIVAL_AT_NON_OWNER:
+        condition: "tr_state == ARRIVED and facility != referral.lease_facility"
+        action: "EMIT ARRIVAL_AT_NON_OWNER; page dispatcher; do not block care"
+    effects:
+      referral:
+        tr_state: "new_tr_state"
+      on_handed_over:
+        deadlines:
+          create:
+            - kind: "CLOSURE"
+              due: "ts + CLOSURE_MS"
+    errors:
+      403: "HUMAN_CONFIRMATION_REQUIRED"
+      409: "INVALID_TR_TRANSITION"
+
+  TR_DESTINATION_CHANGE:
+    id: 12
+    actor_roles: ["EMT", "DISPATCHER"]
+    requires_pin: false
+    needs_pin: false
+    pre_state:
+      referral_exists: true
+      hs_non_terminal: true
+      tr_before_arrived: true        # tr_state in ['REQUESTED', 'DISPATCHED', 'EN_ROUTE']
+    effects:
+      log_destination_change: true
+      update_destination: true
+    errors:
+      409: "INVALID_TR_STATE"
+
+  CANCEL:
+    id: 13
+    actor_roles: ["CLINICIAN", "DISPATCHER"]
+    requires_pin: true
+    needs_pin: true
+    pre_state:
+      referral_exists: true
+      hs_non_terminal: true
+    effects:
+      referral:
+        hs_state: "CANCELLED"
+        outcome: "command.outcome"
+      open_offers:
+        status: "WITHDRAWN"
+      payload_grants:
+        revoke: "all"
+      deadlines:
+        mark_all_pending: "CANCELLED"
+      transport:
+        if_not_terminal: "TR_CANCELLED"
+    errors:
+      401: "SESSION_INVALID"
+      403: "PIN_INVALID"
+      409: "ALREADY_TERMINAL"
+      422: "OUTCOME_REQUIRED"
+
+  CLOSE:
+    id: 14
+    actor_roles: ["RECEIVING_ROLE", "DISPATCHER", "SYSTEM"]
+    requires_pin: true
+    needs_pin: true
+    pre_state:
+      referral_exists: true
+      hs_state: ["ACCEPTED", "ESCALATED_TO_DISPATCHER"]
+      outcome_in_taxonomy: true
+    guards:
+      requires_handover:
+        outcomes: ["ADMITTED_STABLE", "ADMITTED_CRITICAL", "DELIVERED_AT_RECEIVER"]
+        condition: "tr_state == HANDED_OVER"
+    effects:
+      referral:
+        hs_state: "CLOSED"
+        outcome: "command.outcome"
+      payload_grants:
+        revoke: "all"
+      deadlines:
+        mark_done: ["HANDOVER", "CLOSURE", "DISPATCH_ACTION"]
+      schedule_crypto_shred: true
+    errors:
+      401: "SESSION_INVALID"
+      403: "PIN_INVALID"
+      409: "INVALID_HANDOVER_STATE"
+      422: "OUTCOME_REQUIRED"
+
+  REVOKE_GRANT:
+    id: 15
+    actor_roles: ["ADMIN", "DISPATCHER", "SYSTEM"]
+    requires_pin: false
+    needs_pin: false
+    pre_state:
+      referral_exists: true
+      grant_active: true
+    effects:
+      payload_grant:
+        status: "REVOKED"
+        revoked_at: "ts"
+      emit_event: "GRANT_REVOKED"
+    errors:
+      409: "GRANT_NOT_ACTIVE"
