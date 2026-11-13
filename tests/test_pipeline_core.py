@@ -458,3 +458,100 @@ def test_attack_a8_concurrency_race_child_locks():
         assert locked_relations["deadline"] == "RowExclusiveLock"
 
 
+def test_attack_a9_incomplete_command_pipeline():
+    """Attack A-9: Incomplete Command Pipeline (Defect D-8, Closure F1).
+
+    Inputs a DECLINE or TIMEOUT command; steps run apply_command();
+    Pass condition: Query the PostgreSQL database directly and assert the state reflects
+    DECLINED or TIMED_OUT status, rather than remaining unchanged.
+    """
+    roster_id = "00000000-0000-0000-0000-000000000010"
+    fac_id = "00000000-0000-0000-0000-000000000001"
+    fac2_id = "00000000-0000-0000-0000-000000000002"
+
+    with get_main_connection() as conn:
+        raw_token, _ = create_enrollment_ticket(conn, roster_id, roster_id)
+        session_token, _ = redeem_enrollment_ticket(conn, raw_token, secrets.token_bytes(32), "android")
+
+        # 1. Create a referral with 2 facilities in the chain
+        status_create, resp_create = apply_command(
+            conn,
+            {
+                "type": "CREATE",
+                "need_class": "OB_ECLAMPSIA",
+                "origin_facility_id": fac_id,
+                "expected_version": 0,
+                "chain": [fac_id, fac2_id],
+            },
+            session_token=session_token,
+            idem_key="a9-create-referral-1",
+        )
+        assert status_create == 200
+        ref_id = resp_create["referral_id"]
+
+        cur_off1 = conn.execute("SELECT id FROM offer WHERE referral_id = %s;", (str(ref_id),))
+        off1_id = cur_off1.fetchone()[0]
+
+        # 2. Execute DECLINE command on offer 1
+        status_dec, resp_dec = apply_command(
+            conn,
+            {
+                "type": "DECLINE",
+                "referral_id": ref_id,
+                "offer_id": off1_id,
+                "expected_version": 2,
+                "candidate_pin": "4321",
+                "reason": "NO_ICU_BEDS",
+            },
+            session_token=session_token,
+            idem_key="a9-decline-cmd-1",
+        )
+        assert status_dec == 200
+
+        # Query database directly: Assert offer 1 status changed to DECLINED
+        cur_check_dec = conn.execute("SELECT status, decline_reason FROM offer WHERE id = %s;", (str(off1_id),))
+        dec_row = cur_check_dec.fetchone()
+        assert dec_row is not None
+        assert dec_row[0] == "DECLINED"
+        assert dec_row[1] == "NO_ICU_BEDS"
+
+        # Assert ladder cursor advanced and created offer 2 with status OPEN
+        cur_check_off2 = conn.execute("SELECT id, status FROM offer WHERE referral_id = %s AND id != %s;", (str(ref_id), str(off1_id)))
+        off2_row = cur_check_off2.fetchone()
+        assert off2_row is not None
+        off2_id, off2_status = off2_row
+        assert off2_status == "OPEN"
+
+        # 3. Query pending deadline for offer 2 and execute TIMEOUT command
+        cur_dl = conn.execute("SELECT id, kind FROM deadline WHERE referral_id = %s AND status = 'PENDING';", (str(ref_id),))
+        dl_row = cur_dl.fetchone()
+        assert dl_row is not None
+        dl_id, dl_kind = dl_row
+
+        status_timeout, resp_timeout = apply_command(
+            conn,
+            {
+                "type": "TIMEOUT",
+                "referral_id": ref_id,
+                "deadline_id": dl_id,
+                "kind": dl_kind,
+                "channel": "SYSTEM",
+                "expected_version": 3,
+            },
+            session_token=session_token,
+            idem_key="a9-timeout-cmd-1",
+        )
+        assert status_timeout == 200
+
+        # Query database directly: In SEQUENTIAL mode, last facility times out to TIMED_OUT (or SOFT_OPEN if continuing)
+        cur_check_time = conn.execute("SELECT status FROM offer WHERE id = %s;", (str(off2_id),))
+        time_row = cur_check_time.fetchone()
+        assert time_row is not None
+        assert time_row[0] in ("TIMED_OUT", "SOFT_OPEN")
+
+        # Query deadline directly: Assert deadline is marked DONE
+        cur_dl_done = conn.execute("SELECT status FROM deadline WHERE id = %s;", (str(dl_id),))
+        assert cur_dl_done.fetchone()[0] == "DONE"
+
+
+
