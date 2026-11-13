@@ -11,6 +11,7 @@ import { ClinicianCard } from './ClinicianCard';
 import { ReceivingDesk } from './ReceivingDesk';
 import { AmbulancePwa } from './AmbulancePwa';
 import { DispatcherConsole } from './DispatcherConsole';
+import { CommandCentre } from './CommandCentre';
 
 beforeAll(() => {
   // Mock global EventSource
@@ -109,5 +110,14 @@ describe('Module 7 & 8 Physical React Component Rendering Tests', () => {
     expect(screen.getByText(/108 Dispatcher Console & Proxy Hub/i)).toBeDefined();
     expect(screen.getByText(/Action Queue/i)).toBeDefined();
     expect(screen.getByText(/Role: DISPATCHER \(Tier T1\)/i)).toBeDefined();
+  });
+
+  it('renders CommandCentre with APOT KPIs, capability ages, and k>=5 aggregations', async () => {
+    render(<CommandCentre />);
+    expect(screen.getByText(/District Command Centre & Analytics/i)).toBeDefined();
+    expect(screen.getByText(/APOT Handover Latency/i)).toBeDefined();
+    expect(screen.getByText(/Verified Capability Attestations/i)).toBeDefined();
+    expect(screen.getByText(/Descriptive Network Graph \(Not Causal\)/i)).toBeDefined();
+    expect(screen.getAllByText(/Privacy-Preserving Aggregations/i).length).toBeGreaterThanOrEqual(1);
   });
 });

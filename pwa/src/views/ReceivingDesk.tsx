@@ -29,6 +29,9 @@ export const ReceivingDesk: React.FC = () => {
   const [showReconfirmModal, setShowReconfirmModal] = useState(false);
   const [showDeclineModal, setShowDeclineModal] = useState(false);
   const [declineReason, setDeclineReason] = useState('BED_UNAVAILABLE');
+  const [showPaperModal, setShowPaperModal] = useState(false);
+  const [paperCodeInput, setPaperCodeInput] = useState('');
+  const [paperCodeStatus, setPaperCodeStatus] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -190,6 +193,34 @@ export const ReceivingDesk: React.FC = () => {
     }
   };
 
+  const handleResolvePaperCode = async () => {
+    if (!paperCodeInput.trim()) return;
+    setLoading(true);
+    setPaperCodeStatus(null);
+
+    try {
+      const resp = await fetch('/v1/paper-code/resolve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: paperCodeInput.trim() }),
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (resp.ok) {
+        setPaperCodeStatus(`Matched Referral ${data.referral_id || data.id}`);
+        if (data.referral_id) {
+          const matched = referrals.find((r) => r.id === data.referral_id);
+          if (matched) setSelectedRef(matched);
+        }
+      } else {
+        setPaperCodeStatus(data.detail || `Invalid code: HTTP ${resp.status}`);
+      }
+    } catch (e: any) {
+      setPaperCodeStatus(`Network error: ${e?.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Left: Anti-Goodhart Priority Queue (No countdown clocks!) */}
@@ -202,6 +233,17 @@ export const ReceivingDesk: React.FC = () => {
           <span className="text-[11px] font-mono px-2 py-0.5 bg-slate-900 text-slate-400 rounded">
             Anti-Goodhart (No Clocks)
           </span>
+        </div>
+
+        {/* Paper Code Linking Action */}
+        <div className="mb-3">
+          <button
+            type="button"
+            onClick={() => setShowPaperModal(true)}
+            className="w-full py-2 px-3 bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/50 text-indigo-300 font-bold rounded-lg text-xs flex items-center justify-center gap-2 transition"
+          >
+            <span>Link Paper Slip (9-Char Code)</span>
+          </button>
         </div>
 
         {referrals.length === 0 ? (
@@ -465,6 +507,52 @@ export const ReceivingDesk: React.FC = () => {
                 className="flex-1 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg"
               >
                 {loading ? 'Declining...' : 'Confirm Decline'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Paper Code Linking Modal */}
+      {showPaperModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 max-w-sm w-full space-y-4">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-indigo-400" />
+              Link Paper Handover Slip
+            </h3>
+            <p className="text-xs text-slate-400">
+              Enter the 9-character Crockford Base32 + mod-37 paper code printed on the patient slip.
+            </p>
+            <input
+              type="text"
+              maxLength={9}
+              value={paperCodeInput}
+              onChange={(e) => setPaperCodeInput(e.target.value.toUpperCase())}
+              placeholder="e.g. 9K7M2W34X"
+              className="w-full text-center text-xl font-mono tracking-widest py-2 bg-slate-900 border border-slate-700 rounded-lg text-indigo-300 uppercase"
+            />
+            {paperCodeStatus && (
+              <p className="text-xs font-mono text-center text-amber-300 font-bold">
+                {paperCodeStatus}
+              </p>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setShowPaperModal(false);
+                  setPaperCodeStatus(null);
+                }}
+                className="flex-1 py-2 bg-slate-700 text-slate-300 font-bold rounded-lg text-xs"
+              >
+                Close
+              </button>
+              <button
+                onClick={handleResolvePaperCode}
+                disabled={loading || paperCodeInput.length !== 9}
+                className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 text-white font-bold rounded-lg text-xs"
+              >
+                {loading ? 'Resolving...' : 'Verify & Link'}
               </button>
             </div>
           </div>

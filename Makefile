@@ -17,6 +17,9 @@ gate-t0:
 gate-t1:
 	$(PYTEST) -v tests/test_judge_join.py tests/test_transport_and_arrivals.py tests/test_dispatcher_proxy_and_replay.py tests/test_cmd_lifecycle.py
 
+gate-t2:
+	$(PYTEST) -v tests/test_exotel_ivr.py tests/test_dlt_sms_lint.py tests/test_paper_code_mod37.py tests/test_envelope_crypto.py tests/test_analytics_recompute.py
+
 lint:
 	$(PYTHON) -m py_compile api/rhp/*.py tests/*.py
 

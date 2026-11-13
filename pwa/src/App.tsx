@@ -8,6 +8,7 @@ import { ClinicianCard } from './views/ClinicianCard';
 import { ReceivingDesk } from './views/ReceivingDesk';
 import { AmbulancePwa } from './views/AmbulancePwa';
 import { DispatcherConsole } from './views/DispatcherConsole';
+import { CommandCentre } from './views/CommandCentre';
 import {
   Tv,
   QrCode,
@@ -16,6 +17,7 @@ import {
   Hospital,
   Navigation,
   PhoneCall,
+  Activity,
 } from 'lucide-react';
 
 const NavigationNav: React.FC = () => {
@@ -29,6 +31,7 @@ const NavigationNav: React.FC = () => {
     { path: '/receiving-desk', label: 'Receiving Desk', icon: Hospital },
     { path: '/ambulance', label: 'Ambulance PWA', icon: Navigation },
     { path: '/dispatcher', label: 'Dispatcher Hub', icon: PhoneCall },
+    { path: '/command-centre', label: 'Command Centre', icon: Activity },
   ];
 
   return (
@@ -71,6 +74,7 @@ export const App: React.FC = () => {
             <Route path="/receiving-desk" element={<ReceivingDesk />} />
             <Route path="/ambulance" element={<AmbulancePwa />} />
             <Route path="/dispatcher" element={<DispatcherConsole />} />
+            <Route path="/command-centre" element={<CommandCentre />} />
           </Routes>
         </main>
       </div>
