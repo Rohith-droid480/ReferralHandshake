@@ -36,11 +36,11 @@ fi
 echo "=== Provisioning Scratch Database: ${SCRATCH_DB} on ${PGHOST}:${PGPORT} ==="
 
 # 1. Terminate active connections and recreate scratch database
-run_psql -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${SCRATCH_DB}' AND pid <> pg_backend_pid();"
+run_psql -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${SCRATCH_DB}' AND pid <> pg_backend_pid();" || true
 run_psql -d postgres -c "DROP DATABASE IF EXISTS ${SCRATCH_DB};"
 run_psql -d postgres -c "CREATE DATABASE ${SCRATCH_DB};"
 
-# 2. Provision scratch user
+# 2. Provision scratch user and isolate from primary DB
 run_psql -d postgres -c "
   DO \$\$
   BEGIN
@@ -51,6 +51,8 @@ run_psql -d postgres -c "
     END IF;
   END \$\$;
 "
+run_psql -d postgres -c "REVOKE CONNECT ON DATABASE rhp_main FROM ${SCRATCH_USER};" || true
+run_psql -d postgres -c "REVOKE CONNECT ON DATABASE rhp1 FROM ${SCRATCH_USER};" || true
 
 # 3. Load base schema into scratch database
 echo "Loading db/01_schema.sql into ${SCRATCH_DB}..."
@@ -71,4 +73,4 @@ run_psql -d "${SCRATCH_DB}" -c "
 echo "Applying F20 defect: Dropping one_lease partial unique index on ${SCRATCH_DB}..."
 run_psql -d "${SCRATCH_DB}" -c "DROP INDEX IF EXISTS one_lease;"
 
-echo "=== Scratch Database ${SCRATCH_DB} Ready (one_lease DROPPED) ==="
+echo "=== Scratch Database ${SCRATCH_DB} Ready (one_lease DROPPED, isolated from primary) ==="

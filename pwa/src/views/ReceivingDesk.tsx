@@ -321,10 +321,10 @@ export const ReceivingDesk: React.FC = () => {
 
             {/* D1 / K1: High-Contrast Red Banner for UNKNOWN MgSO4 */}
             {selectedRef.mgso4_status === 'UNKNOWN' && (
-              <div className="p-3 bg-red-950/80 border-2 border-red-500 rounded-lg text-red-200 text-xs sm:text-sm font-black flex items-center gap-3 animate-pulse">
-                <AlertTriangle className="w-6 h-6 flex-shrink-0 text-red-400" />
+              <div className="p-3 bg-red-600 text-white rounded-lg text-xs sm:text-sm font-bold flex items-center gap-3 animate-pulse shadow-lg">
+                <AlertTriangle className="w-6 h-6 flex-shrink-0 text-white" />
                 <span>
-                  PRE-REFERRAL MgSO4 DOSE UNKNOWN — VERIFY WITH PATIENT / ESCORT BEFORE DOSING
+                  PRE-REFERRAL MgSO4 DOSE UNKNOWN — VERIFY WITH PATIENT/ESCORT BEFORE DOSING
                 </span>
               </div>
             )}

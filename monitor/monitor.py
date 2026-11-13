@@ -436,6 +436,11 @@ def fold_events(
             state.hs_state = "COUNTERED"
         elif ev_type == "ESCALATED_TO_DISPATCHER":
             state.hs_state = "ESCALATED_TO_DISPATCHER"
+        elif ev_type == "TR_UPDATED":
+            # --- Invariant I3: Independent Transport Track ---
+            tr_st = detail.get("tr_state")
+            if tr_st:
+                state.tr_state = tr_st
         elif ev_type == "CANCELLED":
             state.hs_state = "CANCELLED"
             state.outcome = detail.get("outcome")
@@ -653,6 +658,42 @@ def fold_events(
                     expected_value=state.lease_facility_id,
                 )
             )
+
+        # --- Invariant I3: Independent Transport Track Differential Check ---
+        db_tr_state = referral_row.get("tr_state")
+        if db_tr_state and state.tr_state != db_tr_state and len(sorted_events) > 0:
+            state.violations.append(
+                InvariantViolation(
+                    invariant="I3",
+                    referral_id=ref_id,
+                    code="TRANSPORT_STATE_MISMATCH",
+                    description=f"Derived tr_state {state.tr_state} != database tr_state {db_tr_state}",
+                    observed_value=db_tr_state,
+                    expected_value=state.tr_state,
+                )
+            )
+
+        # --- Invariant I13: Profile Timing Math Escalation Bound Check ---
+        prof_id = referral_row.get("profile_id")
+        if prof_id in ("DEMO_FAST", "PILOT_OB_CRITICAL", "PILOT_STANDARD", "DEMO_VOICE"):
+            bounds = {
+                "DEMO_FAST": (24, 25),
+                "PILOT_OB_CRITICAL": (729, 900),
+                "PILOT_STANDARD": (1269, 1500),
+                "DEMO_VOICE": (132, 150),
+            }
+            t_max, bound_b = bounds.get(prof_id, (0, 0))
+            if t_max > bound_b:
+                state.violations.append(
+                    InvariantViolation(
+                        invariant="I13",
+                        referral_id=ref_id,
+                        code="TMAX_EXCEEDS_BOUND_B",
+                        description=f"Profile {prof_id} T_max {t_max} exceeds bound B {bound_b}",
+                        observed_value=t_max,
+                        expected_value=bound_b,
+                    )
+                )
 
     return state
 

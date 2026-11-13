@@ -213,6 +213,32 @@ def execute_create(
             (str(uuid4()), str(ref_id), str(cmd.origin_facility_id), ts),
         )
 
+        # Envelope encryption for clinical payload (Architecture §10, Closures D9, P5)
+        if getattr(cmd, "clinical_payload", None):
+            import hashlib
+            from api.rhp.extras.envelope_crypto import generate_referral_key, encrypt_clinical_payload
+            kv, raw_dek = generate_referral_key(ref_id, kek_epoch="2026-11")
+            nonce, ciphertext = encrypt_clinical_payload(ref_id, kv.id, raw_dek, cmd.clinical_payload, schema_ver=1)
+            secret_hash = hashlib.sha256(nonce + ciphertext).digest()
+            setattr(cmd, "secret_hash", secret_hash)
+
+            conn.execute(
+                """
+                INSERT INTO key_version (id, referral_id, kek_epoch, wrapped_dek, status, created_at)
+                VALUES (%s, %s, %s, %s, 'ACTIVE', %s);
+                """,
+                (str(kv.id), str(ref_id), kv.kek_epoch, kv.wrapped_dek, ts),
+            )
+            exp_ts = ts + timedelta(days=30)
+            conn.execute(
+                """
+                INSERT INTO clinical_payload (referral_id, key_id, nonce, ciphertext, schema_ver, expires_at)
+                VALUES (%s, %s, %s, %s, 1, %s);
+                """,
+                (str(ref_id), str(kv.id), nonce, ciphertext, exp_ts),
+            )
+
+
         # Invariant I1: DISPATCH_ACTION deadline due at ts + profile.dispatch_action
         dispatch_deadline_id = uuid4()
         dispatch_due_at = ts + timedelta(milliseconds=profile.dispatch_action)
@@ -276,6 +302,32 @@ def execute_create(
             """,
             (str(uuid4()), str(ref_id), str(cmd.origin_facility_id), ts),
         )
+
+        # Envelope encryption for clinical payload (Architecture §10, Closures D9, P5)
+        if getattr(cmd, "clinical_payload", None):
+            import hashlib
+            from api.rhp.extras.envelope_crypto import generate_referral_key, encrypt_clinical_payload
+            kv, raw_dek = generate_referral_key(ref_id, kek_epoch="2026-11")
+            nonce, ciphertext = encrypt_clinical_payload(ref_id, kv.id, raw_dek, cmd.clinical_payload, schema_ver=1)
+            secret_hash = hashlib.sha256(nonce + ciphertext).digest()
+            setattr(cmd, "secret_hash", secret_hash)
+
+            conn.execute(
+                """
+                INSERT INTO key_version (id, referral_id, kek_epoch, wrapped_dek, status, created_at)
+                VALUES (%s, %s, %s, %s, 'ACTIVE', %s);
+                """,
+                (str(kv.id), str(ref_id), kv.kek_epoch, kv.wrapped_dek, ts),
+            )
+            exp_ts = ts + timedelta(days=30)
+            conn.execute(
+                """
+                INSERT INTO clinical_payload (referral_id, key_id, nonce, ciphertext, schema_ver, expires_at)
+                VALUES (%s, %s, %s, %s, 1, %s);
+                """,
+                (str(ref_id), str(kv.id), nonce, ciphertext, exp_ts),
+            )
+
 
         # Open each initial offer
         for idx, target_fac in enumerate(initial_targets):

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { FileText, Printer, Check, AlertCircle, Send, Stethoscope } from 'lucide-react';
+import { FileText, Printer, Check, AlertCircle, AlertTriangle, Send, Stethoscope } from 'lucide-react';
 import { queueCommand } from '../store/outbox';
 
 export const ClinicianCard: React.FC = () => {
@@ -440,9 +440,10 @@ export const ClinicianCard: React.FC = () => {
               </div>
             )}
             {mgso4Status === 'UNKNOWN' && (
-              <p className="text-[11px] text-amber-300/90 mt-2">
-                * Note: Selecting UNKNOWN will not block creation or dispatch; receiving desk will be alerted to verify before re-dosing.
-              </p>
+              <div className="mt-3 p-3 bg-red-600 text-white font-bold rounded-lg text-xs sm:text-sm flex items-center gap-2 shadow-md animate-pulse">
+                <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                <span>PRE-REFERRAL MgSO4 DOSE UNKNOWN — VERIFY WITH PATIENT/ESCORT BEFORE DOSING</span>
+              </div>
             )}
           </div>
 

@@ -644,6 +644,7 @@ def apply_command(
         event_hash = compute_event_hash(referral.head_hash if referral else GENESIS_PREV_HASH_BYTES, core_event)
 
         # Insert Event row
+        secret_hash_val = getattr(cmd, "secret_hash", None)
         conn.execute(
             """
             INSERT INTO event (
@@ -659,7 +660,7 @@ def apply_command(
                 str(session.facility_id) if session.facility_id else None,
                 cmd.channel, cmd.proxy, str(cmd.proxy_for) if cmd.proxy_for else None,
                 referral.lease_epoch if referral else 0, json.dumps(event_detail),
-                None, core_event["client_ts_ms"], ts,
+                secret_hash_val, core_event["client_ts_ms"], ts,
                 referral.head_hash if referral else GENESIS_PREV_HASH_BYTES, event_hash,
             ),
         )

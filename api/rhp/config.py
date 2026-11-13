@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     # 1. Profile & Safety Modes (§6, §12)
     PROFILE: str = Field(
         default="DEMO_FAST",
+        validation_alias=AliasChoices("PROFILE", "ACTIVE_PROFILE"),
         description="Active timing profile: PILOT_OB_CRITICAL | PILOT_STANDARD | DEMO_FAST | DEMO_VOICE",
     )
     REAL_DATA: int = Field(
@@ -58,16 +59,28 @@ class Settings(BaseSettings):
     # 3. Database Connection Strings (§7, §12)
     APP_DSN: str = Field(
         default="postgresql://rhp_app:rhp_app_local_dev_only@pg:5432/rhp_main",
-        validation_alias=AliasChoices("APP_DSN", "RHP_APP_DSN"),
+        validation_alias=AliasChoices("APP_DSN", "RHP_APP_DSN", "PG_APP_DSN"),
         description="Primary database DSN for application command pipeline",
     )
     AUTONOMOUS_DSN: Optional[str] = Field(
         default=None,
+        validation_alias=AliasChoices("AUTONOMOUS_DSN", "PG_AUTONOMOUS_DSN"),
         description="Dedicated connection DSN for autonomous PIN lockout updates (F7)",
     )
     RHP_SCRATCH_DSN: str = Field(
         default="postgresql://rhp_scratch_app:rhp_scratch_local_dev_only@pg:5432/rhp_scratch_broken",
+        validation_alias=AliasChoices("RHP_SCRATCH_DSN", "SCRATCH_DSN", "PG_SCRATCH_BROKEN_DSN"),
         description="Scratch database DSN for BROKEN_BUILD=1 isolated testing",
+    )
+    MONITOR_DSN: str = Field(
+        default="postgresql://rhp_monitor:rhp_monitor_local_dev_only@pg:5432/rhp_main",
+        validation_alias=AliasChoices("MONITOR_DSN", "RHP_MONITOR_DSN", "PG_MONITOR_DSN"),
+        description="Read-only monitor DSN (F17)",
+    )
+    WITNESS_DSN: str = Field(
+        default="postgresql://rhp_witness:rhp_witness_local_dev_only@pg:5432/rhp_main",
+        validation_alias=AliasChoices("WITNESS_DSN", "RHP_WITNESS_DSN", "PG_WITNESS_DSN"),
+        description="Witness signer DSN (F8)",
     )
 
     # 4. Cryptographic Keys & Public Key Anchors (§9, §11)

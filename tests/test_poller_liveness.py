@@ -74,6 +74,8 @@ def test_silent_3_facility_chain_escalates_to_dispatcher_in_demo_fast():
     fac3 = "00000000-0000-0000-0000-000000000004"
 
     with get_main_connection() as conn:
+        if hasattr(conn, "db"):
+            conn.db.deadlines.clear()
         tok, _ = create_enrollment_ticket(conn, roster_origin, roster_origin)
         sess, _ = redeem_enrollment_ticket(conn, tok, secrets.token_bytes(32), "android")
         conn.commit()
@@ -132,6 +134,8 @@ def test_idempotent_deadline_re_execution():
     fac2 = "00000000-0000-0000-0000-000000000003"
 
     with get_main_connection() as conn:
+        if hasattr(conn, "db"):
+            conn.db.deadlines.clear()
         tok, _ = create_enrollment_ticket(conn, roster_origin, roster_origin)
         sess, _ = redeem_enrollment_ticket(conn, tok, secrets.token_bytes(32), "android")
 

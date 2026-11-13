@@ -27,6 +27,7 @@ from api.rhp.auth import AuthError, Session, load_session
 from api.rhp.commands.judge_join import router as judge_router
 from api.rhp.config import check_boot_guards, get_settings
 from api.rhp.db import get_main_connection
+from api.rhp.routes import router as v1_router
 from api.rhp.sse import SSESubscriber, format_heartbeat_frame, get_sse_hub
 
 logger = logging.getLogger("rhp.api")
@@ -126,6 +127,7 @@ app.add_middleware(
 )
 
 app.include_router(judge_router)
+app.include_router(v1_router)
 
 
 @app.get("/mode")

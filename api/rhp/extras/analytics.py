@@ -253,3 +253,54 @@ def bucket_and_suppress(
 
     return sorted(results, key=lambda x: (x["bucket_4h"], x["facility_id"]))
 
+
+# --- Architecture §17 Cost Reconciliation Table ---
+
+COST_RECONCILIATION_TABLE = {
+    "region": "AWS ap-south-1 Multi-AZ",
+    "planning_figure_6mo_usd": 1420.0,
+    "planning_range_6mo_usd": (1140.0, 1500.0),
+    "tiers": [
+        {
+            "name": "Base Infrastructure",
+            "items": [
+                {"item": "Managed Postgres Multi-AZ db.t4g.medium", "usd_per_month": 95.0},
+                {"item": "2 x 100 GB gp3", "usd_per_month": 23.0},
+                {"item": "ALB", "usd_per_month": 22.0},
+            ],
+            "subtotal_monthly_usd": 140.0,
+            "subtotal_6mo_usd": 840.0,
+            "note": "Base subtotal (6 months = $840; Report 3 stated $810, difference $30 attributed to ALB/LCU rounding)",
+        },
+        {
+            "name": "App Tier",
+            "items": [
+                {"item": "2 x small app VM", "usd_per_month": 26.0},
+                {"item": "Backups/S3", "usd_per_month": 8.0},
+                {"item": "Logs/monitoring", "usd_per_month": 10.0},
+                {"item": "Data transfer", "usd_per_month": 6.0},
+            ],
+            "subtotal_monthly_usd": 190.0,  # 140 + 50
+            "subtotal_6mo_usd": 1140.0,
+            "note": "Subtotal with app tier (6 months = $1,140; sits inside v4's $900–$1,000 lean range only at the low end)",
+        },
+        {
+            "name": "Full Pilot with Telephony & Contingency",
+            "items": [
+                {"item": "Telephony/SMS allowance", "usd_per_month": 25.0},
+                {"item": "10% contingency on $215", "usd_per_month": 21.5},
+            ],
+            "total_monthly_usd": 236.5,  # 190 + 46.5
+            "total_6mo_usd": 1419.0,
+            "locked_planning_6mo_usd": 1420.0,
+            "note": "Total (6 x 236.5 = $1,419.00 ≈ $1,420 for six months, range $1,140–$1,500)",
+        },
+    ],
+}
+
+
+def get_cost_reconciliation() -> Dict[str, Any]:
+    """Returns the locked AWS ap-south-1 6-month cost reconciliation table per Architecture §17."""
+    return COST_RECONCILIATION_TABLE
+
+
