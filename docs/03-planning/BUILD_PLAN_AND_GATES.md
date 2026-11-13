@@ -32,25 +32,39 @@ Every feature sits behind an environment feature flag so the MVP can always run 
 
 ---
 
-## 3. Phase E — 24-Hour Event Build Plan (Hour-by-Hour)
+## 3. Phase E — 24-Hour Event Build Plan (24 Half-Module Prompts)
 
 **Team Split:**
 - **Lane A (Person A):** Protocol, PostgreSQL, FastAPI Command Pipeline, Poller/Relay, Witness/Crypto, Concurrency & Mutation Tests.
 - **Lane B (Person B):** Independent Runtime Monitor (Clean-Room Workspace), React PWA Desks, Big Screen / Guarantee Arena, Reach Layer (Voice/SMS/Paper), Demo Operations.
 
-| Step ID | Hours | Lane A (Backend & Proof) | Lane B (Monitor, Clients & Reach) | Risk | Gate Target |
+| Hour | Half-Module | Lane | Sub-Segments Built & Scope | Combined Verification Command | Gate / Milestone |
 |---|---|---|---|---|---|
-| **E0** | H00–H02 | Repo setup, `docker-compose.yml`, PG16 DDL load, synthetic seed, `transitions.yaml` loader, `/healthz` with $T_{\max}$ check | React PWA shell, rotating QR admission (`jti`, 20s TTL, cap 20 desks), LAN fallback mode | MED | — |
-| **E1** | H02–H06 | `apply_command()` 10-step pipeline: `CREATE`, `ACK`, `RESOURCE_CONFIRM`, `ACCEPT`, `DECLINE`, idempotency, Argon2id autonomous PIN counter, row-lock GUC | Receiving Desk UI (priority queue, no countdown clocks, red `mgso4_status=UNKNOWN` banner), SSE hub with per-event `payload_grant` filter & `GRANT_REVOKED` frame | HIGH | — |
-| **E2** | H06–H09 | Stateless 2-phase Poller (`CLAIM` + `apply_command(TIMEOUT)`), Outbox Relay (`SKIP LOCKED` + visibility timeout), unified notice ladder (`0, A/4, 3A/4`) | Guarantee Arena Big Screen UI; **Independent Python Runtime Monitor** (`monitor/cycle.py` in isolated workspace checking `I1–I16`) | HIGH | — |
-| **E3** | H09–H12 | RFC 8785 JCS SHA-256 event hash chain, envelope encryption (`DEK`/`KEK`), separate-OS-user (`rhp-sign`) Merkle checkpoint signer (every 5s), inclusion proofs | Browser Pure-JS Verifier (`@noble/curves/ed25519`, `@noble/hashes/sha256`) on judge phones naming exact broken `seq` | HIGH | — |
-| **E4** | H12–H14 | 200-way `asyncio.Barrier` concurrency test (`race200`), Mutation Tests `M1–M6`, Toxiproxy fault matrix | `BROKEN_BUILD=1` scratch DB (`rhp_scratch_broken`) switch + flashing red Arena banner + hard boot guards | HIGH | **GATE G0 (T0 Pass)** |
-| **E5** | H14–H17 | `COUNTER` / `CONFIRM_COUNTER` (max 2 rounds), 6 arrival cases (`ARRIVAL_SUGGESTED`, `ARRIVAL_REJECTED`, `ARRIVAL_AT_NON_OWNER`), two-stage `CLOSURE` | Dispatcher Console (proxy entry, `DISPATCHER_ASSIGN` with reason enum), PWA Ambulance GPS tracker, Time-Scrubber Replay | HIGH | **GATE G1 (T1 Pass)** |
-| **E6** | H17–H20 | Full idempotency edge-case matrix (`T-F14`), stale offline confirmation rejection (`I15` `409 STALE_CONFIRMATION_RECONFIRM_REQUIRED`), fencing tests | Exotel Outbound IVR webhook (AMD + Press-1 gate, $\le 2\text{s}$ budget, `inbox` dedupe), Crockford Base32 + mod-37 Paper Code entry & printable slip | HIGH | **GATE G2 (T2 Pass)** |
-| **E7** | H20–H22 | Bug fixes from Gate G0–G2 test runs; self-audit checks `ST-1` to `ST-5` | Record MP4 fallback clips (Clips A, B, C, D); run 3 full rehearsals of the 30-second live proof loop | MED | **GATE G3 (Rehearsal)** |
-| **E8** | H22–H24 | **HARD CODE FREEZE AT H22.** Configuration-only tweaks; verify DB backups & clean state reset script | Final stage rehearsal, dual-uplink check (hotspot + Wi-Fi), backup laptop warm standby | LOW | **FREEZE** |
-
----
+| `H00–H01` | **`M1-A`** | Lane A + B | `1.1`–`1.3`: Workspace, Docker topology, PG16 DDL, seed & signed profiles | `pytest tests/test_boot_guards.py tests/test_ddl_constraints.py tests/test_tmax_profiles.py` | — |
+| `H01–H02` | **`M1-B`** | Lane A | `1.4`–`1.6`: RFC 8785 JCS parity, `transitions.yaml` loader, Quint `rhp1.qnt` & Explorer | `pytest tests/test_jcs_parity.py tests/test_transitions_table.py && python tests/explore_transitions.py && quint run spec/rhp1.qnt --invariant safety --max-steps 25 --max-samples 20000` | **Completes Module 1** |
+| `H02–H03` | **`M2-A`** | Lane A | `2.1`–`2.3`: Dual connection pools, sessions (cookie/voice), Argon2id lockout | `pytest tests/test_auth_sessions.py tests/test_pin_lockout_scope.py` | — |
+| `H03–H04` | **`M2-B`** | Lane A | `2.4`–`2.5`: Role-command authz matrix, Pydantic schemas, 10-step pipeline core | `pytest tests/test_authz_matrix.py tests/test_pipeline_core.py` | **Completes Module 2** |
+| `H04–H05` | **`M3-A`** | Lane A | `3.1`–`3.3`: `CREATE`, `ACK`, `RESOURCE_CONFIRM`, `ACCEPT` lease arbitration | `pytest tests/test_cmd_create.py tests/test_cmd_ack_confirm.py tests/test_cmd_accept.py` | — |
+| `H05–H06` | **`M3-B`** | Lane A | `3.4`–`3.6`: `DECLINE` escalation, `COUNTER` negotiation, terminal commands | `pytest tests/test_cmd_decline_advance.py tests/test_cmd_counter.py tests/test_cmd_lifecycle.py` | **Completes Module 3** |
+| `H06–H07` | **`M4-A`** | Lane B / A | `4.1`–`4.2`: Independent monitor `monitor.py` (F17), `race200` barrier, idempotency | `pytest tests/test_monitor_fold.py tests/test_race200.py tests/test_idempotency_matrix.py` | — |
+| `H07–H08` | **`M4-B`** | Lane B / A | `4.3`–`4.4`: `BROKEN_BUILD` scratch isolation, mutation tests `M1`–`M6`, 28 vectors | `pytest tests/test_broken_build.py tests/test_mutations.py tests/test_conformance_vectors.py` | **Completes Module 4 (T0 Proof Core)** |
+| `H08–H09` | **`M5-A`** | Lane A | `5.1`–`5.3`: Two-phase poller, notice ladder ($0, A/4, 3A/4$), outbox relay | `pytest tests/test_poller_liveness.py tests/test_notice_ladder_and_closure.py` | — |
+| `H09–H10` | **`M5-B`** | Lane A + B | `5.4`–`5.5`: Authorized SSE hub with `GRANT_REVOKED` stripping, clock guards | `pytest tests/test_sse_revoke.py tests/test_clock_and_heartbeats.py` | **Completes Module 5** |
+| `H10–H11` | **`M6-A`** | Lane A | `6.1`–`6.2`: Witness signer 5s Merkle tree, off-box sync & cold `RESTORE` | `pytest tests/test_witness_merkle.py tests/test_tamper_vs_restore.py` | — |
+| `H11–H12` | **`M6-B`** | Lane B | `6.3`: Pure-JS browser verifier (`@noble`) & superuser SQL `tamper.sh` | `npm --prefix pwa test -- verifier && bash scripts/tamper.sh --dry-check` | **Completes Module 6** |
+| `H12–H13` | **`M7-A`** | Lane B | `7.1`–`7.3`: React PWA shell, rotating judge QR admission, clinician card | `pytest tests/test_judge_join.py && npm --prefix pwa run build` | — |
+| `H13–H14` | **`M7-B`** | Lane B | `7.4`–`7.6`: Receiving duty desk, judge race desk, Guarantee Arena big screen | `npm --prefix pwa test && make gate-t0` | **GATE G0 (T0 PASS)** |
+| `H14–H15` | **`M8-A`** | Lane A | `8.1`–`8.2`: Parallel transport track API, 6 arrival cases, Mapbox Matrix ETA | `pytest tests/test_transport_and_arrivals.py` | — |
+| `H15–H16` | **`M8-B`** | Lane B | `8.3`–`8.4`: PWA ambulance client (foreground GPS) & Dispatcher Console with replay | `pytest tests/test_dispatcher_proxy_and_replay.py && make gate-t1` | **GATE G1 (T1 PASS)** |
+| `H16–H17` | **`M9-A`** | Lane B + A | `9.1`–`9.3`: Outbound Exotel IVR, AMD + Press-1 gate, DTMF PIN verification | `pytest tests/test_exotel_ivr.py` | — |
+| `H17–H18` | **`M9-B`** | Lane B | `9.4`–`9.5`: TRAI DLT static SMS adapter & 9-char Crockford mod-37 paper code | `pytest tests/test_dlt_sms_lint.py tests/test_paper_code_mod37.py && make gate-t2` | **GATE G2 (T2 PASS)** |
+| `H18–H19` | **`M10-A`** | Lane A | `10.1`–`10.2`: AES-256-GCM envelope encryption, monthly KEK wrapping, crypto-shredder | `pytest tests/test_envelope_crypto.py` | — |
+| `H19–H20` | **`M10-B`** | Lane A + B | `10.3`–`10.4`: District command centre live map/APOT KPIs & graph aggregations | `pytest tests/test_analytics_recompute.py` | **Completes Module 10** |
+| `H20–H20:30` | **`M11-A`** | Lane A + B | `11.1`–`11.2`: Cognitive-forcing AI intake (`423 ANCHOR_REQUIRED`), FHIR R4 exporter | `pytest tests/test_ai_seeded_errors.py tests/test_fhir_exporter.py` | — |
+| `H20:30–H21` | **`M11-B`** | Lane A + B | `11.3`–`11.4`: IEEE 1849 XES / BSA evidence generator & native Kotlin Android EMT app | `pytest tests/test_bsa_xes_exports.py tests/test_fcm_zero_payload.py && make gate-t3` | **Completes Module 11 (T3)** |
+| `H21–H21:45` | **`M12-A`** | Lane A | `12.1`–`12.2`: Eight-scenario Toxiproxy fault matrix & automated self-audit CI suite | `pytest tests/test_toxiproxy_chaos.py tests/test_lock_order.py tests/test_tmax_profiles.py tests/test_ddl_constraints.py tests/test_idempotency_matrix.py tests/test_claims_lexicon.py` | — |
+| `H21:45–H22` | **`M12-B`** | Lane A + B | `12.3`: Master tier acceptance gate runner `Makefile` (`gate-all`) & rehearsal | `make gate-all && bash scripts/preflight.sh` | **GATE G3 (REHEARSAL)** |
+| `H22–H24` | **`FREEZE`** | Team A + B | **HARD CODE FREEZE AT H22:** Configuration-only tweaks, 30s proof loop $\times 3$, demo polish | `bash scripts/preflight.sh` | **STAGE READY** |
 
 ## 4. Mandatory Tier Acceptance Gates (Architecture §24)
 

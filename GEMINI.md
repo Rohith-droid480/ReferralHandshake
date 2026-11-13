@@ -157,7 +157,7 @@ To prevent the server and runtime monitor from sharing a common-mode bug:
 ### 3.3 Loop Routing Rules & Antigravity Mandatory Banners
 
 * **Milestone Validation (`G1 → AG → G2 → G1`, ~10–14 min):** Invoked **ONLY when a Feature or Milestone/Gate (`P1–P6`, `E0–E8`, `G0–G3`) is completed**, or when verifying an S1 fix. Antigravity emits:
-  `🛑 FEATURE / MILESTONE COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!`
+  `🛑 HALF-MODULE M<N>-<A|B> COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!`
 * **Sub-Step Fast-Advance (`G1 → AG → G1`):** Used when a sub-step/task is completed but the full feature/milestone is NOT yet finished. Skips Gem 2. Antigravity emits:
   `🟢 SUB-STEP COMPLETE (FEATURE / MILESTONE NOT YET FINISHED) — DO NOT GO TO GEM 2 YET. Paste the FAST-ADVANCE PACKET below directly into Gem 1.`
 * **Reject Short-Circuit (`G2 → G1`):** Triggered immediately when Gem 2 returns `REJECT` (code does not run, raw test output missing, or forbidden files touched). Gem 2 outputs an immediate REDO/FIX `DECISION PACKET` for Gem 1.

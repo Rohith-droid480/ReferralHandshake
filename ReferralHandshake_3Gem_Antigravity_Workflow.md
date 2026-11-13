@@ -34,6 +34,16 @@ Running a 3-Gem ring on every small task burns hours in copy-paste overhead duri
 
 ## 2. The 2-Gem Ring & Routing Rules
 
+### 2.0 Half-Module Execution Cadence (1 Prompt = 1 Half-Module)
+- **Half-Module Granularity (`M1-A`, `M1-B` ... `M12-A`, `M12-B`):** Every module (`MODULE 1` through `MODULE 12` in `BUILD_PLAN.md`) is divided into two executable Half-Modules: **Part A** and **Part B** (24 Half-Module Prompts in total).
+- **1 AG-PROMPT = 1 Half-Module:** Each prompt from Gem 1 instructs Antigravity to build exactly half of a module (2 to 3 sub-segments) in a single pass.
+- **Mandatory Gem 2 Validation After Every Half-Module:** Immediately upon completing `M<N>-A` or `M<N>-B`, Antigravity runs the combined verification gate command for that half-module, creates git tag `step-M<N><A|B>-loop<k>`, and outputs the mandatory banner:
+  ```text
+  🛑 HALF-MODULE M<N>-<A|B> COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!
+  Paste the BUILD REPORT + VALIDATION-REQUEST block below into Gem 2.
+  ```
+- **Gem 2 Audit & Red-Teaming:** Gem 2 audits the completed half-module and emits the ready-to-paste `DECISION PACKET` prompt for Gem 1 to issue the next Half-Module prompt.
+
 ```
                         ┌──────────────────────────────────────────────┐
                         │            YOU (the courier + final say)     │
@@ -242,21 +252,35 @@ NEXT INSTRUCTION FOR GEM 1: <Emit AG-PROMPT for next feature/milestone or S1 tar
 | P5 | B | Synthetic seed data (`REAL_DATA=0`) | §2, §10 | LOW | Seed script loads with `REAL_DATA=0` verified |
 | P6 | B | Pre-event verification checklist (§21) | §21 | LOW | Checklist completed and recorded |
 
-### Phase E — At-Event Build Milestones (Hours from Architecture §17)
+### Phase E — At-Event Build Milestones (24 Half-Module Prompts)
 
-| ID | Hours | Lane A Milestone (Backend / Proof) | Lane B Milestone (Clients / Reach / Monitor) | Risk | Gate / Gem 2 Mode |
-|---|---|---|---|---|---|
-| E0 | 0–2 | Repo, docker-compose, DDL load, seed, `transitions.yaml` loader | PWA shell, rotating-QR admission | MED | Validate at E0 completion |
-| E1 | 2–6 | `apply_command()` steps 1–10: `CREATE` / `ACK` / `ACCEPT` / `DECLINE` | Desk UI, SSE with per-event authz | HIGH | Validate at E1 completion |
-| E2 | 6–9 | Poller (2-phase), outbox relay, `TIMEOUT`, notice ladder | Big screen; Python monitor (separate workspace, F17) | HIGH | Validate at E2 completion |
-| E3 | 9–12 | Hash chain, witness/signer (OS user 1002), checkpoints | Browser verifier (pure-JS Ed25519 / SHA-256) | HIGH | Validate at E3 completion |
-| E4 | 12–14 | `race200` test, mutation tests M1–M3 | `BROKEN_BUILD` scratch DB + banner | HIGH | **Gate G0 = T0 pass** (Gem 2 FULL Gate Validation) |
-| E5 | 14–17 | `COUNTER`, arrival cases, closure | Dispatcher console, PWA GPS | HIGH | **Gate G1 = T1 pass** (Gem 2 FULL Gate Validation) |
-| E6 | 17–20 | Idempotency matrix, fencing tests | Exotel IVR (press-1 gate), paper code | HIGH | **Gate G2 = T2 pass** (Gem 2 FULL Gate Validation) |
-| E7 | 20–22 | Fixes from test results | Record MP4 fallbacks, rehearsal ×3 | MED | **Gate G3 = rehearsal** (Gem 2 Validation) |
-| E8 | 22–24 | Config-only changes | Final rehearsal, backup laptop | LOW | **FREEZE (H22)** |
-
----
+| Half-Module ID | Hours | Scope & Sub-Segments Built | Primary Lane | Combined Verification Command | Git Tag | Gem 2 Trigger |
+|---|---|---|---|---|---|---|
+| **`M1-A`** | `H00–H01` | `1.1`–`1.3`: Workspace, Docker topology, PG16 24-table DDL, seed & signed timing profiles | Lane A + B | `pytest tests/test_boot_guards.py tests/test_ddl_constraints.py tests/test_tmax_profiles.py` | `step-M1A-loop1` | **Validate `M1-A` in Gem 2** |
+| **`M1-B`** | `H01–H02` | `1.4`–`1.6`: RFC 8785 JCS parity, `transitions.yaml` loader, Quint `rhp1.qnt` & Explorer | Lane A | `pytest tests/test_jcs_parity.py tests/test_transitions_table.py && python tests/explore_transitions.py && quint run spec/rhp1.qnt --invariant safety --max-steps 25 --max-samples 20000` | `step-M1B-loop1` | **Validate `M1-B` in Gem 2 (Completes Module 1)** |
+| **`M2-A`** | `H02–H03` | `2.1`–`2.3`: Dual connection pools, sessions (cookie/voice), Argon2id autonomous lockout | Lane A | `pytest tests/test_auth_sessions.py tests/test_pin_lockout_scope.py` | `step-M2A-loop1` | **Validate `M2-A` in Gem 2** |
+| **`M2-B`** | `H03–H04` | `2.4`–`2.5`: Role-command authz matrix, Pydantic schemas, 10-step `apply_command()` pipeline | Lane A | `pytest tests/test_authz_matrix.py tests/test_pipeline_core.py` | `step-M2B-loop1` | **Validate `M2-B` in Gem 2 (Completes Module 2)** |
+| **`M3-A`** | `H04–H05` | `3.1`–`3.3`: `CREATE`, `ACK`, `RESOURCE_CONFIRM`, `ACCEPT` single-owner lease arbitration | Lane A | `pytest tests/test_cmd_create.py tests/test_cmd_ack_confirm.py tests/test_cmd_accept.py` | `step-M3A-loop1` | **Validate `M3-A` in Gem 2** |
+| **`M3-B`** | `H05–H06` | `3.4`–`3.6`: `DECLINE` + `advance()`, `COUNTER` negotiation, terminal commands (`CLOSE`, etc.) | Lane A | `pytest tests/test_cmd_decline_advance.py tests/test_cmd_counter.py tests/test_cmd_lifecycle.py` | `step-M3B-loop1` | **Validate `M3-B` in Gem 2 (Completes Module 3)** |
+| **`M4-A`** | `H06–H07` | `4.1`–`4.2`: Independent runtime monitor `monitor.py` (F17), 200-way concurrency barrier (`race200`), idempotency matrix | Lane B / A | `pytest tests/test_monitor_fold.py tests/test_race200.py tests/test_idempotency_matrix.py` | `step-M4A-loop1` | **Validate `M4-A` in Gem 2** |
+| **`M4-B`** | `H07–H08` | `4.3`–`4.4`: Safe `BROKEN_BUILD` scratch DB isolation, mutation tests `M1`–`M6`, 28 conformance vectors | Lane B / A | `pytest tests/test_broken_build.py tests/test_mutations.py tests/test_conformance_vectors.py` | `step-M4B-loop1` | **Validate `M4-B` in Gem 2 (Completes Module 4 / T0 Proof Core)** |
+| **`M5-A`** | `H08–H09` | `5.1`–`5.3`: Two-phase stateless poller, intra-facility notice ladder ($0, A/4, 3A/4$), outbox relay | Lane A | `pytest tests/test_poller_liveness.py tests/test_notice_ladder_and_closure.py` | `step-M5A-loop1` | **Validate `M5-A` in Gem 2** |
+| **`M5-B`** | `H09–H10` | `5.4`–`5.5`: Authorized SSE hub with `GRANT_REVOKED` stream stripping, heartbeats & clock-step guard | Lane A + B | `pytest tests/test_sse_revoke.py tests/test_clock_and_heartbeats.py` | `step-M5B-loop1` | **Validate `M5-B` in Gem 2 (Completes Module 5)** |
+| **`M6-A`** | `H10–H11` | `6.1`–`6.2`: Separate-OS-user witness signer 5s Merkle tree, off-box sync & cold-key `RESTORE` | Lane A | `pytest tests/test_witness_merkle.py tests/test_tamper_vs_restore.py` | `step-M6A-loop1` | **Validate `M6-A` in Gem 2** |
+| **`M6-B`** | `H11–H12` | `6.3`: Pure-JS browser verifier (`verifier.ts` with `@noble`) & superuser SQL `tamper.sh` | Lane B | `npm --prefix pwa test -- verifier && bash scripts/tamper.sh --dry-check` | `step-M6B-loop1` | **Validate `M6-B` in Gem 2 (Completes Module 6)** |
+| **`M7-A`** | `H12–H13` | `7.1`–`7.3`: React PWA shell, SSE state store, rotating judge QR admission, referring clinician card | Lane B | `pytest tests/test_judge_join.py && npm --prefix pwa run build` | `step-M7A-loop1` | **Validate `M7-A` in Gem 2** |
+| **`M7-B`** | `H13–H14` | `7.4`–`7.6`: Receiving duty desk, judge race desk + verifier drawer, Guarantee Arena big screen | Lane B | `npm --prefix pwa test && make gate-t0` | `step-M7B-loop1` | **Validate `M7-B` in Gem 2 (GATE G0 = T0 PASS)** |
+| **`M8-A`** | `H14–H15` | `8.1`–`8.2`: Parallel transport track API, 6 arrival cases, Mapbox Matrix ETA service cache | Lane A | `pytest tests/test_transport_and_arrivals.py` | `step-M8A-loop1` | **Validate `M8-A` in Gem 2** |
+| **`M8-B`** | `H15–H16` | `8.3`–`8.4`: PWA ambulance client (foreground GPS) & Dispatcher Console with replay scrubber | Lane B | `pytest tests/test_dispatcher_proxy_and_replay.py && make gate-t1` | `step-M8B-loop1` | **Validate `M8-B` in Gem 2 (GATE G1 = T1 PASS)** |
+| **`M9-A`** | `H16–H17` | `9.1`–`9.3`: Outbound Exotel IVR, AMD + Press-1 human gate, DTMF menu & per-call PIN verification | Lane B + A | `pytest tests/test_exotel_ivr.py` | `step-M9A-loop1` | **Validate `M9-A` in Gem 2** |
+| **`M9-B`** | `H17–H18` | `9.4`–`9.5`: TRAI DLT static SMS adapter & 9-char Crockford Base32 + mod-37 paper code codec | Lane B | `pytest tests/test_dlt_sms_lint.py tests/test_paper_code_mod37.py && make gate-t2` | `step-M9B-loop1` | **Validate `M9-B` in Gem 2 (GATE G2 = T2 PASS)** |
+| **`M10-A`** | `H18–H19` | `10.1`–`10.2`: AES-256-GCM envelope encryption, monthly KEK wrapping, automated crypto-shredder | Lane A | `pytest tests/test_envelope_crypto.py` | `step-M10A-loop1` | **Validate `M10-A` in Gem 2** |
+| **`M10-B`** | `H19–H20` | `10.3`–`10.4`: District command centre live map/APOT KPIs & `networkx` graph aggregations ($k \ge 5$) | Lane A + B | `pytest tests/test_analytics_recompute.py` | `step-M10B-loop1` | **Validate `M10-B` in Gem 2 (Completes Module 10)** |
+| **`M11-A`** | `H20–H20:30` | `11.1`–`11.2`: Cognitive-forcing AI intake (`423 ANCHOR_REQUIRED`) + 20-slip gate, FHIR R4 exporter | Lane A + B | `pytest tests/test_ai_seeded_errors.py tests/test_fhir_exporter.py` | `step-M11A-loop1` | **Validate `M11-A` in Gem 2** |
+| **`M11-B`** | `H20:30–H21` | `11.3`–`11.4`: IEEE 1849 XES / BSA s.63 evidence generator & native Kotlin Android EMT client | Lane A + B | `pytest tests/test_bsa_xes_exports.py tests/test_fcm_zero_payload.py && make gate-t3` | `step-M11B-loop1` | **Validate `M11-B` in Gem 2 (Completes Module 11 & T3)** |
+| **`M12-A`** | `H21–H21:45` | `12.1`–`12.2`: Eight-scenario Toxiproxy fault matrix & automated self-audit CI scripts (`ST-1`..`ST-5`) | Lane A | `pytest tests/test_toxiproxy_chaos.py tests/test_lock_order.py tests/test_tmax_profiles.py tests/test_ddl_constraints.py tests/test_idempotency_matrix.py tests/test_claims_lexicon.py` | `step-M12A-loop1` | **Validate `M12-A` in Gem 2** |
+| **`M12-B`** | `H21:45–H22` | `12.3`: Master tier acceptance gate runner `Makefile` (`gate-all`) & `scripts/preflight.sh` rehearsal | Lane A + B | `make gate-all && bash scripts/preflight.sh` | `step-M12B-loop1` | **Validate `M12-B` in Gem 2 (GATE G3 = REHEARSAL)** |
+| **`FREEZE`** | `H22–H24` | **HARD CODE FREEZE AT H22:** Configuration-only tweaks, 30s live proof loop rehearsal $\times 3$, dual-uplink check | Team A + B | `bash scripts/preflight.sh` | `step-FREEZE` | **STAGE READY** |
 
 ## 7. One-Page Cheat Sheet
 

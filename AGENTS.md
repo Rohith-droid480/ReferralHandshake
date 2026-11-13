@@ -47,7 +47,7 @@ Resolve any ambiguity across project documents using this exact authority hierar
 9. **Common-Mode Independence (`F17`):**
    - **Lane A (Person A)** owns the backend (`api/`), `spec/transitions.yaml`, and the Quint model (`spec/rhp1.qnt`).
    - **Lane B (Person B)** builds the independent Python runtime monitor (`monitor/`) in a separate Antigravity workspace that is **never shown the `api/` server code**. The monitor is written from §3 invariant prose in `ReferralHandshake_FINAL_LOCKED_Architecture.md`, connects exclusively via the read-only PostgreSQL role `rhp_monitor`, and implements its own independent event fold.
-10. **2-Gem Milestone Routing Discipline:** Never instruct or route the user to Gem 2 for an incomplete feature or mid-feature sub-task. Explicitly instruct the user to go to Gem 2 (Milestone Validator) **ONLY when a complete feature or milestone/gate (`P1–P6`, `E0–E8`, `G0–G3`) is finished**. For in-progress sub-steps, output the FAST-ADVANCE block to return directly to Gem 1.
+10. **2-Gem Half-Module Routing Discipline:** 1 `AG-PROMPT` from Gem 1 = 1 Half-Module (`M<N>-A` or `M<N>-B`, comprising 2 to 3 sub-segments of `BUILD_PLAN.md`). Antigravity builds all sub-segments of that half-module in a single pass. Immediately upon completing each Half-Module, Antigravity must execute the Combined Verification Gate command, commit and tag (`step-M<N><A|B>-loop<k>`), and output the mandatory banner: `🛑 HALF-MODULE M<N>-<A|B> COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` followed by the `=== VALIDATION-REQUEST FOR GEM 2 ===` block. Never start the next Half-Module until Gem 2 has validated and Gem 1 issues the next prompt.
 
 ---
 
@@ -241,7 +241,7 @@ Every agent implementing or auditing a step must verify the corresponding `F1`�
 
 ### 8.2 Routing Types & Antigravity Mandatory Banners
 - **Milestone Validation (`G1 -> AG -> G2 -> G1`):** Used **ONLY when a complete Feature or Milestone/Gate (`P1–P6`, `E0–E8`, `G0–G3`) is completed**, or when verifying an S1 fix. Antigravity emits:
-  `🛑 FEATURE / MILESTONE COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!`
+  `🛑 HALF-MODULE M<N>-<A|B> COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!`
 - **Sub-Step Fast-Advance (`G1 -> AG -> G1`):** Used when a sub-step/task is completed but the full feature/milestone is NOT yet finished. Skips Gem 2. Antigravity emits:
   `🟢 SUB-STEP COMPLETE (FEATURE / MILESTONE NOT YET FINISHED) — DO NOT GO TO GEM 2 YET. Paste the FAST-ADVANCE PACKET below directly into Gem 1.`
 - **Reject Short-Circuit (`G2 -> G1`):** Triggered when Gem 2 issues `REJECT` (broken build, missing raw test output, or forbidden files touched). Gem 2 outputs an immediate REDO `DECISION PACKET` for Gem 1.
@@ -327,7 +327,7 @@ LEDGER DELTA: Advance sub-step <id> (tag <step-ID-loopN>) toward milestone compl
 
 #### Case B — Feature or Milestone IS Completed
 ```text
-🛑 FEATURE / MILESTONE COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!
+🛑 HALF-MODULE M<N>-<A|B> COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!
 Copy and paste the entire block below into Gem 2 for Milestone Validation.
 
 === VALIDATION-REQUEST FOR GEM 2 (AUDIT-REQUEST FOR GEM 2) ===
