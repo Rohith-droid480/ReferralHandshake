@@ -1,0 +1,160 @@
+# =============================================================================
+# ReferralHandshake (RHP-1) — Environment Configuration Template (.env.example)
+# Copy to .env before running `docker compose up`.
+# CRITICAL: REAL_DATA must remain 0. Demo profiles and BROKEN_BUILD abort with
+# exit code 78 if REAL_DATA=1 (Architecture §6, §12, F2, F20).
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. Core Safety, Profile & Mode Guards
+# -----------------------------------------------------------------------------
+REAL_DATA=0
+# Active signed timing profile: PILOT_OB_CRITICAL | PILOT_STANDARD | DEMO_FAST | DEMO_VOICE
+PROFILE=DEMO_FAST
+# Safe broken-build switch (F20): 0 = normal (rhp_main) | 1 = scratch DB without one_lease (rhp_scratch_broken)
+BROKEN_BUILD=0
+# Fail-closed local hotspot mode when venue internet is unavailable (§9, N7)
+LAN_MODE=0
+DEPLOYMENT_ID=colossus3-bengaluru-demo
+
+# -----------------------------------------------------------------------------
+# 2. Tier Feature Flags (§2) — T0 is always active
+# -----------------------------------------------------------------------------
+T1_TRANSPORT=1
+T2_REACH=1
+T3_EXTRAS=0
+
+# -----------------------------------------------------------------------------
+# 3. PostgreSQL 16 Primary & Role-Separated DSNs (§7, §12)
+# -----------------------------------------------------------------------------
+POSTGRES_HOST=pg
+POSTGRES_PORT=5432
+POSTGRES_DB=rhp_main
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=rhp_pg_super_local_dev_only
+
+# Application Role (rhp_app: SELECT, INSERT, UPDATE; no UPDATE/DELETE on event/checkpoint/rejected_command)
+RHP_APP_USER=rhp_app
+RHP_APP_PASSWORD=rhp_app_local_dev_only
+RHP_APP_DSN=postgresql://rhp_app:rhp_app_local_dev_only@pg:5432/rhp_main
+
+# Independent Runtime Monitor Role (rhp_monitor: READ ONLY, no access to clinical_payload or event_secret)
+RHP_MONITOR_USER=rhp_monitor
+RHP_MONITOR_PASSWORD=rhp_monitor_local_dev_only
+RHP_MONITOR_DSN=postgresql://rhp_monitor:rhp_monitor_local_dev_only@pg:5432/rhp_main
+
+# Separate-OS-User Witness Role (rhp_witness: SELECT on event/referral/checkpoint, INSERT on checkpoint)
+RHP_WITNESS_USER=rhp_witness
+RHP_WITNESS_PASSWORD=rhp_witness_local_dev_only
+RHP_WITNESS_DSN=postgresql://rhp_witness:rhp_witness_local_dev_only@pg:5432/rhp_main
+
+# -----------------------------------------------------------------------------
+# 4. Scratch Database Isolation for BROKEN_BUILD=1 (F20, §12)
+# -----------------------------------------------------------------------------
+RHP_SCRATCH_DB=rhp_scratch_broken
+RHP_SCRATCH_USER=rhp_scratch_app
+RHP_SCRATCH_PASSWORD=rhp_scratch_local_dev_only
+RHP_SCRATCH_DSN=postgresql://rhp_scratch_app:rhp_scratch_local_dev_only@pg:5432/rhp_scratch_broken
+RHP_SCRATCH_MONITOR_DSN=postgresql://rhp_monitor:rhp_monitor_local_dev_only@pg:5432/rhp_scratch_broken
+
+# -----------------------------------------------------------------------------
+# 5. Poller, Outbox Relay, Monitor & Clock Budgets (§5, §6, §11, §12)
+# -----------------------------------------------------------------------------
+POLLER_INTERVAL_MS=1000
+POLLER_CLAIM_TTL_S=5
+POLLER_BATCH_SIZE=50
+
+RELAY_INTERVAL_MS=500
+RELAY_VISIBILITY_TIMEOUT_S=30
+RELAY_MAX_ATTEMPTS=8
+RELAY_BATCH_SIZE=20
+
+MONITOR_INTERVAL_MS=1000
+# TAU_MS = 2 * POLLER_INTERVAL_MS + 2000 ms (§12)
+MONITOR_TAU_MS=4000
+
+WITNESS_CHECKPOINT_INTERVAL_S=5
+HEARTBEAT_INTERVAL_S=5
+HEARTBEAT_STALE_ALARM_S=15
+NTP_OFFSET_ALARM_MS=2000
+SSE_HEARTBEAT_S=15
+IDEMPOTENCY_TTL_HOURS=48
+
+# -----------------------------------------------------------------------------
+# 6. Cryptography, Envelope Encryption, Witness & PIN Security (§9, §10, §11)
+# -----------------------------------------------------------------------------
+# Pinned Ed25519 public key for offline cold-key verification of profiles & RESTORE checkpoints
+COLD_PUBLIC_KEY_HEX=d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a
+
+# Witness Ed25519 checkpoint signer (runs as UID 1002, key file mode 0400)
+WITNESS_SIGNER_KEY_ID=rhp1-witness-2026-11
+WITNESS_PRIVATE_KEY_FILE=/run/secrets/witness_ed25519.key
+WITNESS_PUBLIC_KEY_HEX=3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c
+SCRATCH_WITNESS_PRIVATE_KEY_FILE=/run/secrets/scratch_witness_ed25519.key
+
+# Monthly KEK epoch for AES-KW wrapping of per-referral AES-256-GCM DEKs (§10)
+ACTIVE_KEK_EPOCH=2026-11
+# 32-byte key (base64) for local synthetic development only
+KEK_2026_11_B64=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+
+# Argon2id parameters tuned to ~100 ms on demo laptop (§9, F7)
+ARGON2_TIME_COST=2
+ARGON2_MEMORY_COST_KIB=65536
+ARGON2_PARALLELISM=2
+PIN_MAX_FAILURES=3
+PIN_LOCKOUT_SECONDS=120
+
+# -----------------------------------------------------------------------------
+# 7. Judge QR Admission, Cloudflare Turnstile & Stream Security (§9)
+# -----------------------------------------------------------------------------
+JUDGE_DESK_CAP=20
+QR_ROTATION_INTERVAL_S=15
+QR_JTI_TTL_S=20
+TURNSTILE_ENABLED=1
+# Cloudflare Turnstile dummy test keys (always pass in local dev; replace for live tunnel)
+TURNSTILE_SITE_KEY=1x00000000000000000000AA
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+CLOUDFLARE_TUNNEL_TOKEN=
+
+# -----------------------------------------------------------------------------
+# 8. Reach Layer: Exotel Outbound IVR & DLT Static SMS (§8)
+# -----------------------------------------------------------------------------
+EXOTEL_ENABLED=0
+EXOTEL_SID=
+EXOTEL_API_KEY=
+EXOTEL_API_TOKEN=
+EXOTEL_SUBDOMAIN=api.in.exotel.com
+EXOTEL_CALLER_ID=
+# Webhook budget is 2000 ms inside Exotel's 5000 ms hard timeout (§8)
+EXOTEL_WEBHOOK_BUDGET_MS=2000
+# Trial account whitelist (<= 10 verified team numbers in E.164 format)
+EXOTEL_WHITELIST_E164=+919000000001,+919000000002
+
+DLT_SMS_STUB=1
+DLT_ENTITY_ID=
+DLT_TEMPLATE_ID=
+DLT_WHITELISTED_DOMAIN=rhp.example.org
+
+# -----------------------------------------------------------------------------
+# 9. Maps, Road ETAs & Geofence Hint (§9, §14)
+# -----------------------------------------------------------------------------
+MAPBOX_ACCESS_TOKEN=
+MAPBOX_MATRIX_PROFILE=mapbox/driving
+ETA_CACHE_TTL_S=120
+GPS_FRESHNESS_TTL_S=30
+GEOFENCE_SUGGEST_RADIUS_M=200
+
+# -----------------------------------------------------------------------------
+# 10. Toxiproxy Fault Injection Endpoints (§12)
+# -----------------------------------------------------------------------------
+TOXIPROXY_URL=http://toxiproxy:8474
+
+# -----------------------------------------------------------------------------
+# 11. React PWA Build-Time / Runtime Variables
+# -----------------------------------------------------------------------------
+VITE_API_BASE_URL=http://localhost:8000
+VITE_WITNESS_PUBLIC_KEY_HEX=3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c
+VITE_COLD_PUBLIC_KEY_HEX=d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a
+VITE_TURNSTILE_SITE_KEY=1x00000000000000000000AA
+VITE_MAPBOX_ACCESS_TOKEN=
+VITE_LAN_MODE=0

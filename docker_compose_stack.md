@@ -1,0 +1,281 @@
+name: referral-handshake
+
+services:
+  # ---------------------------------------------------------------------------
+  # 1. PostgreSQL 16 Single Writable Primary (§0, §5, §7, §17)
+  #    synchronous_commit=on, log_lock_waits=on, max_connections=250 (for race200)
+  # ---------------------------------------------------------------------------
+  pg:
+    image: postgres:16-alpine
+    container_name: rhp-pg
+    restart: unless-stopped
+    command:
+      - "postgres"
+      - "-c"
+      - "synchronous_commit=on"
+      - "-c"
+      - "log_lock_waits=on"
+      - "-c"
+      - "deadlock_timeout=1000ms"
+      - "-c"
+      - "max_connections=250"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-rhp_main}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rhp_pg_super_local_dev_only}
+      RHP_APP_USER: ${RHP_APP_USER:-rhp_app}
+      RHP_APP_PASSWORD: ${RHP_APP_PASSWORD:-rhp_app_local_dev_only}
+      RHP_MONITOR_USER: ${RHP_MONITOR_USER:-rhp_monitor}
+      RHP_MONITOR_PASSWORD: ${RHP_MONITOR_PASSWORD:-rhp_monitor_local_dev_only}
+      RHP_WITNESS_USER: ${RHP_WITNESS_USER:-rhp_witness}
+      RHP_WITNESS_PASSWORD: ${RHP_WITNESS_PASSWORD:-rhp_witness_local_dev_only}
+      RHP_SCRATCH_DB: ${RHP_SCRATCH_DB:-rhp_scratch_broken}
+      RHP_SCRATCH_USER: ${RHP_SCRATCH_USER:-rhp_scratch_app}
+      RHP_SCRATCH_PASSWORD: ${RHP_SCRATCH_PASSWORD:-rhp_scratch_local_dev_only}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./spec/ddl:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-rhp_main}"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+    networks:
+      - rhp_net
+
+  # ---------------------------------------------------------------------------
+  # 2. Shopify Toxiproxy — API↔DB and Phone↔API Fault Injection (§12, §17)
+  # ---------------------------------------------------------------------------
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.11.0
+    container_name: rhp-toxiproxy
+    restart: unless-stopped
+    depends_on:
+      pg:
+        condition: service_healthy
+    ports:
+      - "8474:8474"   # Toxiproxy HTTP control API
+      - "5433:5433"   # Proxied PostgreSQL port for API↔DB chaos tests
+      - "8001:8001"   # Proxied FastAPI port for Phone↔API chaos tests
+    networks:
+      - rhp_net
+
+  # ---------------------------------------------------------------------------
+  # 3. FastAPI Command Server — 10-Step apply_command() Pipeline (§5, §17)
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: rhp-api
+    restart: unless-stopped
+    depends_on:
+      pg:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      REAL_DATA: ${REAL_DATA:-0}
+      PROFILE: ${PROFILE:-DEMO_FAST}
+      BROKEN_BUILD: ${BROKEN_BUILD:-0}
+      LAN_MODE: ${LAN_MODE:-0}
+      RHP_APP_DSN: ${RHP_APP_DSN:-postgresql://rhp_app:rhp_app_local_dev_only@pg:5432/rhp_main}
+      RHP_SCRATCH_DSN: ${RHP_SCRATCH_DSN:-postgresql://rhp_scratch_app:rhp_scratch_local_dev_only@pg:5432/rhp_scratch_broken}
+      SPEC_DIR: /app/spec
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./spec:/app/spec:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - rhp_net
+
+  # ---------------------------------------------------------------------------
+  # 4. Stateless Two-Phase Deadline Poller (§5, F1, I1, I14)
+  # ---------------------------------------------------------------------------
+  poller:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: rhp-poller
+    restart: unless-stopped
+    command: ["python", "-m", "rhp.poller"]
+    depends_on:
+      pg:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      REAL_DATA: ${REAL_DATA:-0}
+      PROFILE: ${PROFILE:-DEMO_FAST}
+      BROKEN_BUILD: ${BROKEN_BUILD:-0}
+      RHP_APP_DSN: ${RHP_APP_DSN:-postgresql://rhp_app:rhp_app_local_dev_only@pg:5432/rhp_main}
+      RHP_SCRATCH_DSN: ${RHP_SCRATCH_DSN:-postgresql://rhp_scratch_app:rhp_scratch_local_dev_only@pg:5432/rhp_scratch_broken}
+      POLLER_INTERVAL_MS: ${POLLER_INTERVAL_MS:-1000}
+      POLLER_CLAIM_TTL_S: ${POLLER_CLAIM_TTL_S:-5}
+      POLLER_BATCH_SIZE: ${POLLER_BATCH_SIZE:-50}
+      SPEC_DIR: /app/spec
+    volumes:
+      - ./spec:/app/spec:ro
+    networks:
+      - rhp_net
+
+  # ---------------------------------------------------------------------------
+  # 5. Outbox Visibility-Timeout Relay (§5, §8, §9)
+  # ---------------------------------------------------------------------------
+  relay:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: rhp-relay
+    restart: unless-stopped
+    command: ["python", "-m", "rhp.relay"]
+    depends_on:
+      pg:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      REAL_DATA: ${REAL_DATA:-0}
+      PROFILE: ${PROFILE:-DEMO_FAST}
+      BROKEN_BUILD: ${BROKEN_BUILD:-0}
+      RHP_APP_DSN: ${RHP_APP_DSN:-postgresql://rhp_app:rhp_app_local_dev_only@pg:5432/rhp_main}
+      RHP_SCRATCH_DSN: ${RHP_SCRATCH_DSN:-postgresql://rhp_scratch_app:rhp_scratch_local_dev_only@pg:5432/rhp_scratch_broken}
+      RELAY_INTERVAL_MS: ${RELAY_INTERVAL_MS:-500}
+      RELAY_VISIBILITY_TIMEOUT_S: ${RELAY_VISIBILITY_TIMEOUT_S:-30}
+      RELAY_MAX_ATTEMPTS: ${RELAY_MAX_ATTEMPTS:-8}
+      RELAY_BATCH_SIZE: ${RELAY_BATCH_SIZE:-20}
+    networks:
+      - rhp_net
+
+  # ---------------------------------------------------------------------------
+  # 6. Independent Runtime Monitor — Person B Code, UID 1001, Read-Only Role (§12, F17)
+  # ---------------------------------------------------------------------------
+  monitor:
+    build:
+      context: ./monitor
+      dockerfile: Dockerfile
+    container_name: rhp-monitor
+    user: "1001:1001"
+    read_only: true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+    depends_on:
+      pg:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      REAL_DATA: ${REAL_DATA:-0}
+      BROKEN_BUILD: ${BROKEN_BUILD:-0}
+      RHP_MONITOR_DSN: ${RHP_MONITOR_DSN:-postgresql://rhp_monitor:rhp_monitor_local_dev_only@pg:5432/rhp_main}
+      RHP_SCRATCH_MONITOR_DSN: ${RHP_SCRATCH_MONITOR_DSN:-postgresql://rhp_monitor:rhp_monitor_local_dev_only@pg:5432/rhp_scratch_broken}
+      MONITOR_INTERVAL_MS: ${MONITOR_INTERVAL_MS:-1000}
+      MONITOR_TAU_MS: ${MONITOR_TAU_MS:-4000}
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./spec:/app/spec:ro
+    networks:
+      - rhp_net
+
+  # ---------------------------------------------------------------------------
+  # 7. Separate-OS-User Ed25519 Merkle Witness Signer — UID 1002 (§11, F8)
+  # ---------------------------------------------------------------------------
+  witness:
+    build:
+      context: ./witness
+      dockerfile: Dockerfile
+    container_name: rhp-witness
+    user: "1002:1002"
+    read_only: true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+    depends_on:
+      pg:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      REAL_DATA: ${REAL_DATA:-0}
+      BROKEN_BUILD: ${BROKEN_BUILD:-0}
+      DEPLOYMENT_ID: ${DEPLOYMENT_ID:-colossus3-bengaluru-demo}
+      RHP_WITNESS_DSN: ${RHP_WITNESS_DSN:-postgresql://rhp_witness:rhp_witness_local_dev_only@pg:5432/rhp_main}
+      WITNESS_CHECKPOINT_INTERVAL_S: ${WITNESS_CHECKPOINT_INTERVAL_S:-5}
+      WITNESS_SIGNER_KEY_ID: ${WITNESS_SIGNER_KEY_ID:-rhp1-witness-2026-11}
+      WITNESS_PRIVATE_KEY_FILE: ${WITNESS_PRIVATE_KEY_FILE:-/run/secrets/witness_ed25519.key}
+      SCRATCH_WITNESS_PRIVATE_KEY_FILE: ${SCRATCH_WITNESS_PRIVATE_KEY_FILE:-/run/secrets/scratch_witness_ed25519.key}
+    volumes:
+      - witness_out:/var/log/rhp-witness
+    networks:
+      - rhp_net
+
+  # ---------------------------------------------------------------------------
+  # 8. React PWA — Desks, Guarantee Arena & Pure-JS Browser Verifier (§11, §13)
+  # ---------------------------------------------------------------------------
+  pwa:
+    build:
+      context: ./pwa
+      dockerfile: Dockerfile
+    container_name: rhp-pwa
+    restart: unless-stopped
+    depends_on:
+      - api
+      - monitor
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+      VITE_WITNESS_PUBLIC_KEY_HEX: ${VITE_WITNESS_PUBLIC_KEY_HEX:-3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c}
+      VITE_COLD_PUBLIC_KEY_HEX: ${VITE_COLD_PUBLIC_KEY_HEX:-d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a}
+      VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY:-1x00000000000000000000AA}
+      VITE_LAN_MODE: ${VITE_LAN_MODE:-0}
+    ports:
+      - "5173:5173"
+    networks:
+      - rhp_net
+
+  # ---------------------------------------------------------------------------
+  # 9. Cloudflare Tunnel — Optional Edge Ingress for Judge QR Desks (§9, §17)
+  #    Start with `docker compose --profile tunnel up -d` when internet is live
+  # ---------------------------------------------------------------------------
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: rhp-tunnel
+    profiles:
+      - tunnel
+    restart: unless-stopped
+    depends_on:
+      - pwa
+      - api
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    networks:
+      - rhp_net
+
+volumes:
+  pgdata:
+  witness_out:
+
+networks:
+  rhp_net:
+    driver: bridge
