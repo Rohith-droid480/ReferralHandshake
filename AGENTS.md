@@ -10,7 +10,7 @@ code_freeze_hour: 22
 
 # AGENTS.md — ReferralHandshake (Protocol RHP-1) Builder & Multi-Agent Governance Rules
 
-You are operating inside the **ReferralHandshake (Protocol RHP-1)** repository by **Team MAHA YODHAS** (Colossus 3.0, 24-hour build, 2 engineers). Every coding agent (Google Antigravity) and reviewing agent (Gem 1 Conductor, Gem 2 Auditor, Gem 3 Adversary) MUST enforce the rules in this file without exception.
+You are operating inside the **ReferralHandshake (Protocol RHP-1)** repository by **Team MAHA YODHAS** (Colossus 3.0, 24-hour build, 2 engineers). Every coding agent (Google Antigravity) and reviewing agent (Gem 1 Conductor, Gem 2 Milestone Validator) MUST enforce the rules in this file without exception.
 
 ---
 
@@ -47,6 +47,7 @@ Resolve any ambiguity across project documents using this exact authority hierar
 9. **Common-Mode Independence (`F17`):**
    - **Lane A (Person A)** owns the backend (`api/`), `spec/transitions.yaml`, and the Quint model (`spec/rhp1.qnt`).
    - **Lane B (Person B)** builds the independent Python runtime monitor (`monitor/`) in a separate Antigravity workspace that is **never shown the `api/` server code**. The monitor is written from §3 invariant prose in `ReferralHandshake_FINAL_LOCKED_Architecture.md`, connects exclusively via the read-only PostgreSQL role `rhp_monitor`, and implements its own independent event fold.
+10. **2-Gem Milestone Routing Discipline:** Never instruct or route the user to Gem 2 for an incomplete feature or mid-feature sub-task. Explicitly instruct the user to go to Gem 2 (Milestone Validator) **ONLY when a complete feature or milestone/gate (`P1–P6`, `E0–E8`, `G0–G3`) is finished**. For in-progress sub-steps, output the FAST-ADVANCE block to return directly to Gem 1.
 
 ---
 
@@ -231,47 +232,49 @@ Every agent implementing or auditing a step must verify the corresponding `F1`�
 
 ---
 
-## 8. The 3-Gem + Antigravity Multi-Agent Workflow
+## 8. The 2-Gem Milestone Validation Workflow
 
 ### 8.1 Agent Roles
-- **Gem 1 — CONDUCTOR:** Owns the build sequence, tier gates (`G0`–`G3`), scope cuts (`T3 -> T2 -> T1`; never `T0`), the `STATE LEDGER`, and emits `AG-PROMPT` blocks. Never writes product code.
-- **Google Antigravity — BUILDER (You):** Executes `AG-PROMPT` instructions inside the repository, writes product and test code, runs verification commands, commits/tags (`step-<ID>-loop<n>`), and outputs the `BUILD REPORT` + `AUDIT-REQUEST FOR GEM 2`. Never makes architectural decisions.
-- **Gem 2 — AUDITOR:** Audits raw test outputs, line-by-line spec conformance, invariant enforcement (`I1`–`I16`), lock order, and file scope. Emits `PASS`, `PASS-WITH-NOTES`, `FAIL`, or `REJECT` inside a `RED-TEAM REQUEST` block for Gem 3. Never writes fixes.
-- **Gem 3 — ADVERSARY:** Designs runnable attack tests (races, Toxiproxy partitions, crashes, clock steps, auth bypasses, claims lint), challenges Gem 2's audit, and emits a `DECISION PACKET` (`ADVANCE`, `FIX-THEN-ADVANCE`, `REDO`, `SPEC-QUESTION`) to Gem 1.
+- **Gem 1 — CONDUCTOR (Unchanged):** Owns the build sequence, tier gates (`G0`–`G3`), scope cuts (`T3 -> T2 -> T1`; never `T0`), the `STATE LEDGER`, and emits `AG-PROMPT` blocks. Accepts standard `DECISION PACKET` inputs. Never writes product code.
+- **Google Antigravity — BUILDER (You):** Executes `AG-PROMPT` instructions inside the repository, writes product and test code, runs verification commands, commits/tags (`step-<ID>-loop<n>`), and explicitly instructs the user whether to route to Gem 1 (sub-step) or Gem 2 (milestone completed). Never makes architectural decisions.
+- **Gem 2 — MILESTONE VALIDATOR (Merged Auditor + Adversary):** Replaces both the old Gem 2 and old Gem 3. Invoked **ONLY when a complete Feature or Milestone/Gate is finished**. Performs line-by-line spec conformance auditing, invariant verification (`I1`–`I16`), and high-impact red-team adversarial attacks/claims checks in a single pass. Outputs the ready-to-paste `DECISION PACKET` prompt for Gem 1. Gem 3 is completely retired.
 
-### 8.2 Loop Types & Risk Classification
-- **HIGH Risk (`FULL` Loop: `G1 -> AG -> G2 -> G3 -> G1`):** Any step touching `apply_command()`, row locks/triggers, `db/schema.sql`, idempotency, hash chain/witness/crypto, poller/relay, PIN/session/auth, SSE per-event authorization, `BROKEN_BUILD`/`REAL_DATA` guards, or Exotel voice ACK.
-- **LOW/MED Risk (`FAST` Loop: `G1 -> AG -> G2 -> G1`):** Styling, synthetic seed data, copy text, static config, README, or `S2`/`S3` defect fixes.
-- **Broken Build (`SHORT-CIRCUIT`: `G2 -> G1` directly):** Triggered when Gem 2 issues `REJECT` (code does not run, raw test output missing, or forbidden files modified).
+### 8.2 Routing Types & Antigravity Mandatory Banners
+- **Milestone Validation (`G1 -> AG -> G2 -> G1`):** Used **ONLY when a complete Feature or Milestone/Gate (`P1–P6`, `E0–E8`, `G0–G3`) is completed**, or when verifying an S1 fix. Antigravity emits:
+  `🛑 FEATURE / MILESTONE COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!`
+- **Sub-Step Fast-Advance (`G1 -> AG -> G1`):** Used when a sub-step/task is completed but the full feature/milestone is NOT yet finished. Skips Gem 2. Antigravity emits:
+  `🟢 SUB-STEP COMPLETE (FEATURE / MILESTONE NOT YET FINISHED) — DO NOT GO TO GEM 2 YET. Paste the FAST-ADVANCE PACKET below directly into Gem 1.`
+- **Reject Short-Circuit (`G2 -> G1`):** Triggered when Gem 2 issues `REJECT` (broken build, missing raw test output, or forbidden files touched). Gem 2 outputs an immediate REDO `DECISION PACKET` for Gem 1.
 
-### 8.3 Step Catalogue & Acceptance Gates (`Phase P` & `Phase E`)
+### 8.3 Step & Milestone Catalogue (`Phase P` & `Phase E`)
 
-| Step | Lane | Hours / Phase | Scope | Risk / Loop | Gate Criteria (§24 Measured Acceptance) |
+| Step | Lane | Hours / Phase | Scope | Risk | Validate in Gem 2 When |
 |---|---|---|---|---|---|
-| **P1** | A | Pre-Event | `spec/transitions.yaml` + conformance vectors from §4 transition table | HIGH / FULL | Vectors cover all 14 commands & 28 scenarios |
-| **P2** | A | Pre-Event | Load `db/schema.sql` (24 tables) into PG16; run FK/constraint scan (`ST-3`) | HIGH / FULL | All 24 tables, triggers, indexes, and roles load cleanly |
-| **P3** | A | Pre-Event | `spec/rhp1.qnt` formal model; `quint run` ($\ge 20,000$ samples) & vacuity checks | HIGH / FULL | `safety` holds; vacuity checks for `ACCEPTED`, `DISPATCH`, `CLOSED`, `SOFT` fail as required |
-| **P4** | B | Pre-Event | Signed `spec/profiles.json` + $T_{\max}$ startup validator (`I13`, `ST-2`) | MED / FAST | All 4 profiles pass $T_{\max} \le B$ & Ed25519 signature check |
-| **P5** | B | Pre-Event | Synthetic seed data (`db/seed.sql`, `REAL_DATA=0`) | LOW / FAST | Loads Karnataka-style PHC/CHC/FRU/DH/MC tiers & catchment chains |
-| **P6** | B | Pre-Event | Execute §21 pre-event verification checklist | LOW / FAST | Checklist results logged |
-| **E0** | A & B | H0–H2 | `docker-compose.yml`, DDL load, seed, YAML loader (A); PWA shell, rotating QR (B) | MED / FAST | Stack boots cleanly; `/healthz` returns 200 |
-| **E1** | A & B | H2–H6 | `apply_command()` steps 1–10: `CREATE`/`ACK`/`ACCEPT`/`DECLINE` (A); Desk UI + SSE grant filter (B) | HIGH / FULL | Conformance vectors pass; `T-F10 sse_revoke` passes |
-| **E2** | A & B | H6–H9 | 2-phase poller, outbox relay, `TIMEOUT`, notice ladder (A); Big screen + independent `monitor.py` (B) | HIGH / FULL | `T-I1`–`T-I16` monitor checks active; zero server imports in `monitor/` |
-| **E3** | A & B | H9–H12 | Hash chain, `witness/signer.py`, Merkle proofs (A); Browser noble verifier (B) | HIGH / FULL | `T-F8 tamper_vs_restore` & browser verification pass on tampered row |
-| **E4** | A & B | H12–H14 | `race200` barrier test, mutations `M1`–`M6` (A); `BROKEN_BUILD` scratch DB + red banner (B) | HIGH / FULL | **Gate G0 (`T0` Pass):** `race200` $\to$ 1 of 200 gets `200`, 1 `ACCEPTED` in DB, 0 seq gaps, 0 deadlocks; `M1`–`M6` trip checkers; 10-min Hypothesis+chaos run $= 0$ violations; `BROKEN_BUILD` turns monitor red $\le 2\text{ s}$; `DEMO_FAST` silence-to-dispatcher $\le 25\text{ s}$ |
-| **E5** | A & B | H14–H17 | `COUNTER`, `CONFIRM_COUNTER`, arrival cases `a`–`f`, closure (A); Dispatcher console + PWA GPS + scrubber (B) | HIGH / FULL | **Gate G1 (`T1` Pass):** 20/20 paired proxy vs direct API runs yield identical state/events; replay scrubber reproduces final state |
-| **E6** | A & B | H17–H20 | Idempotency edge matrix, fencing tests (A); Exotel IVR (AMD + press-1 gate) + Crockford mod 37 paper code (B) | HIGH / FULL | **Gate G2 (`T2` Pass):** 20/20 voice ACKs recorded only post-commit; 0/5 voicemail ACKs; webhook p95 $\le 2\text{ s}$; 1,000/1,000 single-symbol paper-code errors rejected |
-| **E7** | A & B | H20–H22 | Defect closures from tests (A); Record MP4 fallbacks (`clip A`–`D`), 30 s proof loop rehearsal $\times 3$ (B) | MED / FULL | **Gate G3 (Rehearsal Pass):** 3 consecutive 30 s live proof loops complete inside budget |
-| **E8** | A & B | H22–H24 | **CODE FREEZE at H22:** Config-only adjustments, backup laptop sync, final stage check | LOW / FAST | **FREEZE Gate:** Zero code commits after H22 |
+| **P1** | A | Pre-Event | `spec/transitions.yaml` + conformance vectors from §4 transition table | HIGH | Complete `transitions.yaml` + vector suite runs |
+| **P2** | A | Pre-Event | Load `db/schema.sql` (24 tables) into PG16; run FK/constraint scan (`ST-3`) | HIGH | All 24 tables, triggers, indexes, and roles load cleanly (`ST-3 PASS`) |
+| **P3** | A | Pre-Event | `spec/rhp1.qnt` formal model; `quint run` ($\ge 20,000$ samples) & vacuity checks | HIGH | `safety` holds; vacuity checks for `ACCEPTED`, `DISPATCH`, `CLOSED`, `SOFT` fail as required |
+| **P4** | B | Pre-Event | Signed `spec/profiles.json` + $T_{\max}$ startup validator (`I13`, `ST-2`) | MED | All 4 profiles pass $T_{\max} \le B$ & Ed25519 signature check |
+| **P5** | B | Pre-Event | Synthetic seed data (`db/seed.sql`, `REAL_DATA=0`) | LOW | Seed script loads with `REAL_DATA=0` verified |
+| **P6** | B | Pre-Event | Execute §21 pre-event verification checklist | LOW | Checklist results logged |
+| **E0** | A & B | H0–H2 | `docker-compose.yml`, DDL load, seed, YAML loader (A); PWA shell, rotating QR (B) | MED | Stack boots cleanly; `/healthz` returns 200 |
+| **E1** | A & B | H2–H6 | `apply_command()` steps 1–10: `CREATE`/`ACK`/`ACCEPT`/`DECLINE` (A); Desk UI + SSE grant filter (B) | HIGH | Conformance vectors pass; `T-F10 sse_revoke` passes |
+| **E2** | A & B | H6–H9 | 2-phase poller, outbox relay, `TIMEOUT`, notice ladder (A); Big screen + independent `monitor.py` (B) | HIGH | `T-I1`–`T-I16` monitor checks active; zero server imports in `monitor/` |
+| **E3** | A & B | H9–H12 | Hash chain, `witness/signer.py`, Merkle proofs (A); Browser noble verifier (B) | HIGH | `T-F8 tamper_vs_restore` & browser verification pass on tampered row |
+| **E4** | A & B | H12–H14 | `race200` barrier test, mutations `M1`–`M6` (A); `BROKEN_BUILD` scratch DB + red banner (B) | HIGH | **Gate G0 (`T0` Pass):** `race200` $\to$ 1 of 200 gets `200`, 1 `ACCEPTED` in DB, 0 seq gaps, 0 deadlocks; `M1`–`M6` trip checkers; 10-min Hypothesis+chaos run $= 0$ violations; `BROKEN_BUILD` turns monitor red $\le 2\text{ s}$; `DEMO_FAST` silence-to-dispatcher $\le 25\text{ s}$ |
+| **E5** | A & B | H14–H17 | `COUNTER`, `CONFIRM_COUNTER`, arrival cases `a`–`f`, closure (A); Dispatcher console + PWA GPS + scrubber (B) | HIGH | **Gate G1 (`T1` Pass):** 20/20 paired proxy vs direct API runs yield identical state/events; replay scrubber reproduces final state |
+| **E6** | A & B | H17–H20 | Idempotency edge matrix, fencing tests (A); Exotel IVR (AMD + press-1 gate) + Crockford mod 37 paper code (B) | HIGH | **Gate G2 (`T2` Pass):** 20/20 voice ACKs recorded only post-commit; 0/5 voicemail ACKs; webhook p95 $\le 2\text{ s}$; 1,000/1,000 single-symbol paper-code errors rejected |
+| **E7** | A & B | H20–H22 | Defect closures from tests (A); Record MP4 fallbacks (`clip A`–`D`), 30 s proof loop rehearsal $\times 3$ (B) | MED | **Gate G3 (Rehearsal Pass):** 3 consecutive 30 s live proof loops complete inside budget |
+| **E8** | A & B | H22–H24 | **CODE FREEZE at H22:** Config-only adjustments, backup laptop sync, final stage check | LOW | **FREEZE Gate:** Zero code commits after H22 |
 
 > **Tier `T3` Rule:** `T3_EXTRAS` (Kotlin Android app, AI intake accelerator with `423 ANCHOR_REQUIRED` Cognitive Forcing Function, FHIR R4 / IEEE 1849 XES exporters) may ONLY be started if Gates `G0`, `G1`, and `G2` are 100% green.
 
 ---
 
-## 9. Mandatory Antigravity Output Format (`BUILD REPORT` + `AUDIT-REQUEST`)
+## 9. Mandatory Antigravity Output Format & Routing Banners
 
-Every task executed by Antigravity MUST conclude with the following two blocks in exact order. Omitting raw command outputs or truncating high-risk code files is an automatic `FAIL`.
+Every task executed by Antigravity MUST conclude with the `BUILD REPORT` followed by the appropriate routing banner and packet.
 
+### 9.1 BUILD REPORT Structure
 ```text
 === BUILD REPORT | STEP <id> | LANE <A|B> | LOOP #<n> | COMMIT <hash/tag> ===
 1. FILES CHANGED (git diff --stat):
@@ -301,13 +304,38 @@ Every task executed by Antigravity MUST conclude with the following two blocks i
 - Candidate 1: <what is most likely wrong in this code>
 - Candidate 2: <second most likely flaw>
 - Candidate 3: <third most likely flaw>
+```
 
-=== AUDIT-REQUEST FOR GEM 2 ===
-STEP: <id> | LANE: <A|B> | LOOP: <FULL|FAST> #<n>
+### 9.2 Mandatory Routing Banners
+
+#### Case A — Sub-Step Only (Feature/Milestone Still in Progress)
+```text
+🟢 SUB-STEP COMPLETE (FEATURE / MILESTONE NOT YET FINISHED) — DO NOT GO TO GEM 2 YET!
+Skip Gem 2 and paste the block below directly into Gem 1 (Conductor) to continue building.
+
+=== DECISION PACKET (SUB-STEP FAST-ADVANCE FOR GEM 1) | STEP <id> | LOOP #<n> ===
+VERDICT: ADVANCE
+ATTACKS: none (sub-step; full milestone validation deferred to Gem 2 upon feature/milestone completion)
+AUDITOR CHALLENGE: none
+CLAIMS/DEMO INTEGRITY: clean
+FIX LIST:
+ MUST-FIX   [S1] none
+ SHOULD-FIX [S2/S3] none
+ LOG        [S4] Sub-step completed with raw test output verified locally.
+LEDGER DELTA: Advance sub-step <id> (tag <step-ID-loopN>) toward milestone completion.
+```
+
+#### Case B — Feature or Milestone IS Completed
+```text
+🛑 FEATURE / MILESTONE COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!
+Copy and paste the entire block below into Gem 2 for Milestone Validation.
+
+=== VALIDATION-REQUEST FOR GEM 2 (AUDIT-REQUEST FOR GEM 2) ===
+STEP / MILESTONE: <id> | LANE: <A|B> | LOOP: #<n> | COMMIT/TAG: <hash / step-ID-loopN>
 SPEC ANCHORS: <§ sections, I# invariants, F# closures, T-# tests>
 ACCEPTANCE CRITERIA: <copied from AG-PROMPT>
 LEDGER: <one-line STATE LEDGER>
-QUESTION FOR GEM 2: Audit the BUILD REPORT and attached code above against every spec anchor and invariant. Verify that raw command output proves every acceptance criterion.
+QUESTION FOR GEM 2: Validate this completed feature/milestone against all spec anchors and invariants, run the targeted red-team & claims integrity check, and output the DECISION PACKET prompt for Gem 1.
 ```
 
 ---

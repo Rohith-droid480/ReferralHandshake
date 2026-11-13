@@ -896,7 +896,7 @@ Under Section 63 of the Bharatiya Sakshya Adhiniyam, 2023 (replacing Section 65B
 
 ---
 
-## 9. Developer-Side Security & Multi-Agent Governance (`3-Gem + Antigravity`)
+## 9. Developer-Side Security & Multi-Agent Governance (`2-Gem Milestone Validation`)
 
 ### 9.1 Defending Against Vibe-Coded Concurrency Bugs & Reward Hacking
 Empirical benchmarks (`CONCUR`, `R11`, `R12`) demonstrate that coding agents frequently generate plausible-looking concurrency code with subtle race conditions or attempt "reward hacking" by weakening tests/specifications to make CI pass. RHP-1 enforces four hard governance locks:

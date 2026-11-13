@@ -99,17 +99,17 @@ Weights: **Impact** ($20$), **Real-World Operability** ($15$), **Safety & Legal 
 | **E4** | H12–H14 | 200-way `asyncio.Barrier` test (`race200`), mutation suite `M1–M6`, Toxiproxy suite | `BROKEN_BUILD=1` isolated `rhp_scratch_broken` DB + flashing red banner (`F20`) | HIGH | FULL | **G0 (T0 Pass)** |
 | **E5** | H14–H17 | `COUNTER`, `CONFIRM_COUNTER`, 6 arrival cases (`F5`), two-stage `CLOSURE` (`F6`) | Dispatcher console (`DISPATCHER_ASSIGN`, proxy entry), PWA foreground GPS + replay scrubber | HIGH | FULL | **G1 (T1 Pass)** |
 | **E6** | H17–H20 | Full idempotency matrix (`F14`), stale confirmation check (`F12`/`I15`), fencing tests | Outbound Exotel IVR (`Press 1` gate + PIN + $2\text{ s}$ budget), Base32 `mod 37` paper code | HIGH | FULL | **G2 (T2 Pass)** |
-| **E7** | H20–H22 | Defect closures from Gem 2 / Gem 3 packets; final self-audit `ST-1..ST-5` | Record MP4 fallback clips A–D; execute full 5-minute + 30-second rehearsal $\times 3$ | MED | FULL | **G3 (Rehearsal)** |
+| **E7** | H20–H22 | Defect closures from Gem 2 Milestone Validation; final self-audit `ST-1..ST-5` | Record MP4 fallback clips A–D; execute full 5-minute + 30-second rehearsal $\times 3$ | MED | FULL | **G3 (Rehearsal)** |
 | **E8** | H22–H24 | **HARD CODE FREEZE AT H22:** configuration-only adjustments | Final stage rehearsal, hotspot + LAN QR verification, backup laptop warm standby | LOW | FAST | **FREEZE** |
 
-### 3.3 3-Gem + Antigravity Multi-Agent Governance Ring
+### 3.3 2-Gem Milestone Validation Multi-Agent Governance Workflow
 ```
 G1 (CONDUCTOR) ──① AG-PROMPT──▶ GOOGLE ANTIGRAVITY (Builder) ──② BUILD REPORT + AUDIT-REQUEST──▶ G2 (AUDITOR)
       ▲                                                                                                │
       └────────────④ DECISION PACKET (Attacks as runnable tests)──────── G3 (ADVERSARY) ◀──③ RED-TEAM──┘
 ```
 - **Rule 1 (Evidence Mandate):** Antigravity must paste raw terminal test output and full code/diff of `HIGH`-risk files in every `BUILD REPORT`. "Tests pass" without raw output is an automatic `FAIL`.
-- **Rule 2 (Executable Red-Teaming):** Every attack identified by Gem 3 (`ADVERSARY`) is written as a concrete runnable test specification that Gem 1 (`CONDUCTOR`) injects into the next `AG-PROMPT`.
+- **Rule 2 (Executable Red-Teaming):** Every attack identified by Gem 2 (`MILESTONE VALIDATOR`) is written as a concrete runnable test specification that Gem 1 (`CONDUCTOR`) injects into the next `AG-PROMPT`.
 - **Rule 3 (Protected Files):** `spec/`, `db/schema.sql`, and `monitor/` are protected by `CODEOWNERS`. Antigravity may never modify the spec or weaken a test to make a build pass.
 - **Rule 4 (Max 2 Fix Loops):** If a step fails 2 fix loops, Gem 1 cuts scope according to the locked tier order (`T3 -> T2 -> T1`; `T0` never) or escalates a `SPEC-QUESTION` to the human team.
 

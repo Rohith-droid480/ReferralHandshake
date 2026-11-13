@@ -928,7 +928,7 @@ echo "=== ALL SELF-AUDITS (ST-1..ST-5) PASSED ==="
 
 ---
 
-## 7. Multi-Agent Governance Setup (3-Gem + Antigravity Ring)
+## 7. Multi-Agent Governance Setup (2-Gem Milestone Validation Workflow)
 
 ### 7.1 `CODEOWNERS` & Pre-Commit Hook (`scripts/install_git_hooks.sh`)
 Per **§7.1 of v8** and **§12 (F17)**, the specification, conformance vectors, database DDL, and independent monitor are owned by humans and hash-pinned so coding agents cannot alter the spec or tests to make a failing build pass (reward-hacking prevention).
@@ -976,17 +976,17 @@ chmod +x .git/hooks/pre-commit
 echo "Installed .git/hooks/pre-commit successfully."
 ```
 
-### 7.2 Setting Up the 3 Gemini Gems & Two Antigravity Workspaces
+### 7.2 Setting Up the 2 Gemini Gems & Two Antigravity Workspaces
 Before the clock starts, configure two parallel lanes (**Lane A** for Person A, **Lane B** for Person B):
 
-1. **Upload the 4 Locked Knowledge Files to Gem 1 (CONDUCTOR), Gem 2 (AUDITOR), and Gem 3 (ADVERSARY):**
+1. **Upload the Locked Knowledge Files to Gem 1 (CONDUCTOR) and Gem 2 (MILESTONE VALIDATOR):**
    - `ReferralHandshake_LOCKED_Problem_Statement_v7.md`
    - `ReferralHandshake_v8_LOCKED_Solution.md`
    - `ReferralHandshake_FINAL_LOCKED_Architecture.md`
    - `AGENTS.md`
-2. **Create 6 Dedicated Gem Chat Threads:**
-   - Lane A: `G1-A (Conductor)`, `G2-A (Auditor)`, `G3-A (Adversary)`
-   - Lane B: `G1-B (Conductor)`, `G2-B (Auditor)`, `G3-B (Adversary)`
+2. **Create 4 Dedicated Gem Chat Threads (2 per lane):**
+   - Lane A: `G1-A (Conductor)`, `G2-A (Milestone Validator)`
+   - Lane B: `G1-B (Conductor)`, `G2-B (Milestone Validator)` *(Gem 3 chat threads G3-A and G3-B are retired)*
 3. **Create 3 Isolated Antigravity Workspaces:**
    - **Workspace A (`branch: lane-a/backend-proof`):** Builds `api/`, `witness/`, `db/`, `spec/rhp1.qnt`, and backend tests.
    - **Workspace B-Client (`branch: lane-b/clients-reach`):** Builds `pwa/`, `android/`, Exotel/SMS/paper-code views.
@@ -1036,7 +1036,7 @@ Run every item in this table during **Phase P Step P6** and record the outcome i
 | **E4** | `H12–H14` | `test_race200.py` (`200`-way barrier), `test_mutations.py` (`M1`–`M6`), Toxiproxy 8-toxic suite | `BROKEN_BUILD=1` scratch DB switch + flashing red banner on Guarantee Arena | **GATE G0 (`T0` Pass):** `race200` yields $1\times 200$ and $199\times 409$, `deadlocks_delta == 0`, seq gap-free; `M1`–`M6` all trip checkers; `BROKEN_BUILD=1` turns monitor red in $\le 2\text{ s}$ |
 | **E5** | `H14–H17` | `COUNTER`, `CONFIRM_COUNTER`, `ARRIVAL_REJECTED`, 6 arrival cases, `CLOSE` + 2-stage `CLOSURE` | Dispatcher Console (`DISPATCHER_ASSIGN`, proxy entry, replay scrubber), PWA GPS (`T1`) | **GATE G1 (`T1` Pass):** Proxy vs direct API entry yields identical state/seq in 20 paired runs; replay reproduces final state from log |
 | **E6** | `H17–H20` | Idempotency 8-case matrix (`ST-4`), stale epoch/confirmation fencing (`I8`, `I15`), autonomous PIN lockout | Exotel outbound IVR (`Press 1` gate + `PIN#`), DLT SMS stub, 9-char Crockford mod-37 paper code | **GATE G2 (`T2` Pass):** 20/20 voice ACKs recorded only after commit; voicemail yields 0 ACKs in 5 trials; webhook p95 $\le 2\text{ s}$; 1,000/1,000 single-symbol paper-code errors rejected |
-| **E7** | `H20–H22` | Fix any defects surfaced by Gem 2 / Gem 3; run full `./scripts/run_self_audit.sh` | Record MP4 fallback clips (`Clip A`–`Clip D`); rehearse 30-second live proof loop $\times 3$ | **GATE G3 (Rehearsal Pass):** 30-second proof loop completes inside $30\text{ s}$ three times in a row; all 4 MP4 clips verified |
+| **E7** | `H20–H22` | Fix any defects surfaced by Gem 2 Milestone Validation; run full `./scripts/run_self_audit.sh` | Record MP4 fallback clips (`Clip A`–`Clip D`); rehearse 30-second live proof loop $\times 3$ | **GATE G3 (Rehearsal Pass):** 30-second proof loop completes inside $30\text{ s}$ three times in a row; all 4 MP4 clips verified |
 | **E8** | `H22–H24` | **CODE FREEZE AT H22:** Config-only adjustments; standby backup laptop synced | Final stage check: feature phone charged, hotspot armed, witness page open on judge QR | **FREEZE GATE:** `git status` clean; tag `release-colossus3-locked` pushed |
 
 ---

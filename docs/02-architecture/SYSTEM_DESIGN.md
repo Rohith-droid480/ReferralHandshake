@@ -87,7 +87,7 @@ Anything outside `(a)`, `(b)`, or `(c)` is strictly out of scope.
 | **H12–H14** | 200-way barrier test (`race200`), mutations `M1`–`M3` | `BROKEN_BUILD=1` scratch DB + flashing red banner | **G0 (`T0` Pass)** |
 | **H14–H17** | `COUNTER`, `CONFIRM_COUNTER`, 6 arrival cases, 2-stage closure | Dispatcher console, proxy entry, PWA GPS ambulance client | **G1 (`T1` Pass)** |
 | **H17–H20** | Idempotency edge-case matrix, fencing tests, `M4`–`M6` | Exotel outbound IVR (press-1 gate + PIN), Crockford+mod37 paper code | **G2 (`T2` Pass)** |
-| **H20–H22** | Fix defects surfaced by Gem 2 / Gem 3 audits | Record MP4 fallback clips (Clips A–D), full 30 s loop rehearsal $\times 3$ | **G3 (Rehearsal)** |
+| **H20–H22** | Fix defects surfaced by Gem 2 Milestone Validation audits | Record MP4 fallback clips (Clips A–D), full 30 s loop rehearsal $\times 3$ | **G3 (Rehearsal)** |
 | **H22–H24** | **HARD CODE FREEZE AT H22** (config-only changes permitted) | Final rehearsal, backup laptop hot-standby, LAN hotspot verification | **FREEZE** |
 
 ---

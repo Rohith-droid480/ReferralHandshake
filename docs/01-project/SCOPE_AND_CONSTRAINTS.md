@@ -271,7 +271,7 @@ $$\text{advisory try-lock (non-blocking)} \rightarrow \texttt{referral} \rightar
 ## 8. Build Tiers (T0–T3), Cut-Line Hierarchy & Multi-Agent Governance
 
 ### 8.1 Tier Definitions, Feature Flags & Cut Order (`F16`, `§2`, `§24`)
-If schedule pressure occurs or a step fails 3 consecutive fix loops in the 3-Gem ring, scope is cut strictly from the bottom (`T3` first, then `T2`, then `T1`; **`T0` is never cut**):
+If schedule pressure occurs or a step fails 3 consecutive fix loops in the 2-Gem milestone workflow, scope is cut strictly from the bottom (`T3` first, then `T2`, then `T1`; **`T0` is never cut**):
 
 | Tier | Feature Flag | Included Components | Cut Priority | Mandatory Acceptance Gate Criteria (§24) |
 |---|---|---|---|---|
@@ -298,9 +298,9 @@ If schedule pressure occurs or a step fails 3 consecutive fix loops in the 3-Gem
 2. **Read-Only Spec & `CODEOWNERS` Protection (`v8 §7.1`, `AGENTS.md`):**
    - Files in `/spec`, `db/schema.sql`, and `monitor/` are hash-pinned in CI and protected by `CODEOWNERS`.
    - The AI coding builder (Google Antigravity) is **strictly forbidden** from modifying `/spec`, loosening database constraints, weakening `rhp_detail_ok`, or editing `monitor/` to make a failing test pass (anti-reward-hacking lock).
-3. **3-Gem Review Ring Enforcement:**
-   - Every HIGH-risk step (`apply_command`, locks/triggers, DDL, idempotency, hash chain/witness, poller/relay, PIN/session, SSE per-event authz, `BROKEN_BUILD` guard, voice ACK) must pass a **FULL** loop (`Gem 1 Conductor -> Antigravity -> Gem 2 Auditor -> Gem 3 Adversary -> Gem 1`).
-   - Any build report lacking raw terminal output and full code/diff of HIGH-risk files is automatically marked **FAIL** by Gem 2.
+3. **2-Gem Milestone Validation Ring Enforcement:**
+   - Every complete Feature or Milestone/Gate (`P1`–`P6`, `E0`–`E8`, `G0`–`G3`) and any `S1` fix must be validated through the **Milestone Validation** loop (`Gem 1 Conductor -> Antigravity -> Gem 2 Milestone Validator -> Gem 1`).
+   - Any build report lacking raw terminal output and full code/diff of HIGH-risk files is automatically marked **REJECT** by Gem 2.
 
 ---
 

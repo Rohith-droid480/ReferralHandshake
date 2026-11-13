@@ -12,9 +12,9 @@ No step in **ReferralHandshake (Protocol RHP-1)** counts as complete until its t
 
 ---
 
-## 1. Evidence-Based Verification Rule (3-Gem + Antigravity Protocol)
+## 1. Evidence-Based Verification Rule (2-Gem Milestone Validation Protocol)
 
-1. **Raw Output Mandate:** Claiming "tests pass" without pasting the exact command executed and its raw terminal output is an **automatic `FAIL` / `REJECT`** by Gem 2 (Auditor).
+1. **Raw Output Mandate:** Claiming "tests pass" without pasting the exact command executed and its raw terminal output is an **automatic `FAIL` / `REJECT`** by Gem 2 (Milestone Validator).
 2. **Anti-Tamper Rule:** Coding agents **MUST NEVER** edit `/spec/*`, `spec/transitions.yaml`, `spec/rhp1.qnt`, `spec/vectors.json`, `db/schema.sql`, or `monitor/` to make a failing test pass.
 3. **Git Tagging:** Every completed loop ends with a commit tagged `step-<ID>-loop<n>`.
 4. **Required `BUILD REPORT` Order:**
@@ -24,7 +24,7 @@ No step in **ReferralHandshake (Protocol RHP-1)** counts as complete until its t
    - `COMMANDS RUN + RAW OUTPUT` (verbatim terminal output)
    - `TESTS` (`name | pass/fail | measured numbers`)
    - `NOT DONE / SKIPPED`, `DEVIATIONS FROM SPEC`, `ASSUMPTIONS`, `OPEN QUESTIONS`, `SELF-RATED RISK`
-   - `=== AUDIT-REQUEST FOR GEM 2 ===` block.
+   - `=== VALIDATION-REQUEST FOR GEM 2 === (upon milestone completion)` block.
 
 ---
 

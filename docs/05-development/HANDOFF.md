@@ -1,114 +1,96 @@
-# ReferralHandshake (Protocol RHP-1) — Multi-Agent Context Handoff Protocol (`HANDOFF.md`)
+# ReferralHandshake (Protocol RHP-1) — 2-Gem Milestone Validation Context Handoff Protocol (`HANDOFF.md`)
 
 **Team:** MAHA YODHAS | **Track:** HealthTech | **Event:** Colossus 3.0
 **Architecture Authority:** `ReferralHandshake_FINAL_LOCKED_Architecture.md`
 **Workflow Authority:** `ReferralHandshake_3Gem_Antigravity_Workflow.md`
 
-> **PURPOSE:** This document provides the **exact, copy-paste-ready handoff packets** used to move context across the 4-node ring (`Gem 1 CONDUCTOR -> Google Antigravity -> Gem 2 AUDITOR -> Gem 3 ADVERSARY -> Gem 1 CONDUCTOR`) and to recover any Gem or Antigravity session from zero context loss when a chat window grows stale.
+> **PURPOSE:** This document provides the **exact, copy-paste-ready handoff packets** used in the 2-Gem Milestone Validation Workflow (`Gem 1 CONDUCTOR <-> Google Antigravity`, routing to `Gem 2 MILESTONE VALIDATOR` ONLY when a complete feature or milestone/gate is achieved), and to recover any session from zero context loss when a chat thread grows long or drifts.
 
 ---
 
 ## 1. Handoff Routing Rules & Loop Selection
 
-```
-  ┌──────────────┐  ① AG-PROMPT   ┌────────────────────┐  ② BUILD REPORT +   ┌──────────────┐
-  │    GEM 1     │───────────────▶│ GOOGLE ANTIGRAVITY │    AUDIT-REQUEST     │    GEM 2     │
-  │  CONDUCTOR   │                │   (Code Builder)   │─────────────────────▶│   AUDITOR    │
-  └──────────────┘                └────────────────────┘                      └──────────────┘
-         ▲                                                                         │   │
-         │                                     SHORT-CIRCUIT (if Verdict = REJECT) │   │
-         │◀────────────────────────────────────────────────────────────────────────┘   │
-         │                                     OR FAST LOOP (if Risk = LOW/MED)        │
-         │                                                                             ▼
-         │        ④ DECISION PACKET (Verdict + Runnable Attack Tests)         ┌──────────────┐
-         └────────────────────────────────────────────────────────────────────│    GEM 3     │
-                                                                              │  ADVERSARY   │
-                                                                              └──────────────┘
+```text
+  ┌──────────────┐     ① AG-PROMPT (or FAST-ADVANCE)     ┌────────────────────┐
+  │    GEM 1     │◀─────────────────────────────────────▶│ GOOGLE ANTIGRAVITY │
+  │  CONDUCTOR   │                                       │   (Code Builder)   │
+  └──────────────┘                                       └────────────────────┘
+         ▲                                                          │
+         │                                                          │ (Case B: Feature / Milestone Complete)
+         │                                                          ▼ ② BUILD REPORT + VALIDATION-REQUEST
+         │       ③ DECISION PACKET (Verdict + Attack Tests)      ┌──────────────────────────────────────┐
+         └───────────────────────────────────────────────────────│                GEM 2                 │
+                                                                 │         MILESTONE VALIDATOR          │
+                                                                 │   (Merged Spec Auditor & Adversary)  │
+                                                                 └──────────────────────────────────────┘
 ```
 
 ### 1.1 Which Loop Path to Execute
 | Loop Type | Route | Mandatory Trigger Conditions | Target Time |
 |---|---|---|---|
-| **FULL** | `G1 -> AG -> G2 -> G3 -> G1` | Any `HIGH` risk step (`apply_command`, locks/triggers, DDL, idempotency, hash chain/witness/crypto, poller/relay, PIN/session/auth, SSE authz, `BROKEN_BUILD`/`REAL_DATA` guards, voice ACK), any Gate (`G0–G3`), or any `S1` defect fix. | 20–25 min |
-| **FAST** | `G1 -> AG -> G2 -> G1` | `LOW` or `MED` risk steps (UI layout, seed data, copy text, config, docs) or fixes for `S2`/`S3` defects where `G2` verdict is `PASS` or `PASS-WITH-NOTES`. | 10–12 min |
-| **SHORT-CIRCUIT** | `G1 -> AG -> G2 -> G1` | Gem 2 returns `VERDICT: REJECT` (code does not run, raw command output missing, forbidden files touched, or banned tech introduced). Do not waste Gem 3 tokens on a broken build. | 5 min |
+| **MILESTONE VALIDATION** | `G1 -> AG -> G2 -> G1` | Used **ONLY** when a complete Feature or Milestone/Gate (`P1`–`P6`, `E0`–`E8`, `G0`–`G3`) is completed, or when validating an `S1` fix. Gem 2 runs combined spec audit and adversarial red-teaming. | 15–20 min |
+| **SUB-STEP FAST-ADVANCE** | `G1 <-> AG` | Sub-steps within a feature (e.g. drafting schema, scaffolding tests, UI layout, iterative code). Skips Gem 2 entirely until the entire feature/milestone is ready. | 5–10 min |
+| **SHORT-CIRCUIT** | `G2 -> G1` | Gem 2 returns `VERDICT: REJECT` (code does not boot, raw command output missing, forbidden files touched, or banned tech introduced). Immediately re-issue or roll back. | ~5 min |
 
 ### 1.2 Non-Negotiable Handoff Discipline
 1. **Evidence or Automatic FAIL:** Antigravity must paste raw terminal outputs (`pytest`, `psql`, `quint`, `git diff --stat`) and full source code (or unified diffs if $>300$ lines) for every `HIGH` risk file. Summarized test claims without raw stdout/stderr are automatically rejected by Gem 2.
-2. **Workspace Isolation (F17):** Lane A (`G1-A`, `G2-A`, `G3-A`, Antigravity Workspace A) and Lane B (`G1-B`, `G2-B`, `G3-B`, Antigravity Workspace B) never mix. When Lane B builds `monitor/monitor.py` (Step `E2-B`), Antigravity Workspace B is **never** given access to `api/` source files—only `db/schema.sql`, `spec/transitions.yaml`, and §3/§12 prose.
+2. **Workspace Isolation (F17):** Lane A (`G1-A`, `G2-A`, Antigravity Workspace A) and Lane B (`G1-B`, `G2-B`, Antigravity Workspace B) never mix. When Lane B builds `monitor/monitor.py` (Step `E2-B`), Antigravity Workspace B is **never** given access to `api/` source files—only `db/schema.sql`, `spec/transitions.yaml`, and §3/§12 prose.
 3. **Zero Secrets / Zero PHI in Packets:** Never paste `.env` secrets, Exotel API tokens, Mapbox tokens, or private keys into any handoff packet. `REAL_DATA=0` always.
 4. **Two-Fix-Loop Cap:** Maximum 2 fix loops per step. On a 3rd failure, Gem 1 must either cut scope following the locked cut order (`T3 -> T2 -> T1`; `T0` is never cut) or escalate a `SPEC-QUESTION` to the human operator.
 
 ---
 
-## 2. Packet ①: `AG-PROMPT` (`Gem 1 CONDUCTOR` $\rightarrow$ `Google Antigravity`)
+## 2. Packet ①: `AG-PROMPT` (`Gem 1 CONDUCTOR` $ightarrow$ `Google Antigravity`)
 
 Copy this block from **Gem 1** and paste it directly into **Google Antigravity**:
 
 ```markdown
-=== AG-PROMPT | STEP <Step-ID> | LANE <A|B> | LOOP <FULL|FAST> #<1|2|3> | RISK <LOW|MED|HIGH> ===
+=== AG-PROMPT | STEP <Step-ID> | LANE <A|B> | LOOP <MILESTONE|FAST> #<1|2|3> | RISK <LOW|MED|HIGH> ===
 Read `AGENTS.md` and `CURRENT_STATE.md` first. You are the builder only. Do not invent architecture or touch files outside `FILES YOU MAY TOUCH`.
 
-### 1. STATE LEDGER
-<Paste current STATE LEDGER block from CURRENT_STATE.md §1>
+GOAL: <One-sentence active-voice goal for this run>
+SPEC ANCHORS: <Architecture §, Invariants I1-I16, Closures F1-F20, Verification Tests ST-1..ST-5>
+INPUT STATE: branch <lane-a|lane-b>, last good tag <tag>, current commit <hash>
 
-### 2. GOAL
-<Single declarative sentence stating what this step delivers>
+FILES YOU MAY TOUCH:
+- <exact repo path 1>
+- <exact repo path 2>
 
-### 3. SPEC ANCHORS (Strict Precedence: Problem v7 > [V] > Solution v8 > Final Architecture)
-- **Sections:** <e.g., FINAL_LOCKED_Architecture.md §4, §5, §7>
-- **Invariants Enforced:** <e.g., I1, I2, I4, I8, I12, I14, I15, I16>
-- **Closures & Tests:** <e.g., F1, F12, F13, F14 | T-F1, T-F12, T-F13, T-F14>
+FILES YOU MUST NOT TOUCH:
+- db/schema.sql (READ-ONLY after P2)
+- spec/transitions.yaml (READ-ONLY after P1)
+- spec/rhp1.qnt (READ-ONLY after P3)
+- spec/profiles.json (READ-ONLY after P4)
+- monitor/ (LANE B ONLY — FORBIDDEN TO LANE A)
+- api/ (LANE A ONLY — FORBIDDEN TO LANE B)
 
-### 4. INPUT STATE
-- **Branch:** `<lane-a/main or lane-b/main>`
-- **Last Good Tag:** `<step-XX-loopN>`
-- **Existing Verified Artifacts:** `<list files already committed and passing>`
+TASKS (Execute in exact order):
+ 1. <Task 1: concrete, falsifiable file edits>
+ 2. <Task 2: verification command to run>
+ 3. <Task 3: git commit & tag requirement>
 
-### 5. ATOMIC TASKS
-1. <Task 1 with exact function signatures, table names, or UI states>
-2. <Task 2 ...>
-3. <Task 3 ...>
+ACCEPTANCE CRITERIA:
+- [ ] AC-1: <observable, testable condition>
+- [ ] AC-2: <exact terminal command> outputs <expected string / exit 0>
+- [ ] AC-3: git tag `step-<Step-ID>-loop<N>` applied cleanly
 
-### 6. ATTACK TESTS FROM PREVIOUS RED-TEAM (Implement & Run Now)
-- `<None | A-1: description, inputs, steps, expected assertion>`
+STOP CONDITIONS:
+- If any spec requirement is ambiguous, if a test fails and cannot be fixed within allowed files, or if you need to touch a forbidden file: STOP IMMEDIATELY and report in OPEN QUESTIONS. Do not improvise.
 
-### 7. FILE BOUNDARIES (CODEOWNERS Enforced)
-- **FILES YOU MAY TOUCH:**
-  - `<path/to/file1>`
-  - `<path/to/file2>`
-- **FILES YOU MUST NOT TOUCH (Hard Lock):**
-  - `spec/*` (Read-only unless Step is P1/P3/P4)
-  - `db/schema.sql` (Read-only unless Step is P2)
-  - `<api/* if Lane B building monitor/ | monitor/* if Lane A>`
+LEDGER SNAPSHOT:
+Clock: H<hh.mm> | Active Lane: <A|B> | Open S1: <count> | Tier Gates: G0[ ] G1[ ] G2[ ] G3[ ]
 
-### 8. TESTS TO WRITE & EXECUTE
-1. `<exact pytest / psql / quint command>` -> Expected: `<exact pass condition>`
-2. `<exact command>` -> Expected: `<exact pass condition>`
-
-### 9. MEASURABLE ACCEPTANCE CRITERIA
-- [ ] Criterion 1 (with numeric bound, e.g., deadlock delta == 0)
-- [ ] Criterion 2
-- [ ] Commit tagged as `step-<Step-ID>-loop<N>`
-
-### 10. STOP CONDITIONS
-STOP IMMEDIATELY and output a blocker report if:
-- Any spec requirement is ambiguous or contradicts `FINAL_LOCKED_Architecture.md`.
-- Achieving a passing test requires editing a file in `FILES YOU MUST NOT TOUCH`.
-- You are tempted to introduce a banned technology (Redis, Kafka, WebSockets, floats in JCS, etc.).
-
-### 11. REQUIRED OUTPUT FORMAT
-When finished, output **Packet ② (`BUILD REPORT + AUDIT-REQUEST`)** using the exact template in `HANDOFF.md §3`. Paste raw command output (never summarize) and full code of all `HIGH` risk files.
+When finished, output your complete BUILD REPORT followed by the mandatory routing banner (Case A for sub-steps, Case B for complete milestones).
 ```
 
 ---
 
-## 3. Packet ②: `BUILD REPORT + AUDIT-REQUEST` (`Google Antigravity` $\rightarrow$ `Gem 2 AUDITOR`)
+## 3. Antigravity Output & Mandatory Routing Banners
 
-Antigravity must generate this exact structure at the end of every run. Copy the entire output and paste it into **Gem 2**:
+Antigravity must generate a complete BUILD REPORT and append one of the two mandatory routing banners at the very end:
 
 ```markdown
-=== BUILD REPORT | STEP <Step-ID> | LANE <A|B> | LOOP <FULL|FAST> #<N> | COMMIT <git-sha> ===
+=== BUILD REPORT | STEP <Step-ID> | LANE <A|B> | LOOP #<N> | COMMIT <git-sha> ===
 **Tag Created:** `step-<Step-ID>-loop<N>`
 
 ### 1. FILES CHANGED (`git diff --stat`)
@@ -145,152 +127,119 @@ $ <exact command 2>
   1. `<point 1>`
   2. `<point 2>`
   3. `<point 3>`
+```
 
----
-=== AUDIT-REQUEST FOR GEM 2 ===
-- **Step / Lane / Loop:** `<Step-ID> | Lane <A|B> | Loop <FULL|FAST> #<N>`
-- **Spec Anchors to Audit Against:** `<copy section numbers, I1-I16, F1-F20 from AG-PROMPT>`
-- **Acceptance Criteria to Verify:** `<copy acceptance checklist from AG-PROMPT>`
-- **Instruction to Gem 2:** Audit the BUILD REPORT and code above against the locked spec anchors. Verify raw evidence, lock ordering (`referral > offer > deadline > outbox`), invariant enforcement, file boundaries, and test falsifiability. Output Packet ③ (`RED-TEAM REQUEST`).
+### Mandatory Routing Banner (Choose Case A or Case B):
+
+#### Case A (Sub-step completed, feature/milestone in progress):
+```text
+================================================================================
+🟢 SUB-STEP COMPLETE (FEATURE / MILESTONE NOT YET FINISHED) — DO NOT GO TO GEM 2 YET.
+Paste the FAST-ADVANCE PACKET below directly into Gem 1 (or continue building the remaining tasks of this feature).
+================================================================================
+=== FAST-ADVANCE PACKET | STEP <id> | LANE <A|B> | LOOP #<n> ===
+1. COMPLETED SUB-TASKS: <list tasks completed>
+2. RAW TEST / VERIFICATION EVIDENCE: <summary of command outputs>
+3. REMAINING TASKS FOR MILESTONE: <what tasks remain before Gem 2 review>
+4. PROPOSED NEXT AG-PROMPT FOCUS: <next sub-step>
+```
+
+#### Case B (Complete Feature / Milestone / Tier Gate completed):
+```text
+================================================================================
+🛑 FEATURE / MILESTONE COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!
+Paste the BUILD REPORT + VALIDATION-REQUEST block below into Gem 2.
+================================================================================
+=== VALIDATION-REQUEST FOR GEM 2 ===
+FEATURE / MILESTONE: <ID> | LANE: <A|B> | LOOP #<N> | RISK: <LOW|MED|HIGH>
+SPEC ANCHORS: <exact § sections, I# invariants, F# closures, T-# tests>
+ACCEPTANCE CRITERIA: <copied verbatim from AG-PROMPT>
+LEDGER LINE: <one-line STATE LEDGER>
+attached_above: BUILD REPORT with raw outputs, browser verification, and HIGH-risk code.
+QUESTION FOR GEM 2: Validate this completed milestone line-by-line against every spec anchor, invariant (I1–I16), and closure (F1–F20). Verify raw test outputs. Design adversarial attack tests (A-1..A-k). Emit the DECISION PACKET for Gem 1.
 ```
 
 ---
 
-## 4. Packet ③: `RED-TEAM REQUEST` (`Gem 2 AUDITOR` $\rightarrow$ `Gem 3 ADVERSARY` or `Gem 1`)
+## 4. Packet ②: `DECISION PACKET` (`Gem 2 MILESTONE VALIDATOR` $ightarrow$ `Gem 1 CONDUCTOR`)
 
-Gem 2 outputs this block after auditing Packet ②.
-- If `VERDICT` is `REJECT` -> **SHORT-CIRCUIT:** Paste this directly into **Gem 1**.
-- If `LOOP` is `FAST` and `VERDICT` is `PASS` / `PASS-WITH-NOTES` -> Paste this directly into **Gem 1**.
-- Otherwise (`FULL` loop or `FAIL`) -> Paste this (plus the HIGH-risk code) into **Gem 3**.
+Gem 2 outputs this definitive block after performing combined spec audit and adversarial red-teaming on Packet ②. Copy and paste it directly into **Gem 1**:
 
 ```markdown
-=== RED-TEAM REQUEST | STEP <Step-ID> | LANE <A|B> | LOOP <FULL|FAST> #<N> ===
-**AUDITOR VERDICT:** `<PASS | PASS-WITH-NOTES | FAIL | REJECT>`
-*(If REJECT: User, SHORT-CIRCUIT directly to Gem 1 without running Gem 3)*
+=== DECISION PACKET | FEATURE/STEP <Step-ID> | LANE <A|B> | LOOP #<N> ===
+**VERDICT:** `<ADVANCE | FIX-THEN-ADVANCE | REDO | REJECT | SPEC-QUESTION>`
 
 ### 1. EVIDENCE CHECK
-- **Raw Command Output Present?** `<YES | NO — Automatic FAIL if NO>`
-- **File Boundaries Respected?** `<YES | NO — list any unauthorized file edits>`
+- **Raw Command Output Present?** `<YES | NO — Automatic REJECT if NO>`
+- **File Boundaries Respected?** `<YES | NO — list unauthorized edits>`
 - **Common-Mode Independence (F17) Intact?** `<YES | VIOLATED>`
-- **UNVERIFIED ITEMS (Not shown in packet):** `<list every file/behavior that could not be verified from pasted text>`
+- **UNVERIFIED ITEMS:** `<list items lacking raw proof>`
 
 ### 2. SPEC CONFORMANCE MATRIX
 | Spec Anchor | Locked Requirement (Section / Rule) | Implementation (`file:line`) | Status (`MATCH` / `PARTIAL` / `MISSING` / `DEVIATES`) |
 |---|---|---|---|
 | `<§ / F#>` | `<exact rule>` | `<file:line>` | `<status>` |
 
-### 3. INVARIANT SWEEP (I1–I16 Touched by This Step)
+### 3. INVARIANT SWEEP (I1–I16 Touched by This Milestone)
 | Invariant | Enforcement Mechanism Found in Code / DDL | Falsifiable Test Present? | Status (`ENFORCED` / `WEAK` / `ABSENT`) |
 |---|---|---|---|
 | `<I#>` | `<trigger / unique index / FOR UPDATE / check>` | `<YES/NO + test name>` | `<status>` |
 
-### 4. ARCHITECTURAL LOCK & CODE REVIEW CHECKS
+### 4. ARCHITECTURAL LOCK CHECKS
 - **Lock Order (`referral -> offer -> deadline -> outbox`):** `<PASS | FAIL | N/A>`
 - **Idempotency Step-1 & Savepoint Rollback (`sp_cmd`):** `<PASS | FAIL | N/A>`
 - **Banned Tech Scan:** `<CLEAN | VIOLATION: name>`
-- **Test Quality (Tests that cannot fail):** `<none | list weak tests>`
+- **Claims & Demo Integrity (§19 Claims Register):** `<CLEAN | VIOLATION>`
 
-### 5. DEFECT LIST
-| Defect ID | Severity (`S1` Blocker / `S2` Major / `S3` Minor / `S4` Note) | Title & Mechanism | Spec Reference | Evidence (`file:line` or test output) |
-|---|---|---|---|---|
-| `D-1` | `<S1-S4>` | `<description>` | `<§ / I#>` | `<file:line>` |
-
-### 6. TOP 5 ATTACK SURFACES FOR GEM 3
-1. `<Surface 1: e.g., race window between phase-1 deadline claim and phase-2 apply_command>`
-2. `<Surface 2>`
-3. `<Surface 3>`
-4. `<Surface 4>`
-5. `<Surface 5>`
-
-### 7. STATE LEDGER LINE
-`<Single-line summary of current step, defects count, and clock>`
-```
-
----
-
-## 5. Packet ④: `DECISION PACKET` (`Gem 3 ADVERSARY` $\rightarrow$ `Gem 1 CONDUCTOR`)
-
-Gem 3 outputs this block after red-teaming Packet ③. Copy and paste it into **Gem 1**:
-
-```markdown
-=== DECISION PACKET | STEP <Step-ID> | LANE <A|B> | LOOP #<N> | MODE <FULL|QUICK> ===
-**ADVERSARY VERDICT:** `<ADVANCE | FIX-THEN-ADVANCE | REDO | SPEC-QUESTION>`
-
-### 1. ADVERSARIAL ATTACKS & RUNNABLE TEST SPECS
+### 5. ADVERSARIAL ATTACKS & RUNNABLE TEST SPECS (RED-TEAM)
 | Attack ID | Scenario & Vector | Targets (`I#` / `§` / `F#`) | Spec Requirement | Prediction (`BREAKS` / `HOLDS` / `UNKNOWN`) + Exact Mechanism | Runnable Test Spec for Antigravity (Inputs, Steps, Pass Assertion) |
 |---|---|---|---|---|---|
 | `A-1` | `<e.g., 200 concurrent accepts + simultaneous poller timeout>` | `I2, I14, §5` | `<rule>` | `<BREAKS/HOLDS because ...>` | **Inputs:** `<...>` **Steps:** `<...>` **Assert:** `<...>` |
 | `A-2` | `<...>` | `<...>` | `<...>` | `<...>` | `<...>` |
 
-### 2. CHALLENGE TO GEM 2 (AUDITOR BLIND SPOTS)
-- `<List anything Gem 2 marked MATCH/PASS without raw proof, or concurrency/clock/privacy subtleties Gem 2 missed>`
-
-### 3. CLAIMS & DEMO INTEGRITY AUDIT (§19 Claims Register)
-- **Live-Measured Rule ("Every number shown live is measured live"):** `<CLEAN | VIOLATION: file:line>`
-- **Forbidden Claims Scan ("lives saved", "eliminates ping-pong", "ABDM compliant", "BSA certified", "immutable", "zero loopholes", "mathematically proven system"):** `<CLEAN | VIOLATION: quote>`
-- **`REAL_DATA=0` & `BROKEN_BUILD` Isolation:** `<CLEAN | VIOLATION>`
-
-### 4. MERGED FIX LIST FOR GEM 1
+### 6. DEFECT & REMEDIATION LIST FOR GEM 1
 | Priority (`MUST-FIX` / `SHOULD-FIX` / `LOG`) | Defect / Attack ID | Severity (`S1–S4`) | Issue Description | Spec Reference | Closing Evidence Required in Next Loop |
 |---|---|---|---|---|---|
 | `MUST-FIX` | `<D-x / A-y>` | `S1` | `<description>` | `<§>` | `<exact raw test output required>` |
 | `SHOULD-FIX` | `<D-x / A-y>` | `S2/S3` | `<description>` | `<§>` | `<evidence>` |
 | `LOG` | `<D-x>` | `S4` | `<description>` | `<§>` | `<logged in ledger>` |
 
-### 5. RISK-ACCEPTANCE CANDIDATES (Requires Human Approval)
-- `<none | R-id: description, technical bound, and monitor alarm that bounds it>`
-
-### 6. STATE LEDGER DELTA
-- **Step Status Transition:** `<Step-ID: PENDING -> DONE | FIX-LOOP-#(N+1) | ROLLBACK>`
+### 7. STATE LEDGER DELTA
+- **Milestone Status:** `<PENDING -> DONE | FIX-LOOP-#(N+1) | ROLLBACK>`
 - **New Open Defects:** `<list>`
 - **Closed Defects:** `<list>`
 ```
 
 ---
 
-## 6. Emergency Escalation & Context Reset Templates
+## 5. Context Recovery & Session Re-Hydration Packets
 
-### 6.1 `SPEC-DEVIATION` Proposal (When Gem 3 Returns `SPEC-QUESTION`)
-Never patch around a spec ambiguity in code. Gem 1 outputs this block to the human operator:
+Use these packets when recovering a fresh Gem session without losing context:
 
-```markdown
-=== SPEC-DEVIATION REQUEST | ID: SD-<N> | STEP <Step-ID> ===
-- **Ambiguity / Conflict Discovered:** `<exact conflict between code/environment and spec section>`
-- **Precedence Check:**
-  1. `Problem_Statement_v7.md` says: `<quote>`
-  2. `v8_LOCKED_Solution.md` says: `<quote>`
-  3. `FINAL_LOCKED_Architecture.md` says: `<quote>`
-- **Proposed Resolution (Minimal Delta):** `<exact rule>`
-- **Invariants Impacted (I1–I16):** `<prove zero invariant relaxation>`
-- **Human Decision Required:** Reply `APPROVE SD-<N>` or `REJECT SD-<N>`.
+### 5.1 Context Re-Hydration (`Human` $ightarrow$ `Gem 1 CONDUCTOR`)
+```text
+=== CONTEXT RE-HYDRATION | GEM 1 CONDUCTOR | LANE <A|B> ===
+You are GEM 1 (CONDUCTOR) for ReferralHandshake. Resume orchestration from this STATE LEDGER:
+
+=== STATE LEDGER v<n> ===
+Clock: H<hh.mm> of 24.00 (or Phase P) | Active Lane: <A|B>
+Lane A Position: Step <id> (Last good tag: <tag>)
+Lane B Position: Step <id> (Last good tag: <tag>)
+Tier Gates: G0(T0)[ ]  G1(T1)[ ]  G2(T2)[ ]  G3(Rehearsal)[ ]  H22-FREEZE[ ]
+Completed Steps: <comma-separated step IDs + git tags>
+Open Defects: <D-id [S1|S2|S3] description (or "None")>
+Pending Attack Tests: <A-id description (or "None")>
+User-Accepted Bounded Risks: <R-id (or "None")>
+Approved Spec Deviations: <SD-id (or "None")>
+Scope Cuts Executed: <"None" or cut tier items>
+Next 3 Queued Steps: <id1, id2, id3>
+
+Emit the next AG-PROMPT now.
 ```
 
-### 6.2 Fresh-Chat Context Re-Hydration Prompt (When Any Gem Drifts or Hits Token Limits)
-If any Gem forgets a section, hallucinates an invariant, or slows down due to chat length, open a **brand-new chat** for that Gem (with the 4 knowledge files uploaded) and paste this exact bootstrap message:
-
-```markdown
-=== CONTEXT RE-HYDRATION | GEM <1 CONDUCTOR | 2 AUDITOR | 3 ADVERSARY> | LANE <A|B> ===
-We are resuming the ReferralHandshake (Protocol RHP-1) build in a clean session.
-1. Your uploaded Knowledge Files (`Problem_Statement_v7.md` > `v8_LOCKED_Solution.md` > `FINAL_LOCKED_Architecture.md` > `AGENTS.md`) are the locked specification.
-2. Below is the authoritative `STATE LEDGER` from `CURRENT_STATE.md`:
-
-<Paste current STATE LEDGER block from CURRENT_STATE.md §1>
-
-3. Below is the current active packet for you to process immediately:
-
-<Paste Packet ①, ②, ③, or ④>
-```
-
-### 6.3 Cross-Lane Sync Packet (Before Gate Steps `G0`, `G1`, `G2`, `G3`)
-Before running a Gate prompt, Person A and Person B merge their `ADVANCED` branches into an integration branch (`gate-g0`, `gate-g1`, `gate-g2`, `gate-g3`) and paste this sync block into **Gem 1 (Lane A)**:
-
-```markdown
-=== CROSS-LANE GATE SYNC | GATE <G0|G1|G2|G3> | CLOCK H<hh> ===
-- **Lane A Last Good Tag:** `<step-E4A-loopN>` (Commit `<sha>`)
-- **Lane B Last Good Tag:** `<step-E4B-loopN>` (Commit `<sha>`)
-- **Integration Branch:** `gate-<g0|g1|g2|g3>`
-- **Common-Mode Independence Check (F17):**
-  - `git log -- monitor/` authors: `<Person B only>`
-  - `grep -rn "from api" monitor/ || echo "CLEAN"`: `CLEAN`
-- **Instruction to Gem 1:** Emit the `GATE-PROMPT` (`LOOP FULL`) requiring Antigravity to execute every acceptance test for `<Tier T0|T1|T2|T3>` in `FINAL_LOCKED_Architecture.md §24` and paste raw measured outputs.
+### 5.2 Context Re-Hydration (`Human` $ightarrow$ `Gem 2 MILESTONE VALIDATOR`)
+```text
+=== CONTEXT RE-HYDRATION | GEM 2 MILESTONE VALIDATOR | LANE <A|B> ===
+You are GEM 2 (MILESTONE VALIDATOR) for ReferralHandshake (merged Spec Auditor & Red-Team Adversary; Gem 3 is retired).
+Validate the attached BUILD REPORT against the locked specification, run adversarial red-team attack tests, and emit the DECISION PACKET for Gem 1.
 ```

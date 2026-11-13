@@ -263,20 +263,27 @@ Every agent implementing or auditing a step must verify the corresponding `F1`�
 
 ---
 
-## 9. The 3-Gem + Antigravity Multi-Agent Workflow, Build Plan & Gates
+## 9. The 2-Gem Milestone Validation Multi-Agent Workflow, Build Plan & Gates
 
-### 9.1 Agent Roles in the 4-Station Ring
-`Gem 1 (CONDUCTOR) ──① AG-PROMPT──▶ YOU (ANTIGRAVITY) ──② BUILD REPORT + AUDIT-REQUEST──▶ Gem 2 (AUDITOR) ──③ RED-TEAM REQUEST──▶ Gem 3 (ADVERSARY) ──④ DECISION PACKET──▶ Gem 1`
+### 9.1 Agent Roles in the Milestone Validation Workflow
+```text
+Gem 1 (CONDUCTOR) <───① AG-PROMPT / FAST-ADVANCE───> ANTIGRAVITY (Builder)
+                           │ (upon feature/milestone completion)
+                           ▼ ② BUILD REPORT + VALIDATION-REQUEST
+                     Gem 2 (MILESTONE VALIDATOR: Merged Auditor + Adversary)
+                           │
+                           ▼ ③ DECISION PACKET (Audit + Red-Team Attacks)
+                     Gem 1 (CONDUCTOR)
+```
 
-- **Gem 1 — CONDUCTOR:** Owns the build sequence, tier gates (`G0`–`G3`), scope cuts (`T3 -> T2 -> T1`; never `T0`), the `STATE LEDGER`, and emits `AG-PROMPT` blocks. Never writes product code.
-- **Google Antigravity — BUILDER (You):** Executes `AG-PROMPT` instructions inside the repository, outputs the Pre-Coding Briefing, writes product and test code, runs verification commands, physically executes the feature in the browser (per `.agents/agent.md`), commits/tags (`step-<ID>-loop<n>`), and outputs the `BUILD REPORT` + `AUDIT-REQUEST FOR GEM 2`. Never makes architectural decisions.
-- **Gem 2 — AUDITOR:** Audits raw test outputs, line-by-line spec conformance, invariant enforcement (`I1`–`I16`), lock order, and file scope. Emits `PASS`, `PASS-WITH-NOTES`, `FAIL`, or `REJECT` inside a `RED-TEAM REQUEST` block for Gem 3. Never writes fixes.
-- **Gem 3 — ADVERSARY:** Designs runnable attack tests (races, Toxiproxy partitions, crashes, clock steps, auth bypasses, claims lint), challenges Gem 2's audit, and emits a `DECISION PACKET` (`ADVANCE`, `FIX-THEN-ADVANCE`, `REDO`, `SPEC-QUESTION`) to Gem 1.
+- **Gem 1 — CONDUCTOR:** Owns the build sequence, tier gates (`G0`–`G3`), scope cuts (`T3 -> T2 -> T1`; never `T0`), the `STATE LEDGER`, and emits `AG-PROMPT` blocks. Fast-advances with Antigravity during sub-steps. Accepts `DECISION PACKET` inputs from Gem 2 upon milestone completion. Never writes product code.
+- **Google Antigravity — BUILDER (You):** Executes `AG-PROMPT` instructions inside the repository, outputs the Pre-Coding Briefing, writes product and test code, runs verification commands, physically executes features in the browser, commits/tags (`step-<ID>-loop<n>`), and outputs the `BUILD REPORT` with the mandatory routing banner (Case A for sub-steps, Case B for completed milestones). Never makes architectural decisions.
+- **Gem 2 — MILESTONE VALIDATOR (Combined Auditor & Adversary):** Invoked **ONLY** when a complete Feature or Milestone/Gate (`P1`–`P6`, `E0`–`E8`, `G0`–`G3`) is completed, or when validating an `S1` fix. Audits raw test outputs, line-by-line spec conformance, invariant enforcement (`I1`–`I16`), lock order, designs runnable attack tests `A-1..A-k`, and emits the definitive `DECISION PACKET` directly to Gem 1. *(Gem 3 is retired).*
 
 ### 9.2 Loop Types, Risk Classification & Stop Conditions
-- **HIGH Risk (`FULL` Loop: `G1 -> AG -> G2 -> G3 -> G1`):** Any step touching `apply_command()`, row locks/triggers, `db/schema.sql`, idempotency, hash chain/witness/crypto, poller/relay, PIN/session/auth, SSE per-event authorization, `BROKEN_BUILD`/`REAL_DATA` guards, or Exotel voice ACK.
-- **LOW/MED Risk (`FAST` Loop: `G1 -> AG -> G2 -> G1`):** Styling, synthetic seed data, copy text, static config, README, or `S2`/`S3` defect fixes.
-- **Broken Build (`SHORT-CIRCUIT`: `G2 -> G1` directly):** Triggered when Gem 2 issues `REJECT` (code does not run, raw test output missing, or forbidden files modified).
+- **MILESTONE VALIDATION Loop (`Gem 1 -> Antigravity -> Gem 2 -> Gem 1`, 15–20 min):** Mandatory at complete feature or milestone/gate completion, or validating an `S1` fix. Gem 2 executes combined audit and adversarial red-teaming.
+- **SUB-STEP FAST-ADVANCE Loop (`Gem 1 <-> Antigravity`, 5–10 min):** Sub-steps within a feature (scaffolding, drafting schema, unit test suites, UI layout, iterative code). Skips Gem 2 entirely until the complete feature/milestone is ready.
+- **Broken Build (`SHORT-CIRCUIT`: `Gem 2 -> Gem 1` directly, ~5 min):** Triggered when Gem 2 issues `REJECT` (code does not run, raw test output missing, or forbidden files modified).
 - **STOP Conditions:** Stop immediately and report if: (a) the spec is ambiguous, (b) a required test fails and fixing it requires touching a forbidden file, (c) a mutation test (`M1`–`M6`) fails to trip its checker, or (d) you hit 2 failed fix attempts on the same issue.
 
 ### 9.3 Tier Feature Flags & Scope Cut Order
@@ -379,17 +386,39 @@ Every task executed by Antigravity MUST conclude with the following two blocks i
 
 10. SELF-RATED RISK & TOP 3 FAILURE CANDIDATES
    - Risk Rating: <LOW | MED | HIGH>
-   - Candidate 1: <what is most likely to break under Gem 3 red-team attack>
+   - Candidate 1: <what is most likely to break under Gem 2 red-team attack>
    - Candidate 2: <second most likely flaw>
    - Candidate 3: <third most likely flaw>
 
-=== AUDIT-REQUEST FOR GEM 2 ===
-STEP: <ID> | LANE: <A|B> | LOOP: <FULL|FAST> #<N> | RISK: <LOW|MED|HIGH>
+MANDATORY ROUTING BANNER (Append one of these at the very end of your response):
+
+Case A (Sub-step completed, feature/milestone in progress):
+```text
+================================================================================
+🟢 SUB-STEP COMPLETE (FEATURE / MILESTONE NOT YET FINISHED) — DO NOT GO TO GEM 2 YET.
+Paste the FAST-ADVANCE PACKET below directly into Gem 1 (or continue building the remaining tasks of this feature).
+================================================================================
+=== FAST-ADVANCE PACKET | STEP <id> | LANE <A|B> | LOOP #<n> ===
+1. COMPLETED SUB-TASKS: <list tasks completed>
+2. RAW TEST / VERIFICATION EVIDENCE: <summary of command outputs>
+3. REMAINING TASKS FOR MILESTONE: <what tasks remain before Gem 2 review>
+4. PROPOSED NEXT AG-PROMPT FOCUS: <next sub-step>
+```
+
+Case B (Complete Feature / Milestone / Tier Gate completed):
+```text
+================================================================================
+🛑 FEATURE / MILESTONE COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!
+Paste the BUILD REPORT + VALIDATION-REQUEST block below into Gem 2.
+================================================================================
+=== VALIDATION-REQUEST FOR GEM 2 ===
+FEATURE / MILESTONE: <ID> | LANE: <A|B> | LOOP #<N> | RISK: <LOW|MED|HIGH>
 SPEC ANCHORS: <exact § sections, I# invariants, F# closures, T-# tests>
 ACCEPTANCE CRITERIA: <copied verbatim from AG-PROMPT>
 LEDGER LINE: <one-line STATE LEDGER>
 attached_above: BUILD REPORT with raw outputs, browser verification, and HIGH-risk code.
-QUESTION FOR GEM 2: Audit the BUILD REPORT and attached code above line-by-line against every spec anchor and invariant. Verify that raw command output and browser verification prove every acceptance criterion. Issue a RED-TEAM REQUEST for Gem 3 (or SHORT-CIRCUIT if REJECT).
+QUESTION FOR GEM 2: Validate this completed milestone line-by-line against every spec anchor, invariant (I1–I16), and closure (F1–F20). Verify raw test outputs. Design adversarial attack tests (A-1..A-k). Emit the DECISION PACKET for Gem 1.
+```
 ```
 
 ---

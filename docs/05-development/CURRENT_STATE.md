@@ -4,7 +4,7 @@
 **Input Precedence (Locked):** `Problem_Statement_v7.md` > `[V]` Research > `v8_LOCKED_Solution.md` > `FINAL_LOCKED_Architecture.md` > `3Gem_Antigravity_Workflow.md`
 **Data Mode:** `REAL_DATA=0` (Synthetic data only; demo profiles refuse boot if `REAL_DATA=1`)
 
-> **AGENT DIRECTIVE:** This file is the authoritative context anchor for **Gem 1 (CONDUCTOR)**, **Gem 2 (AUDITOR)**, **Gem 3 (ADVERSARY)**, and **Google Antigravity**. Before starting or auditing any task, read the **Active State Ledger (§1)** and verify that no **Common-Mode Independence (§2)** or **Hard Architectural Locks (§3)** are violated. Update this file at the end of every accepted loop.
+> **AGENT DIRECTIVE:** This file is the authoritative context anchor for **Gem 1 (CONDUCTOR)**, **Gem 2 (MILESTONE VALIDATOR)**, and **Google Antigravity**. Before starting or auditing any task, read the **Active State Ledger (§1)** and verify that no **Common-Mode Independence (§2)** or **Hard Architectural Locks (§3)** are violated. Update this file at the end of every accepted loop.
 
 ---
 
@@ -47,7 +47,7 @@ To prevent the specification, server, and runtime monitor from sharing a common-
 
 ---
 
-## 3. Hard Architectural Locks Checklist (Gem 2 Audit Gate)
+## 3. Hard Architectural Locks Checklist (Gem 2 Milestone Validation Gate)
 
 Gem 2 MUST verify every item in this table on every `HIGH` risk loop:
 

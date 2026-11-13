@@ -27,15 +27,14 @@ No feature, module, PR, or build step in ReferralHandshake may be marked **DONE*
 
 ---
 
-## 2. Step-Level Definition of Done (3-Gem + Antigravity Ring Governance)
+## 2. Milestone Definition of Done (2-Gem Milestone Validation Governance)
 
-Under the locked `3Gem_Antigravity_Workflow`, no build step (`P1`–`P6`, `E0`–`E8`) may transition to **DONE** in the `STATE LEDGER` until all six gates below are satisfied:
+Under the locked 2-Gem Milestone Validation Workflow, no feature or milestone/gate (`P1`–`P6`, `E0`–`E8`, `G0`–`G3`) may transition to **DONE** in the `STATE LEDGER` until all gates below are satisfied:
 
 | # | Gate | Owner | Mandatory Evidence Required | Automatic Failure Condition |
 |---|---|---|---|---|
-| 1 | **Builder Execution & Raw Output** | Antigravity | Complete `BUILD REPORT` containing: (a) `git diff --stat`, (b) full source text of every `HIGH`-risk file touched (or full diff if $>300$ lines), (c) exact shell commands executed and **raw, unedited terminal output pasted**, (d) measured test metrics, and (e) explicit `DEVIATIONS FROM SPEC: none` (or user-approved deviation ID). | Claiming `"tests pass"` without raw terminal output pasted, or touching any file listed in `FILES MUST NOT TOUCH`. |
-| 2 | **Spec Conformance & Invariant Audit** | Gem 2 (`AUDITOR`) | Line-by-line conformance table mapping every `SPEC ANCHOR` in the `AG-PROMPT` to `file:line` with status `MATCH`; invariant sweep confirming enforcement mechanisms for every touched invariant `I1`–`I16`; verdict `PASS` or `PASS-WITH-NOTES`. | Any `MISSING` or unapproved `DEVIATES` row, any `S1` blocker defect, or verdict `FAIL` / `REJECT`. |
-| 3 | **Adversarial Red-Team & Attack Tests** | Gem 3 (`ADVERSARY`) | `DECISION PACKET` with verdict `ADVANCE` (or `FIX-THEN-ADVANCE` after all `MUST-FIX` items are closed in the follow-up loop), zero open `S1` defects, and `"CLAIMS/DEMO INTEGRITY: clean"`. Every `BREAKS` or `UNKNOWN` attack from the previous loop has been implemented as a runnable test and passes. | Any open `S1` defect, any unclosed `MUST-FIX`, or any violation of the Claims Register. |
+| 1 | **Builder Execution & Raw Output** | Antigravity | Complete `BUILD REPORT` containing: (a) `git diff --stat`, (b) full source text of every `HIGH`-risk file touched (or full diff if $>300$ lines), (c) exact shell commands executed and **raw, unedited terminal output pasted**, (d) measured test metrics, and (e) mandatory Case B routing banner. | Claiming `"tests pass"` without raw terminal output pasted, or touching any file listed in `FILES MUST NOT TOUCH`. |
+| 2 | **Milestone Validation (Audit + Red-Team)** | Gem 2 (`MILESTONE VALIDATOR`) | Line-by-line conformance table mapping every `SPEC ANCHOR` to `file:line` with status `MATCH`; invariant sweep confirming enforcement mechanisms for `I1`–`I16`; adversarial attack tests (`A-1..A-k`) verified; `DECISION PACKET` with verdict `ADVANCE` (or `FIX-THEN-ADVANCE` after `MUST-FIX` closed); 0 open `S1` defects; Claims Register clean. | Any unapproved deviation, any `S1` blocker defect, or verdict `REJECT`. |
 | 4 | **Self-Audit CI Green** | CI / Runner | `scripts/run_self_audit.sh` (`ST-1` through `ST-5`) passes with exit code `0`. | Any failure in `ST-1`..`ST-5`. |
 | 5 | **Scope Cut & Loop Cap Rule** | Gem 1 (`CONDUCTOR`) | Step completed within $\le 2$ fix loops. If a step fails its 3rd loop, Gem 1 executes the mandatory tier cut order (`T3 -> T2 -> T1`; `T0` is never cut) or escalates a `SPEC-QUESTION` to the human team. | Entering a 4th fix loop on the same step without a scope cut or human override. |
 | 6 | **Git Commit & Immutable Tag** | Human Courier | Committed on clean branch and tagged `step-<ID>-loop<n>` before merging to `main`. Zero `.env` secrets or API keys in git history. | Untracked changes, missing git tag, or leaked secret. |
