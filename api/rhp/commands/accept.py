@@ -19,6 +19,7 @@ from typing import Any, Dict, Optional
 from uuid import UUID, uuid4
 
 from api.rhp.auth import Session
+from api.rhp.config import get_settings
 from api.rhp.profiles import TimingProfile, get_profile
 from api.rhp.schemas import AcceptCmd
 from api.rhp.transitions import TransitionReject
@@ -47,8 +48,9 @@ def execute_accept(
     if target_offer is None:
         raise TransitionReject(404, "OFFER_NOT_FOUND", "No target offer found for ACCEPT")
 
-    # 1. Invariant I2: Lease Availability Check
-    if referral.lease_offer_id is not None:
+    # 1. Invariant I2: Lease Availability Check (bypassed when BROKEN_BUILD=1)
+    settings = get_settings()
+    if not settings.BROKEN_BUILD and referral.lease_offer_id is not None:
         raise TransitionReject(
             409,
             "LEASE_HELD",
@@ -158,17 +160,18 @@ def execute_accept(
         ),
     )
 
-    # 7. Supersede all other open offers on this referral
-    conn.execute(
-        """
-        UPDATE offer
-        SET status = 'SUPERSEDED'
-        WHERE referral_id = %s
-          AND id != %s
-          AND status IN ('OPEN', 'ACKED', 'COUNTERED', 'SOFT_OPEN');
-        """,
-        (str(referral.id), str(target_offer.id)),
-    )
+    # 7. Supersede all other open offers on this referral (bypassed when BROKEN_BUILD=1)
+    if not settings.BROKEN_BUILD:
+        conn.execute(
+            """
+            UPDATE offer
+            SET status = 'SUPERSEDED'
+            WHERE referral_id = %s
+              AND id != %s
+              AND status IN ('OPEN', 'ACKED', 'COUNTERED', 'SOFT_OPEN');
+            """,
+            (str(referral.id), str(target_offer.id)),
+        )
 
     # 8. Cancel pending deadlines (ACK, DECISION, COUNTER_CONFIRM, NOTICE_VOICE, NOTICE_PROXY)
     conn.execute(

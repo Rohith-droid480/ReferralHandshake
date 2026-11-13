@@ -4,7 +4,7 @@
 **Team:** MAHA YODHAS | **Track:** HealthTech | **Event:** Colossus 3.0 (13–14 Nov 2026, Bengaluru, 24-hour build, 2 students) `[V]`  
 **Data Posture:** Synthetic data only (`REAL_DATA=0`)  
 **First Clinical Pathway:** Emergency obstetric referral through Karnataka-style tiers (`PHC` $\rightarrow$ `CHC` $\rightarrow$ `FRU` $\rightarrow$ `DH` $\rightarrow$ `MC`); generic data model (`OBSTETRIC_EMERGENCY`, `NEONATAL`, `TRAUMA`, `CARDIAC`, `STROKE`)  
-**Input Precedence:** `ReferralHandshake_LOCKED_Problem_Statement_v7.md` $>$ Research tagged `[V]` $>$ `ReferralHandshake_v8_LOCKED_Solution.md` $>$ `ReferralHandshake_FINAL_LOCKED_Architecture.md` $>$ `ReferralHandshake_3Gem_Antigravity_Workflow.md (Updated 2-Gem Half-Module Validation Workflow)`
+**Input Precedence:** `ReferralHandshake_LOCKED_Problem_Statement_v7.md` $>$ Research tagged `[V]` $>$ `ReferralHandshake_v8_LOCKED_Solution.md` $>$ `ReferralHandshake_FINAL_LOCKED_Architecture.md` $>$ `ReferralHandshake_3Gem_Antigravity_Workflow.md (Updated 2-Gem Full-Module Validation Workflow)`
 
 ---
 
@@ -15,84 +15,64 @@
 Every module and sub-segment (`1.1` through `12.3`) in this build plan is ordered by **strict dependency and criticality**:
 $$\text{Spec-First Spine} \rightarrow \text{Immediate Proof} \rightarrow \text{Vertical Slice Integration } (\texttt{T0} \rightarrow \texttt{T1\_TRANSPORT} \rightarrow \texttt{T2\_REACH} \rightarrow \texttt{T3\_EXTRAS})$$
 
-#### The Half-Module Execution & Gem 2 Validation Cadence:
-1. **Half-Module Granularity (24 Prompts Total):** Every Module (`MODULE 1` through `MODULE 12`) is divided into two executable Half-Modules: **Half-Module `M<N>-A` (First Half)** and **Half-Module `M<N>-B` (Second Half)**.
-2. **1 Prompt = 1 Half-Module:** Each `AG-PROMPT` from Gem 1 instructs Antigravity to build **exactly half of a module (2 to 3 sub-segments)** in one unified pass.
-3. **Mandatory Gem 2 Validation After Every Half-Module:** Immediately upon completing a Half-Module, Antigravity executes the **Combined Verification Gate Command** for that half-module, pastes the verbatim command output in the `BUILD REPORT`, tags the commit (`step-M<N><A|B>-loop<k>`), and halts with the mandatory routing banner:
+#### The Full-Module Execution & Gem 2 Validation Cadence:
+1. **Full-Module Granularity (12 Prompts Total):** The build plan consists of **12 complete Modules (`M1` through `M12`)**.
+2. **1 Prompt = 1 Full Module:** Each `AG-PROMPT` from Gem 1 instructs Antigravity to build **one entire Module (all of its sub-segments)** in a single unified pass.
+3. **Mandatory Gem 2 Validation After Every Full Module:** Immediately upon completing a Full Module (`M1` through `M12`), Antigravity executes the **Full-Module Combined Verification Gate Command**, pastes the verbatim command output in the `BUILD REPORT`, tags the commit (`step-M<N>-loop<k>`), and halts with the mandatory routing banner:
    ```text
-   🛑 HALF-MODULE M<N>-<A|B> COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!
+   🛑 MODULE M<N> COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!
    Paste the BUILD REPORT + VALIDATION-REQUEST block below into Gem 2.
    ```
-4. **Gem 2 Milestone Audit & Adversarial Red-Teaming:** Gem 2 audits the completed half-module against locked spec anchors, generates adversarial attack test specs (`A-1..A-k`), and emits the ready-to-paste `DECISION PACKET` prompt for Gem 1. Gem 1 then issues the next Half-Module `AG-PROMPT`.
+4. **Gem 2 Milestone Audit & Adversarial Red-Teaming:** Gem 2 audits the completed module against locked spec anchors, generates adversarial attack test specs (`A-1..A-k`), and emits the ready-to-paste `DECISION PACKET` prompt for Gem 1. Gem 1 then issues the next Full-Module `AG-PROMPT`.
 
 ```text
-[MODULE 1: M1-A -> Gem 2] ──▶ [M1-B -> Gem 2] (Completes Module 1)
-     │
-     ▼
-[MODULE 2: M2-A -> Gem 2] ──▶ [M2-B -> Gem 2] (Completes Module 2)
-     │
-     ▼
-[MODULE 3: M3-A -> Gem 2] ──▶ [M3-B -> Gem 2] (Completes Module 3)
-     │
-     ▼
-[MODULE 4: M4-A -> Gem 2] ──▶ [M4-B -> Gem 2] (Completes Module 4 / T0 Proof Core)
-     │
-     ▼
-[MODULE 5: M5-A -> Gem 2] ──▶ [M5-B -> Gem 2] (Completes Module 5)
-     │
-     ▼
-[MODULE 6: M6-A -> Gem 2] ──▶ [M6-B -> Gem 2] (Completes Module 6)
-     │
-     ▼
-[MODULE 7: M7-A -> Gem 2] ──▶ [M7-B -> Gem 2] (Completes Module 7 & Gate G0 = T0 Pass)
-     │
-     ├──────────────────────────┐
-     ▼                          ▼
-[MODULE 8: M8-A -> Gem 2]  [MODULE 9: M9-A -> Gem 2]
-     │                          │
-     ▼                          ▼
-[MODULE 8: M8-B -> Gem 2]  [MODULE 9: M9-B -> Gem 2]
-(Completes Gate G1 = T1)   (Completes Gate G2 = T2)
-     │                          │
-     └──────────┬───────────────┘
-                ▼
-     [MODULE 10: M10-A -> Gem 2] ──▶ [M10-B -> Gem 2] (Completes Module 10)
-                │
-                ▼
-     [MODULE 11: M11-A -> Gem 2] ──▶ [M11-B -> Gem 2] (Completes Module 11 & T3_EXTRAS)
-                │
-                ▼
-     [MODULE 12: M12-A -> Gem 2] ──▶ [M12-B -> Gem 2] (Completes Module 12 & Gate G3)
+[MODULE 1 (M1): Spec-First Spine, Cryptographic Primitives & Production Database (T0) -> Gem 2]
+     |
+     v
+[MODULE 2 (M2): Identity, PIN Lockout Scope & 10-Step Transactional Command Pipeline (T0) -> Gem 2]
+     |
+     v
+[MODULE 3 (M3): Core Handshake Commands, Single-Owner Lease & Escalation Engine (T0) -> Gem 2]
+     |
+     v
+[MODULE 4 (M4): Independent Runtime Monitor, 200-Way Race & Safe BROKEN_BUILD (T0 Proof Gate) -> Gem 2]
+     |
+     v
+[MODULE 5 (M5): Stateless Poller, Outbox Relay, Notice Ladder & Authorized SSE Hub (T0 Liveness) -> Gem 2]
+     |
+     v
+[MODULE 6 (M6): Cryptographic Witness Signer, Merkle Checkpoints & Pure-JS Verifier (T0 Integrity) -> Gem 2]
+     |
+     v
+[MODULE 7 (M7): Core PWA Desks, Rotating QR Admission & Guarantee Arena Big Screen (T0 / Gate G0) -> Gem 2]
+     |
+     +--> [MODULE 8 (M8): Parallel Transport Track, Mapbox ETAs, Dispatcher Console & Replay (T1 / Gate G1) -> Gem 2]
+     |
+     +--> [MODULE 9 (M9): Multi-Channel Reach: Exotel Voice IVR, DLT SMS & Paper Code (T2 / Gate G2) -> Gem 2]
+     |
+     +--> [MODULE 10 (M10): Envelope Encryption, Crypto-Shredding & Command Centre Analytics (T3_EXTRAS A) -> Gem 2]
+     |
+     +--> [MODULE 11 (M11): Cognitive-Forcing AI Intake, FHIR/XES/BSA Exports & Kotlin App (T3_EXTRAS B) -> Gem 2]
+     |
+     +--> [MODULE 12 (M12): Toxiproxy Chaos Matrix, Self-Audit CI Scripts (ST-1..ST-5) & Final Gate Suite (Gate G3) -> Gem 2]
 ```
 
-#### Master 24 Half-Module Execution & Gem 2 Validation Matrix
+#### Master 12 Full-Module Execution & Gem 2 Validation Matrix
 
-| Half-Module ID | Module | Sub-Segments Built in Single Prompt | Primary Lane | Combined Verification Gate Command (Paste Raw Output) | Git Tag | Gem 2 Validation Trigger |
+| Module ID | Module Name | Sub-Segments Built in Single Prompt | Primary Lane | Full-Module Combined Verification Gate Command (Paste Raw Output) | Git Tag | Gem 2 Validation Trigger |
 |---|---|---|---|---|---|---|
-| **`M1-A`** | Module 1 (Part A) | `1.1`, `1.2`, `1.3` (Docker/Config Guards, PG16 24-Table DDL & Roles, Seed Data & Signed Profiles) | Lane A + B | `pytest tests/test_boot_guards.py tests/test_ddl_constraints.py tests/test_tmax_profiles.py` | `step-M1A-loop1` | **Validate `M1-A` in Gem 2** |
-| **`M1-B`** | Module 1 (Part B) | `1.4`, `1.5`, `1.6` (RFC 8785 JCS & Chain Hasher, `transitions.yaml` Loader, Quint `rhp1.qnt` & Explorer) | Lane A | `pytest tests/test_jcs_parity.py tests/test_transitions_table.py && python tests/explore_transitions.py && quint run spec/rhp1.qnt --invariant safety --max-steps 25 --max-samples 20000` | `step-M1B-loop1` | **Validate `M1-B` in Gem 2 (Completes Module 1)** |
-| **`M2-A`** | Module 2 (Part A) | `2.1`, `2.2`, `2.3` (Dual Connection Pools & Lock Helpers, Enrollment/Cookie/Voice Sessions, Argon2id PIN & Per-Session Lockout) | Lane A | `pytest tests/test_auth_sessions.py tests/test_pin_lockout_scope.py` | `step-M2A-loop1` | **Validate `M2-A` in Gem 2** |
-| **`M2-B`** | Module 2 (Part B) | `2.4`, `2.5` (Role-Command Authz Matrix & Strict Pydantic Schemas, 10-Step `apply_command()` Pipeline) | Lane A | `pytest tests/test_authz_matrix.py tests/test_pipeline_core.py` | `step-M2B-loop1` | **Validate `M2-B` in Gem 2 (Completes Module 2)** |
-| **`M3-A`** | Module 3 (Part A) | `3.1`, `3.2`, `3.3` (`CREATE`, `ACK`, `RESOURCE_CONFIRM`, and `ACCEPT` Single-Owner Lease Arbitration) | Lane A | `pytest tests/test_cmd_create.py tests/test_cmd_ack_confirm.py tests/test_cmd_accept.py` | `step-M3A-loop1` | **Validate `M3-A` in Gem 2** |
-| **`M3-B`** | Module 3 (Part B) | `3.4`, `3.5`, `3.6` (`DECLINE` + `advance()`, `COUNTER` + `CONFIRM_COUNTER`, `ARRIVAL_REJECTED`, `DISPATCHER_ASSIGN`, `CANCEL`, `CLOSE`, `REVOKE_GRANT`) | Lane A | `pytest tests/test_cmd_decline_advance.py tests/test_cmd_counter.py tests/test_cmd_lifecycle.py` | `step-M3B-loop1` | **Validate `M3-B` in Gem 2 (Completes Module 3)** |
-| **`M4-A`** | Module 4 (Part A) | `4.1`, `4.2` (Independent Runtime Monitor `monitor/monitor.py` [F17] & 200-Way Concurrency Barrier `race200` + F14 Idempotency Matrix) | Lane B (`4.1`) / Lane A (`4.2`) | `pytest tests/test_monitor_fold.py tests/test_race200.py tests/test_idempotency_matrix.py` | `step-M4A-loop1` | **Validate `M4-A` in Gem 2** |
-| **`M4-B`** | Module 4 (Part B) | `4.3`, `4.4` (Safe `BROKEN_BUILD` Scratch DB Isolation & `M1`–`M6` Mutation Suite + 28 Conformance Vectors) | Lane B (`4.3`) / Lane A (`4.4`) | `pytest tests/test_broken_build.py tests/test_mutations.py tests/test_conformance_vectors.py` | `step-M4B-loop1` | **Validate `M4-B` in Gem 2 (Completes Module 4 / T0 Proof Core)** |
-| **`M5-A`** | Module 5 (Part A) | `5.1`, `5.2`, `5.3` (Two-Phase Stateless Poller, Intra-Facility Notice Ladder $0, A/4, 3A/4$ & Closure Timeout, Visibility-Timeout Outbox Relay) | Lane A | `pytest tests/test_poller_liveness.py tests/test_notice_ladder_and_closure.py` | `step-M5A-loop1` | **Validate `M5-A` in Gem 2** |
-| **`M5-B`** | Module 5 (Part B) | `5.4`, `5.5` (Per-Frame Authorized SSE Hub with `GRANT_REVOKED` Stream Stripping, Component Heartbeats & Clock-Step Guard) | Lane A + B | `pytest tests/test_sse_revoke.py tests/test_clock_and_heartbeats.py` | `step-M5B-loop1` | **Validate `M5-B` in Gem 2 (Completes Module 5)** |
-| **`M6-A`** | Module 6 (Part A) | `6.1`, `6.2` (Separate-OS-User Witness Signer 5s Binary Merkle Tree & Off-Box Witness Sync + Cold-Key `RESTORE` Protocol) | Lane A | `pytest tests/test_witness_merkle.py tests/test_tamper_vs_restore.py` | `step-M6A-loop1` | **Validate `M6-A` in Gem 2** |
-| **`M6-B`** | Module 6 (Part B) | `6.3` (Pure-JS Browser Verifier `@noble` `verifier.ts` & Superuser SQL Tamper Script `tamper.sh`) | Lane B | `npm --prefix pwa test -- verifier && bash scripts/tamper.sh --dry-check` | `step-M6B-loop1` | **Validate `M6-B` in Gem 2 (Completes Module 6)** |
-| **`M7-A`** | Module 7 (Part A) | `7.1`, `7.2`, `7.3` (React PWA Shell/SSE Store/IndexedDB Outbox/ModeBanner, Rotating Judge QR Admission, Referring Clinician Card Creator) | Lane B | `pytest tests/test_judge_join.py && npm --prefix pwa run build` | `step-M7A-loop1` | **Validate `M7-A` in Gem 2** |
-| **`M7-B`** | Module 7 (Part B) | `7.4`, `7.5`, `7.6` (Receiving Duty Desk, Judge Race Desk + Verifier Drawer, Guarantee Arena Big Screen & 30s Live Proof Loop) | Lane B | `npm --prefix pwa test && make gate-t0` | `step-M7B-loop1` | **Validate `M7-B` in Gem 2 (Completes Module 7 & Gate G0 = T0 Pass)** |
-| **`M8-A`** | Module 8 (Part A) | `8.1`, `8.2` (Parallel Transport Track API `TR_UPDATE`/`TR_DESTINATION_CHANGE`, 6 Arrival Cases, Telemetry Ingest, 200m Geofence Hint & Mapbox Matrix ETA Cache) | Lane A | `pytest tests/test_transport_and_arrivals.py` | `step-M8A-loop1` | **Validate `M8-A` in Gem 2** |
-| **`M8-B`** | Module 8 (Part B) | `8.3`, `8.4` (PWA Ambulance Client `AmbulancePwa.tsx` & Dispatcher Console `DispatcherConsole.tsx` with Proxy Entry + Deterministic Replay Scrubber) | Lane B | `pytest tests/test_dispatcher_proxy_and_replay.py && make gate-t1` | `step-M8B-loop1` | **Validate `M8-B` in Gem 2 (Completes Module 8 & Gate G1 = T1 Pass)** |
-| **`M9-A`** | Module 9 (Part A) | `9.1`, `9.2`, `9.3` (Outbound Exotel IVR Adapter, `inbox` Dedup, 2s Commit Budget, AMD + Press-1 Human Gate, DTMF Menu & Per-Call PIN Verification) | Lane B + A | `pytest tests/test_exotel_ivr.py` | `step-M9A-loop1` | **Validate `M9-A` in Gem 2** |
-| **`M9-B`** | Module 9 (Part B) | `9.4`, `9.5` (TRAI DLT-Compliant Static SMS Adapter & 9-Char Crockford Base32 + Mod-37 Paper Code Codec + Linking UI) | Lane B | `pytest tests/test_dlt_sms_lint.py tests/test_paper_code_mod37.py && make gate-t2` | `step-M9B-loop1` | **Validate `M9-B` in Gem 2 (Completes Module 9 & Gate G2 = T2 Pass)** |
-| **`M10-A`** | Module 10 (Part A) | `10.1`, `10.2` (Per-Referral AES-256-GCM Envelope Encryption, Monthly KEK Wrapping, `event_secret` Binding & Automated Crypto-Shredding Worker) | Lane A | `pytest tests/test_envelope_crypto.py` | `step-M10A-loop1` | **Validate `M10-A` in Gem 2** |
-| **`M10-B`** | Module 10 (Part B) | `10.3`, `10.4` (District Command Centre Live Map/Capability Age/APOT KPIs & `networkx` Referral Graph + 4h Bucketed $k \ge 5$ Suppression) | Lane A + B | `pytest tests/test_analytics_recompute.py` | `step-M10B-loop1` | **Validate `M10-B` in Gem 2 (Completes Module 10)** |
-| **`M11-A`** | Module 11 (Part A) | `11.1`, `11.2` (AI Intake Accelerator `423 ANCHOR_REQUIRED` Cognitive Forcing Function + 20-Slip Seeded-Error Gate & FHIR R4 Bundle Exporter) | Lane A + B | `pytest tests/test_ai_seeded_errors.py tests/test_fhir_exporter.py` | `step-M11A-loop1` | **Validate `M11-A` in Gem 2** |
-| **`M11-B`** | Module 11 (Part B) | `11.3`, `11.4` (IEEE 1849 XES Exporter, BSA 2023 s.63 Hash-Bearing Evidence Bundle & Native Kotlin Android EMT Client) | Lane A + B | `pytest tests/test_bsa_xes_exports.py tests/test_fcm_zero_payload.py && make gate-t3` | `step-M11B-loop1` | **Validate `M11-B` in Gem 2 (Completes Module 11 & T3_EXTRAS)** |
-| **`M12-A`** | Module 12 (Part A) | `12.1`, `12.2` (Eight-Scenario Toxiproxy Fault-Injection Matrix & Automated Self-Audit CI Scripts `ST-1`..`ST-5`) | Lane A | `pytest tests/test_toxiproxy_chaos.py tests/test_lock_order.py tests/test_tmax_profiles.py tests/test_ddl_constraints.py tests/test_idempotency_matrix.py tests/test_claims_lexicon.py` | `step-M12A-loop1` | **Validate `M12-A` in Gem 2** |
-| **`M12-B`** | Module 12 (Part B) | `12.3` (Master Tier Acceptance Gate Runner `Makefile` `gate-t0..gate-all` & `scripts/preflight.sh` Rehearsal Suite) | Lane A + B | `make gate-all && bash scripts/preflight.sh` | `step-M12B-loop1` | **Validate `M12-B` in Gem 2 (Completes Module 12 & Gate G3)** |
+| **`M1`** | Module 1 | `1.1`, `1.2`, `1.3`, `1.4`, `1.5`, `1.6` (Docker/Config Guards, PG16 24-Table DDL & Roles, Seed Data & Signed Profiles, RFC 8785 JCS & Chain Hasher, `transitions.yaml` Loader, Quint `rhp1.qnt` & Explorer) | Lane A + B | `pytest tests/test_boot_guards.py tests/test_ddl_constraints.py tests/test_tmax_profiles.py tests/test_jcs_parity.py tests/test_transitions_table.py && python tests/explore_transitions.py && quint run spec/rhp1.qnt --invariant safety --max-steps 25 --max-samples 20000` | `step-M1-loop1` | **Validate `M1` in Gem 2 (Completes Module 1)** |
+| **`M2`** | Module 2 | `2.1`, `2.2`, `2.3`, `2.4`, `2.5` (Dual Connection Pools & Lock Helpers, Enrollment/Cookie/Voice Sessions, Argon2id PIN & Per-Session Lockout, Role-Command Authz Matrix & Strict Pydantic Schemas, 10-Step `apply_command()` Pipeline) | Lane A | `pytest tests/test_auth_sessions.py tests/test_pin_lockout_scope.py tests/test_authz_matrix.py tests/test_pipeline_core.py` | `step-M2-loop1` | **Validate `M2` in Gem 2 (Completes Module 2)** |
+| **`M3`** | Module 3 | `3.1`, `3.2`, `3.3`, `3.4`, `3.5`, `3.6` (`CREATE`, `ACK`, `RESOURCE_CONFIRM`, `ACCEPT` Single-Owner Lease Arbitration, `DECLINE` + `advance()`, `COUNTER` + `CONFIRM_COUNTER`, `ARRIVAL_REJECTED`, `DISPATCHER_ASSIGN`, `CANCEL`, `CLOSE`, `REVOKE_GRANT`) | Lane A | `pytest tests/test_cmd_create.py tests/test_cmd_ack_confirm.py tests/test_cmd_accept.py tests/test_cmd_decline_advance.py tests/test_cmd_counter.py tests/test_cmd_lifecycle.py` | `step-M3-loop1` | **Validate `M3` in Gem 2 (Completes Module 3)** |
+| **`M4`** | Module 4 | `4.1`, `4.2`, `4.3`, `4.4` (Independent Runtime Monitor `monitor/monitor.py` [F17], 200-Way Concurrency Barrier `race200` + F14 Idempotency Matrix, Safe `BROKEN_BUILD` Scratch DB Isolation, `M1`–`M6` Mutation Suite + 28 Conformance Vectors) | Lane B (`4.1`, `4.3`) / Lane A (`4.2`, `4.4`) | `pytest tests/test_monitor_fold.py tests/test_race200.py tests/test_idempotency_matrix.py tests/test_broken_build.py tests/test_mutations.py tests/test_conformance_vectors.py` | `step-M4-loop1` | **Validate `M4` in Gem 2 (Completes Module 4 / T0 Proof Core)** |
+| **`M5`** | Module 5 | `5.1`, `5.2`, `5.3`, `5.4`, `5.5` (Two-Phase Stateless Poller, Intra-Facility Notice Ladder $0, A/4, 3A/4$ & Closure Timeout, Visibility-Timeout Outbox Relay, Per-Frame Authorized SSE Hub with `GRANT_REVOKED` Stream Stripping, Component Heartbeats & Clock-Step Guard) | Lane A + B | `pytest tests/test_poller_liveness.py tests/test_notice_ladder_and_closure.py tests/test_sse_revoke.py tests/test_clock_and_heartbeats.py` | `step-M5-loop1` | **Validate `M5` in Gem 2 (Completes Module 5)** |
+| **`M6`** | Module 6 | `6.1`, `6.2`, `6.3` (Separate-OS-User Witness Signer 5s Binary Merkle Tree, Off-Box Witness Sync + Cold-Key `RESTORE` Protocol, Pure-JS Browser Verifier `@noble` `verifier.ts` & Superuser SQL Tamper Script `tamper.sh`) | Lane A + B | `pytest tests/test_witness_merkle.py tests/test_tamper_vs_restore.py && npm --prefix pwa test -- verifier && bash scripts/tamper.sh --dry-check` | `step-M6-loop1` | **Validate `M6` in Gem 2 (Completes Module 6)** |
+| **`M7`** | Module 7 | `7.1`, `7.2`, `7.3`, `7.4`, `7.5`, `7.6` (React PWA Shell/SSE Store/IndexedDB Outbox/ModeBanner, Rotating Judge QR Admission, Referring Clinician Card Creator, Receiving Duty Desk, Judge Race Desk + Verifier Drawer, Guarantee Arena Big Screen & 30s Live Proof Loop) | Lane B | `pytest tests/test_judge_join.py && npm --prefix pwa run build && npm --prefix pwa test && make gate-t0` | `step-M7-loop1` | **Validate `M7` in Gem 2 (Completes Module 7 & Gate G0 = T0 Pass)** |
+| **`M8`** | Module 8 | `8.1`, `8.2`, `8.3`, `8.4` (Parallel Transport Track API `TR_UPDATE`/`TR_DESTINATION_CHANGE`, 6 Arrival Cases, Telemetry Ingest, 200m Geofence Hint & Mapbox Matrix ETA Cache, PWA Ambulance Client `AmbulancePwa.tsx` & Dispatcher Console `DispatcherConsole.tsx` with Proxy Entry + Deterministic Replay Scrubber) | Lane A + B | `pytest tests/test_transport_and_arrivals.py tests/test_dispatcher_proxy_and_replay.py && make gate-t1` | `step-M8-loop1` | **Validate `M8` in Gem 2 (Completes Module 8 & Gate G1 = T1 Pass)** |
+| **`M9`** | Module 9 | `9.1`, `9.2`, `9.3`, `9.4`, `9.5` (Outbound Exotel IVR Adapter, `inbox` Dedup, 2s Commit Budget, AMD + Press-1 Human Gate, DTMF Menu & Per-Call PIN Verification, TRAI DLT-Compliant Static SMS Adapter & 9-Char Crockford Base32 + Mod-37 Paper Code Codec + Linking UI) | Lane B + A | `pytest tests/test_exotel_ivr.py tests/test_dlt_sms_lint.py tests/test_paper_code_mod37.py && make gate-t2` | `step-M9-loop1` | **Validate `M9` in Gem 2 (Completes Module 9 & Gate G2 = T2 Pass)** |
+| **`M10`** | Module 10 | `10.1`, `10.2`, `10.3`, `10.4` (Per-Referral AES-256-GCM Envelope Encryption, Monthly KEK Wrapping, `event_secret` Binding, Automated Crypto-Shredding Worker, District Command Centre Live Map/Capability Age/APOT KPIs & `networkx` Referral Graph + 4h Bucketed $k \ge 5$ Suppression) | Lane A + B | `pytest tests/test_envelope_crypto.py tests/test_analytics_recompute.py` | `step-M10-loop1` | **Validate `M10` in Gem 2 (Completes Module 10)** |
+| **`M11`** | Module 11 | `11.1`, `11.2`, `11.3`, `11.4` (AI Intake Accelerator `423 ANCHOR_REQUIRED` Cognitive Forcing Function + 20-Slip Seeded-Error Gate, FHIR R4 Bundle Exporter, IEEE 1849 XES Exporter, BSA 2023 s.63 Hash-Bearing Evidence Bundle & Native Kotlin Android EMT Client) | Lane A + B | `pytest tests/test_ai_seeded_errors.py tests/test_fhir_exporter.py tests/test_bsa_xes_exports.py tests/test_fcm_zero_payload.py && make gate-t3` | `step-M11-loop1` | **Validate `M11` in Gem 2 (Completes Module 11 & T3_EXTRAS)** |
+| **`M12`** | Module 12 | `12.1`, `12.2`, `12.3` (Eight-Scenario Toxiproxy Fault-Injection Matrix, Automated Self-Audit CI Scripts `ST-1`..`ST-5`, Master Tier Acceptance Gate Runner `Makefile` `gate-t0..gate-all` & `scripts/preflight.sh` Rehearsal Suite) | Lane A + B | `pytest tests/test_toxiproxy_chaos.py tests/test_lock_order.py tests/test_tmax_profiles.py tests/test_ddl_constraints.py tests/test_idempotency_matrix.py tests/test_claims_lexicon.py && make gate-all && bash scripts/preflight.sh` | `step-M12-loop1` | **Validate `M12` in Gem 2 (Completes Module 12 & Gate G3)** |
 
 ### 0.2 Feature Flags & Tier Cut Order (Closure F16)
 
@@ -246,9 +226,7 @@ rhp/
 
 ---
 
-## MODULE 1: Spec-First Spine, Cryptographic Primitives & Production Database (`T0` — Priority 1)
-
-## HALF-MODULE M1-A (Prompt 1 of 2 for Module 1): Workspace Topology, 24-Table PG16 DDL & Signed Timing Profiles (Sub-Segments 1.1 – 1.3)
+## MODULE 1 (`M1` — Prompt 1 of 12): Spec-First Spine, Cryptographic Primitives & Production Database (`T0` — Priority 1, Sub-Segments 1.1 – 1.6)
 
 ### 1.1 Monorepo Workspace, Docker Compose Topology & Environment Guard
 * **Objective:** Initialize the repository structure, multi-container orchestration, and boot-level safety guards (`REAL_DATA=0`, `BROKEN_BUILD` isolation, and feature flags).
@@ -333,16 +311,6 @@ rhp/
 * **Verification Gate (`ST-2` / `T-F2` / `T-F3`):**
   * Run `pytest tests/test_tmax_profiles.py` confirming $729\text{ s} \le 900\text{ s}$, $1269\text{ s} \le 1500\text{ s}$, $24\text{ s} \le 25\text{ s}$, $132\text{ s} \le 150\text{ s}$, voice stagger $15000 + 2 \cdot 5000 + 20000 = 45000 \le 45000$, and confirming that tampering with 1 byte of `profiles.json` aborts startup.
 
-> ### 🛑 HALF-MODULE `M1-A` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `1.1`, `1.2`, and `1.3` (Docker/Config Guards, PG16 24-Table DDL & Roles, Seed Data & Signed Profiles).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_boot_guards.py tests/test_ddl_constraints.py tests/test_tmax_profiles.py`
-> - **Git Commit & Tag:** `git commit -m "feat(M1-A): workspace config guards, 24-table DDL, seed & signed profiles" && git tag step-M1A-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M1-A COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M1-B` until Gem 2 validates `M1-A` and Gem 1 issues the `M1-B` prompt.
-
----
-
-## HALF-MODULE M1-B (Prompt 2 of 2 for Module 1): RFC 8785 JCS Parity, Frozen State Machine Table & Quint Formal Spec (Sub-Segments 1.4 – 1.6)
-
 ### 1.4 RFC 8785 Canonical JSON (JCS), SHA-256 Chain Hasher, Integer Microsecond Clock & Cross-Language Parity Vectors
 * **Objective:** Guarantee bit-for-bit identical canonical JSON serialization and SHA-256 hash chaining across the Python server, the Python monitor, and the JavaScript browser verifier.
 * **Files to Create:**
@@ -388,19 +356,15 @@ rhp/
 * **Verification Gate (`T-F6`):**
   * Execute `quint run spec/rhp1.qnt --invariant safety --max-steps 25 --max-samples 20000` (passes with 0 violations), run the 4 vacuity checks (`ACCEPTED`, `DISPATCH`, `CLOSED`, `SOFT` reachability must each fail `--invariant "not (...)"` with a witness trace), and run `python tests/explore_transitions.py` confirming 100% exit reachability.
 
----
-
-> ### 🛑 HALF-MODULE `M1-B` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `1.4`, `1.5`, and `1.6` (RFC 8785 JCS & Chain Hasher, `transitions.yaml` Loader, Quint `rhp1.qnt` & Explorer).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_jcs_parity.py tests/test_transitions_table.py && python tests/explore_transitions.py && quint run spec/rhp1.qnt --invariant safety --max-steps 25 --max-samples 20000`
-> - **Git Commit & Tag:** `git commit -m "feat(M1-B): RFC 8785 JCS, transitions loader & Quint formal spec" && git tag step-M1B-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M1-B COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. (Completes Module 1)
+> ### 🛑 MODULE `M1` FULL-MODULE COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
+> - **Scope Completed in This Prompt:** Full Module 1 (`1.1`, `1.2`, `1.3`, `1.4`, `1.5`, and `1.6` — Workspace/Docker/Config Guards, PG16 24-Table DDL & Roles, Seed Data & Signed Profiles, RFC 8785 JCS & Chain Hasher, `transitions.yaml` Loader, Quint `rhp1.qnt` & Explorer).
+> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_boot_guards.py tests/test_ddl_constraints.py tests/test_tmax_profiles.py tests/test_jcs_parity.py tests/test_transitions_table.py && python tests/explore_transitions.py && quint run spec/rhp1.qnt --invariant safety --max-steps 25 --max-samples 20000`
+> - **Git Commit & Tag:** `git commit -m "feat(M1): spec-first spine, cryptographic primitives & production database" && git tag step-M1-loop1`
+> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 MODULE M1 COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M2` until Gem 2 validates `M1` and Gem 1 issues the `M2` prompt.
 
 ---
 
-## MODULE 2: Identity, PIN Lockout Scope & 10-Step Transactional Command Pipeline (`T0` — Priority 2)
-
-## HALF-MODULE M2-A (Prompt 1 of 2 for Module 2): Dual Connection Pools, Sessions & Argon2id Autonomous Lockout (Sub-Segments 2.1 – 2.3)
+## MODULE 2 (`M2` — Prompt 2 of 12): Identity, PIN Lockout Scope & 10-Step Transactional Command Pipeline (`T0` — Priority 2, Sub-Segments 2.1 – 2.5)
 
 ### 2.1 Dual Connection Pools & Advisory Lock Helpers
 * **Objective:** Provide dead-simple, deadlock-free database connection management separating main command transactions from autonomous security audit writes.
@@ -450,16 +414,6 @@ rhp/
 * **Verification Gate (`T-F7`):**
   * Run `pytest tests/test_pin_lockout_scope.py`: fail PIN 3 times on Session A (assert `429 PIN_LOCKED` and `pin_failed == 3` persisted despite command rollback), then submit a valid PIN on Session B for the same facility/role and assert `200 OK`.
 
-> ### 🛑 HALF-MODULE `M2-A` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `2.1`, `2.2`, and `2.3` (Dual Connection Pools & Lock Helpers, Enrollment/Cookie/Voice Sessions, Argon2id PIN & Per-Session Lockout).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_auth_sessions.py tests/test_pin_lockout_scope.py`
-> - **Git Commit & Tag:** `git commit -m "feat(M2-A): dual connection pools, sessions & Argon2id autonomous lockout" && git tag step-M2A-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M2-A COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M2-B` until Gem 2 validates `M2-A` and Gem 1 issues the `M2-B` prompt.
-
----
-
-## HALF-MODULE M2-B (Prompt 2 of 2 for Module 2): Authorization Matrix, Pydantic Models & 10-Step Pipeline Core (Sub-Segments 2.4 – 2.5)
-
 ### 2.4 Role-Command Authorization Matrix, Roster Validity Check & Strict Pydantic Schemas
 * **Objective:** Enforce object-level authorization (BOLA prevention), role-slot permissions, and strict input validation (`extra='forbid'`, Closure F9, Invariant I11).
 * **Files to Create:**
@@ -505,19 +459,15 @@ rhp/
 * **Verification Gate (`T-I8`, `T-I14`, `T-I16`):**
   * Run `pytest tests/test_pipeline_core.py` verifying that direct table writes without `rhp.locked_referral` raise `I14_LOCK_NOT_HELD`, stale `expected_version` returns `412` and logs to `rejected_command`, and replaying the same `Idempotency-Key` returns the exact stored `412` response.
 
----
-
-> ### 🛑 HALF-MODULE `M2-B` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `2.4` and `2.5` (Role-Command Authz Matrix & Strict Pydantic Schemas, 10-Step `apply_command()` Pipeline).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_authz_matrix.py tests/test_pipeline_core.py`
-> - **Git Commit & Tag:** `git commit -m "feat(M2-B): authorization matrix, Pydantic models & 10-step pipeline core" && git tag step-M2B-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M2-B COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. (Completes Module 2)
+> ### 🛑 MODULE `M2` FULL-MODULE COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
+> - **Scope Completed in This Prompt:** Full Module 2 (`2.1`, `2.2`, `2.3`, `2.4`, and `2.5` — Dual Connection Pools & Lock Helpers, Enrollment/Cookie/Voice Sessions, Argon2id PIN & Per-Session Lockout, Role-Command Authz Matrix & Strict Pydantic Schemas, 10-Step `apply_command()` Pipeline).
+> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_auth_sessions.py tests/test_pin_lockout_scope.py tests/test_authz_matrix.py tests/test_pipeline_core.py`
+> - **Git Commit & Tag:** `git commit -m "feat(M2): identity, PIN lockout scope & 10-step transactional command pipeline" && git tag step-M2-loop1`
+> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 MODULE M2 COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M3` until Gem 2 validates `M2` and Gem 1 issues the `M3` prompt.
 
 ---
 
-## MODULE 3: Core Handshake Commands, Single-Owner Lease & Escalation Engine (`T0` — Priority 3)
-
-## HALF-MODULE M3-A (Prompt 1 of 2 for Module 3): CREATE, ACK, RESOURCE_CONFIRM & ACCEPT Lease Arbitration (Sub-Segments 3.1 – 3.3)
+## MODULE 3 (`M3` — Prompt 3 of 12): Core Handshake Commands, Single-Owner Lease & Escalation Engine (`T0` — Priority 3, Sub-Segments 3.1 – 3.6)
 
 ### 3.1 `CREATE` Command: Chain Snapshot, Mode Selection, Initial Offers, Grants & Deadlines
 * **Objective:** Atomically create a referral, snapshot its approved catchment chain, open initial offer(s), grant payload access, and arm ACK and notice deadlines so no referral is ever silent (Invariants I1, I7).
@@ -580,16 +530,6 @@ rhp/
 * **Verification Gate (`T-C3`, `T-F12`, `T-I15`):**
   * Run `pytest tests/test_cmd_accept.py` verifying single-lease grant, `409 STALE_CONFIRMATION_RECONFIRM_REQUIRED` when `ts >= expires_at`, and `409 LATE_ACCEPT_REJECTED` when accepting after a successor facility has ACKed.
 
-> ### 🛑 HALF-MODULE `M3-A` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `3.1`, `3.2`, and `3.3` (`CREATE`, `ACK`, `RESOURCE_CONFIRM`, and `ACCEPT` Single-Owner Lease Arbitration).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_cmd_create.py tests/test_cmd_ack_confirm.py tests/test_cmd_accept.py`
-> - **Git Commit & Tag:** `git commit -m "feat(M3-A): CREATE, ACK, RESOURCE_CONFIRM & ACCEPT lease arbitration" && git tag step-M3A-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M3-A COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M3-B` until Gem 2 validates `M3-A` and Gem 1 issues the `M3-B` prompt.
-
----
-
-## HALF-MODULE M3-B (Prompt 2 of 2 for Module 3): DECLINE Escalation, COUNTER Negotiation & Terminal Lifecycle Commands (Sub-Segments 3.4 – 3.6)
-
 ### 3.4 `DECLINE` Command & Deterministic `advance()` Escalation Engine
 * **Objective:** Record structured declines with optional redirect suggestions and deterministically advance along the catchment chain without loops or $>2$ open offers (Invariants I7, I9, I12, Closure F13).
 * **Files to Create:**
@@ -639,19 +579,15 @@ rhp/
 * **Verification Gate:**
   * Run `pytest tests/test_cmd_lifecycle.py` covering `ARRIVAL_REJECTED` re-escalation, dispatcher assignment, and terminal outcome constraints.
 
----
-
-> ### 🛑 HALF-MODULE `M3-B` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `3.4`, `3.5`, and `3.6` (`DECLINE` + `advance()`, `COUNTER` + `CONFIRM_COUNTER`, `ARRIVAL_REJECTED`, `DISPATCHER_ASSIGN`, `CANCEL`, `CLOSE`, `REVOKE_GRANT`).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_cmd_decline_advance.py tests/test_cmd_counter.py tests/test_cmd_lifecycle.py`
-> - **Git Commit & Tag:** `git commit -m "feat(M3-B): DECLINE escalation, COUNTER negotiation & terminal lifecycle commands" && git tag step-M3B-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M3-B COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. (Completes Module 3)
+> ### 🛑 MODULE `M3` FULL-MODULE COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
+> - **Scope Completed in This Prompt:** Full Module 3 (`3.1`, `3.2`, `3.3`, `3.4`, `3.5`, and `3.6` — `CREATE`, `ACK`, `RESOURCE_CONFIRM`, `ACCEPT` Single-Owner Lease Arbitration, `DECLINE` + `advance()`, `COUNTER` + `CONFIRM_COUNTER`, `ARRIVAL_REJECTED`, `DISPATCHER_ASSIGN`, `CANCEL`, `CLOSE`, `REVOKE_GRANT`).
+> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_cmd_create.py tests/test_cmd_ack_confirm.py tests/test_cmd_accept.py tests/test_cmd_decline_advance.py tests/test_cmd_counter.py tests/test_cmd_lifecycle.py`
+> - **Git Commit & Tag:** `git commit -m "feat(M3): core handshake commands, single-owner lease & escalation engine" && git tag step-M3-loop1`
+> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 MODULE M3 COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M4` until Gem 2 validates `M3` and Gem 1 issues the `M4` prompt.
 
 ---
 
-## MODULE 4: Independent Runtime Monitor, 200-Way Race & Safe `BROKEN_BUILD` (`T0` Proof Gate — Priority 4)
-
-## HALF-MODULE M4-A (Prompt 1 of 2 for Module 4): Independent Runtime Monitor (F17) & 200-Way Concurrency Barrier (Sub-Segments 4.1 – 4.2)
+## MODULE 4 (`M4` — Prompt 4 of 12): Independent Runtime Monitor, 200-Way Race & Safe `BROKEN_BUILD` (`T0` Proof Gate — Priority 4, Sub-Segments 4.1 – 4.4)
 
 ### 4.1 Independent Runtime Monitor (`monitor/`)
 * **Objective:** Continuously re-derive every referral's state from the raw event log using an independent implementation by Person B and check Invariants I1–I16 against the database (Closure F17).
@@ -699,16 +635,6 @@ rhp/
 * **Verification Gate (`T-C1`, `T-F1`, `T-F14`):**
   * Execute `pytest tests/test_race200.py tests/test_idempotency_matrix.py` 5 consecutive times with 100% pass rate.
 
-> ### 🛑 HALF-MODULE `M4-A` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `4.1` and `4.2` (Independent Runtime Monitor `monitor/monitor.py` [F17] & 200-Way Concurrency Barrier `race200` + F14 Idempotency Matrix).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_monitor_fold.py tests/test_race200.py tests/test_idempotency_matrix.py`
-> - **Git Commit & Tag:** `git commit -m "feat(M4-A): independent runtime monitor (F17), race200 barrier & idempotency matrix" && git tag step-M4A-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M4-A COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M4-B` until Gem 2 validates `M4-A` and Gem 1 issues the `M4-B` prompt.
-
----
-
-## HALF-MODULE M4-B (Prompt 2 of 2 for Module 4): Safe BROKEN_BUILD Scratch Isolation & Six Mutation Tests M1–M6 (Sub-Segments 4.3 – 4.4)
-
 ### 4.3 Safe `BROKEN_BUILD` Isolation (`rhp_scratch_broken` DB & Double-Lease Fault Injection)
 * **Objective:** Provide a live, isolated demonstration proving the Independent Runtime Monitor catches a double-lease bug within 2 seconds without ever risking the main database (Closure F20).
 * **Files to Create:**
@@ -739,19 +665,15 @@ rhp/
 * **Verification Gate (`T-F17`):**
   * Run `pytest tests/test_mutations.py tests/test_conformance_vectors.py` with 100% pass rate.
 
----
-
-> ### 🛑 HALF-MODULE `M4-B` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `4.3` and `4.4` (Safe `BROKEN_BUILD` Scratch DB Isolation & `M1`–`M6` Mutation Suite + 28 Conformance Vectors).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_broken_build.py tests/test_mutations.py tests/test_conformance_vectors.py`
-> - **Git Commit & Tag:** `git commit -m "feat(M4-B): safe broken build isolation, M1-M6 mutation suite & 28 conformance vectors" && git tag step-M4B-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M4-B COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. (Completes Module 4 / T0 Proof Core)
+> ### 🛑 MODULE `M4` FULL-MODULE COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
+> - **Scope Completed in This Prompt:** Full Module 4 (`4.1`, `4.2`, `4.3`, and `4.4` — Independent Runtime Monitor `monitor/monitor.py` [F17], 200-Way Concurrency Barrier `race200` + F14 Idempotency Matrix, Safe `BROKEN_BUILD` Scratch DB Isolation, `M1`–`M6` Mutation Suite + 28 Conformance Vectors).
+> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_monitor_fold.py tests/test_race200.py tests/test_idempotency_matrix.py tests/test_broken_build.py tests/test_mutations.py tests/test_conformance_vectors.py`
+> - **Git Commit & Tag:** `git commit -m "feat(M4): independent runtime monitor (F17), race200, broken build & M1-M6 mutations" && git tag step-M4-loop1`
+> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 MODULE M4 COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M5` until Gem 2 validates `M4` and Gem 1 issues the `M5` prompt. (Completes Module 4 / T0 Proof Core)
 
 ---
 
-## MODULE 5: Stateless Poller, Outbox Relay, Notice Ladder & Authorized SSE Hub (`T0` Liveness — Priority 5)
-
-## HALF-MODULE M5-A (Prompt 1 of 2 for Module 5): Two-Phase Deadline Poller, Notice Ladder & Visibility Outbox Relay (Sub-Segments 5.1 – 5.3)
+## MODULE 5 (`M5` — Prompt 5 of 12): Stateless Poller, Outbox Relay, Notice Ladder & Authorized SSE Hub (`T0` Liveness — Priority 5, Sub-Segments 5.1 – 5.5)
 
 ### 5.1 Two-Phase Stateless Deadline Poller (`SKIP LOCKED` Claim + `TIMEOUT` Command Execution)
 * **Objective:** Execute overdue deadlines without holding locks across transactions or deadlocking against live user commands (Closure F1).
@@ -832,16 +754,6 @@ rhp/
 * **Verification Gate (`T-F3b`):**
   * Simulate an adapter crash mid-flight, verify the row becomes eligible again after `visible_after`, and verify `attempts > 8` transitions the row to `DEAD`.
 
-> ### 🛑 HALF-MODULE `M5-A` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `5.1`, `5.2`, and `5.3` (Two-Phase Stateless Poller, Intra-Facility Notice Ladder $0, A/4, 3A/4$ & Closure Timeout, Visibility-Timeout Outbox Relay).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_poller_liveness.py tests/test_notice_ladder_and_closure.py`
-> - **Git Commit & Tag:** `git commit -m "feat(M5-A): 2-phase deadline poller, notice ladder & visibility outbox relay" && git tag step-M5A-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M5-A COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M5-B` until Gem 2 validates `M5-A` and Gem 1 issues the `M5-B` prompt.
-
----
-
-## HALF-MODULE M5-B (Prompt 2 of 2 for Module 5): Per-Frame Authorized SSE Hub, GRANT_REVOKED & Clock-Step Guard (Sub-Segments 5.4 – 5.5)
-
 ### 5.4 Per-Frame Authorized SSE Hub (`Last-Event-ID` Resume & `GRANT_REVOKED` Stream Stripping)
 * **Objective:** Push real-time state updates to web desks over HTTP/2 SSE while dynamically stripping clinical payloads the instant a facility's `payload_grant` is revoked (Closure F10, Invariant I10).
 * **Files to Create:**
@@ -866,19 +778,15 @@ rhp/
 * **Verification Gate (`T-F11`):**
   * Run `pytest tests/test_clock_and_heartbeats.py` verifying that `GREATEST(clock_timestamp(), head_ts)` keeps `server_ts` strictly non-decreasing during a simulated backward clock step and triggers the $>2\text{ s}$ offset alarm.
 
----
-
-> ### 🛑 HALF-MODULE `M5-B` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `5.4` and `5.5` (Per-Frame Authorized SSE Hub with `GRANT_REVOKED` Stream Stripping, Component Heartbeats & Clock-Step Guard).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_sse_revoke.py tests/test_clock_and_heartbeats.py`
-> - **Git Commit & Tag:** `git commit -m "feat(M5-B): authorized SSE hub, GRANT_REVOKED stripping & clock-step guard" && git tag step-M5B-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M5-B COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. (Completes Module 5)
+> ### 🛑 MODULE `M5` FULL-MODULE COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
+> - **Scope Completed in This Prompt:** Full Module 5 (`5.1`, `5.2`, `5.3`, `5.4`, and `5.5` — Two-Phase Stateless Poller, Intra-Facility Notice Ladder $0, A/4, 3A/4$ & Closure Timeout, Visibility-Timeout Outbox Relay, Per-Frame Authorized SSE Hub with `GRANT_REVOKED` Stream Stripping, Component Heartbeats & Clock-Step Guard).
+> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_poller_liveness.py tests/test_notice_ladder_and_closure.py tests/test_sse_revoke.py tests/test_clock_and_heartbeats.py`
+> - **Git Commit & Tag:** `git commit -m "feat(M5): stateless poller, outbox relay, notice ladder & authorized SSE hub" && git tag step-M5-loop1`
+> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 MODULE M5 COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M6` until Gem 2 validates `M5` and Gem 1 issues the `M6` prompt.
 
 ---
 
-## MODULE 6: Cryptographic Witness Signer, Merkle Checkpoints & Pure-JS Verifier (`T0` Integrity — Priority 6)
-
-## HALF-MODULE M6-A (Prompt 1 of 2 for Module 6): Separate-OS-User Witness Signer, Merkle Tree & Cold RESTORE (Sub-Segments 6.1 – 6.2)
+## MODULE 6 (`M6` — Prompt 6 of 12): Cryptographic Witness Signer, Merkle Checkpoints & Pure-JS Verifier (`T0` Integrity — Priority 6, Sub-Segments 6.1 – 6.3)
 
 ### 6.1 Separate-OS-User Witness Signer (`witness/`): 5-Second Binary Merkle Tree & C2SP Signed Notes
 * **Objective:** Produce signed, tamper-evident Merkle checkpoints over all referrals every 5 seconds using an isolated OS user and database role (Closure F8, Invariant I5).
@@ -908,16 +816,6 @@ rhp/
 * **Verification Gate (`T-F8`, `T-S2`):**
   * Run `pytest tests/test_tamper_vs_restore.py` proving that truncating the `event` table without a cold-key `RESTORE` checkpoint triggers `TRUNCATED at seq=<k>`, while a cold-key-signed `RESTORE` validates cleanly.
 
-> ### 🛑 HALF-MODULE `M6-A` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `6.1` and `6.2` (Separate-OS-User Witness Signer 5s Binary Merkle Tree & Off-Box Witness Sync + Cold-Key `RESTORE` Protocol).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_witness_merkle.py tests/test_tamper_vs_restore.py`
-> - **Git Commit & Tag:** `git commit -m "feat(M6-A): separate-OS-user witness signer, Merkle tree & cold RESTORE protocol" && git tag step-M6A-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M6-A COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M6-B` until Gem 2 validates `M6-A` and Gem 1 issues the `M6-B` prompt.
-
----
-
-## HALF-MODULE M6-B (Prompt 2 of 2 for Module 6): Pure-JS Browser Verifier (@noble) & SQL Tamper Script (Sub-Segment 6.3)
-
 ### 6.3 Pure-JS Browser Verifier (`@noble`) & Superuser SQL Tamper Demo Script (`tamper.sh`)
 * **Objective:** Enable every judge's phone browser (including iOS Safari over plain-HTTP LAN where WebCrypto `crypto.subtle` is disabled) to independently verify event hash chains, Merkle inclusion proofs, and checkpoint signatures in pure JavaScript.
 * **Files to Create:**
@@ -934,19 +832,15 @@ rhp/
 * **Verification Gate (`T-I5`, `T-D1`):**
   * Run Vitest/Node test verifying `verifier.ts` against `spec/parity_vectors.json`, execute `scripts/tamper.sh`, and assert `verifier.ts` outputs `BROKEN referral=... seq=... kind=HASH`.
 
----
-
-> ### 🛑 HALF-MODULE `M6-B` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `6.3` (Pure-JS Browser Verifier `@noble` `verifier.ts` & Superuser SQL Tamper Script `tamper.sh`).
-> - **Combined Command to Run & Paste Raw Output:** `npm --prefix pwa test -- verifier && bash scripts/tamper.sh --dry-check`
-> - **Git Commit & Tag:** `git commit -m "feat(M6-B): pure-JS browser verifier (@noble) & superuser SQL tamper script" && git tag step-M6B-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M6-B COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. (Completes Module 6)
+> ### 🛑 MODULE `M6` FULL-MODULE COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
+> - **Scope Completed in This Prompt:** Full Module 6 (`6.1`, `6.2`, and `6.3` — Separate-OS-User Witness Signer 5s Binary Merkle Tree, Off-Box Witness Sync + Cold-Key `RESTORE` Protocol, Pure-JS Browser Verifier `@noble` `verifier.ts` & Superuser SQL Tamper Script `tamper.sh`).
+> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_witness_merkle.py tests/test_tamper_vs_restore.py && npm --prefix pwa test -- verifier && bash scripts/tamper.sh --dry-check`
+> - **Git Commit & Tag:** `git commit -m "feat(M6): cryptographic witness signer, Merkle checkpoints & pure-JS verifier" && git tag step-M6-loop1`
+> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 MODULE M6 COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M7` until Gem 2 validates `M6` and Gem 1 issues the `M7` prompt.
 
 ---
 
-## MODULE 7: Core PWA Desks, Rotating QR Admission & Guarantee Arena Big Screen (`T0` Complete — Priority 7)
-
-## HALF-MODULE M7-A (Prompt 1 of 2 for Module 7): React PWA Shell, Rotating Judge QR Admission & Clinician Card (Sub-Segments 7.1 – 7.3)
+## MODULE 7 (`M7` — Prompt 7 of 12): Core PWA Desks, Rotating QR Admission & Guarantee Arena Big Screen (`T0` Complete — Priority 7, Sub-Segments 7.1 – 7.6)
 
 ### 7.1 React PWA Shell, SSE State Store, IndexedDB Offline Outbox & Mode/Liveness Banners
 * **Objective:** Build the responsive frontend foundation with real-time SSE synchronization, offline command queuing, and prominent safety/mode banners.
@@ -989,16 +883,6 @@ rhp/
   3. **Card-as-Slip Print View:** Renders a printable handover slip displaying the 9-character Crockford `paper_code` and QR code so the clinician never writes a separate paper slip.
 * **Verification Gate:**
   * Create a referral with `mgso4_status = 'UNKNOWN'` in the UI and verify it transitions immediately to `OFFERED` in under 1 second.
-
-> ### 🛑 HALF-MODULE `M7-A` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `7.1`, `7.2`, and `7.3` (React PWA Shell/SSE Store/IndexedDB Outbox/ModeBanner, Rotating Judge QR Admission, Referring Clinician Card Creator).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_judge_join.py && npm --prefix pwa run build`
-> - **Git Commit & Tag:** `git commit -m "feat(M7-A): React PWA shell, rotating judge QR admission & clinician card creator" && git tag step-M7A-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M7-A COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M7-B` until Gem 2 validates `M7-A` and Gem 1 issues the `M7-B` prompt.
-
----
-
-## HALF-MODULE M7-B (Prompt 2 of 2 for Module 7): Receiving Duty Desk, Judge Race Desk & Guarantee Arena Big Screen (Sub-Segments 7.4 – 7.6)
 
 ### 7.4 Receiving Duty Desk (Anti-Goodhart Priority Queue, Red `mgso4_status=UNKNOWN` Banner & Live Reconfirm)
 * **Objective:** Provide the hospital casualty desk interface that prevents Goodhart gaming, surfaces clinical unknowns, and handles race losses and expired confirmations gracefully.
@@ -1045,19 +929,15 @@ rhp/
 * **Verification Gate (`T-F16` — Completes Tier 0):**
   * Execute the entire 30-second live proof loop end-to-end on the Big Screen (`0–4s` QR join $\rightarrow$ `4–7s` PARALLEL2 create $\rightarrow$ `7–12s` simultaneous accept $\rightarrow$ `12–18s` `BROKEN_BUILD=1` turns Monitor I2 RED $\rightarrow$ `18–21s` flip back GREEN $\rightarrow$ `21–27s` SQL tamper caught by Judge phone verifier $\rightarrow$ `27–30s` live measured recap).
 
----
-
-> ### 🛑 HALF-MODULE `M7-B` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `7.4`, `7.5`, and `7.6` (Receiving Duty Desk, Judge Race Desk + Verifier Drawer, Guarantee Arena Big Screen & 30s Live Proof Loop).
-> - **Combined Command to Run & Paste Raw Output:** `npm --prefix pwa test && make gate-t0`
-> - **Git Commit & Tag:** `git commit -m "feat(M7-B): receiving duty desk, judge race desk & Guarantee Arena big screen" && git tag step-M7B-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M7-B COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. (Completes Module 7 & Gate G0 = T0 Pass)
+> ### 🛑 MODULE `M7` FULL-MODULE COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
+> - **Scope Completed in This Prompt:** Full Module 7 (`7.1`, `7.2`, `7.3`, `7.4`, `7.5`, and `7.6` — React PWA Shell/SSE Store/IndexedDB Outbox/ModeBanner, Rotating Judge QR Admission, Referring Clinician Card Creator, Receiving Duty Desk, Judge Race Desk + Verifier Drawer, Guarantee Arena Big Screen & 30s Live Proof Loop).
+> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_judge_join.py && npm --prefix pwa run build && npm --prefix pwa test && make gate-t0`
+> - **Git Commit & Tag:** `git commit -m "feat(M7): core PWA desks, rotating QR admission & Guarantee Arena big screen (T0 complete)" && git tag step-M7-loop1`
+> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 MODULE M7 COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M8` until Gem 2 validates `M7` (and **Gate G0 = T0 Pass**) and Gem 1 issues the `M8` prompt.
 
 ---
 
-## MODULE 8: Parallel Transport Track, Mapbox ETAs, Dispatcher Console & Replay (`T1_TRANSPORT` — Priority 8)
-
-## HALF-MODULE M8-A (Prompt 1 of 2 for Module 8): Parallel Transport Track API, 6 Arrival Cases & Mapbox Matrix ETA (Sub-Segments 8.1 – 8.2)
+## MODULE 8 (`M8` — Prompt 8 of 12): Parallel Transport Track, Mapbox ETAs, Dispatcher Console & Replay (`T1_TRANSPORT` — Priority 8, Sub-Segments 8.1 – 8.4)
 
 ### 8.1 Parallel Transport Track API (`TR_UPDATE`, `TR_DESTINATION_CHANGE`), 6 Arrival Cases & Telemetry Ingest
 * **Objective:** Run ambulance transport tracking completely independently of handshake state (Invariant I3), handle all 6 real-world arrival scenarios (Closure F5), and ingest offline-tolerant GPS/vitals telemetry.
@@ -1090,16 +970,6 @@ rhp/
 * **Verification Gate:**
   * Submit synthetic GPS points approaching `CHC_RAMANAGARA` and verify `ARRIVAL_SUGGESTED` is emitted while `tr_state` remains `EN_ROUTE` until human confirmation.
 
-> ### 🛑 HALF-MODULE `M8-A` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `8.1` and `8.2` (Parallel Transport Track API `TR_UPDATE`/`TR_DESTINATION_CHANGE`, 6 Arrival Cases, Telemetry Ingest, 200m Geofence Hint & Mapbox Matrix ETA Cache).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_transport_and_arrivals.py`
-> - **Git Commit & Tag:** `git commit -m "feat(M8-A): parallel transport track API, 6 arrival cases & Mapbox matrix ETA" && git tag step-M8A-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M8-A COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M8-B` until Gem 2 validates `M8-A` and Gem 1 issues the `M8-B` prompt.
-
----
-
-## HALF-MODULE M8-B (Prompt 2 of 2 for Module 8): PWA Ambulance Client & Dispatcher Console with Replay Scrubber (Sub-Segments 8.3 – 8.4)
-
 ### 8.3 PWA Ambulance Client (Foreground `watchPosition`, Offline Queue & Redirect Advisory)
 * **Objective:** Provide EMT crews with a mobile web interface for live GPS streaming, offline vitals logging, redirect advisories, and 1-tap arrival/handover confirmation.
 * **Files to Create:**
@@ -1122,19 +992,15 @@ rhp/
 * **Verification Gate (`T1` Acceptance Gate):**
   * Run 20 paired trials comparing direct API actions vs. dispatcher proxy actions (assert identical resulting states and event sequences) and verify the replay scrubber reproduces `referral` state at `seq = head_seq`.
 
----
-
-> ### 🛑 HALF-MODULE `M8-B` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `8.3` and `8.4` (PWA Ambulance Client `AmbulancePwa.tsx` & Dispatcher Console `DispatcherConsole.tsx` with Proxy Entry + Deterministic Replay Scrubber).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_dispatcher_proxy_and_replay.py && make gate-t1`
-> - **Git Commit & Tag:** `git commit -m "feat(M8-B): PWA ambulance client & dispatcher console with replay scrubber" && git tag step-M8B-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M8-B COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. (Completes Module 8 & Gate G1 = T1 Pass)
+> ### 🛑 MODULE `M8` FULL-MODULE COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
+> - **Scope Completed in This Prompt:** Full Module 8 (`8.1`, `8.2`, `8.3`, and `8.4` — Parallel Transport Track API `TR_UPDATE`/`TR_DESTINATION_CHANGE`, 6 Arrival Cases, Telemetry Ingest, 200m Geofence Hint & Mapbox Matrix ETA Cache, PWA Ambulance Client `AmbulancePwa.tsx` & Dispatcher Console `DispatcherConsole.tsx` with Proxy Entry + Deterministic Replay Scrubber).
+> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_transport_and_arrivals.py tests/test_dispatcher_proxy_and_replay.py && make gate-t1`
+> - **Git Commit & Tag:** `git commit -m "feat(M8): parallel transport track, Mapbox ETAs, dispatcher console & replay (T1 complete)" && git tag step-M8-loop1`
+> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 MODULE M8 COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M9` until Gem 2 validates `M8` (and **Gate G1 = T1 Pass**) and Gem 1 issues the `M9` prompt.
 
 ---
 
-## MODULE 9: Multi-Channel Reach: Exotel Voice IVR, DLT SMS & Paper Code (`T2_REACH` — Priority 9)
-
-## HALF-MODULE M9-A (Prompt 1 of 2 for Module 9): Outbound Exotel IVR, AMD + Press-1 Gate & DTMF PIN Verification (Sub-Segments 9.1 – 9.3)
+## MODULE 9 (`M9` — Prompt 9 of 12): Multi-Channel Reach: Exotel Voice IVR, DLT SMS & Paper Code (`T2_REACH` — Priority 9, Sub-Segments 9.1 – 9.5)
 
 ### 9.1 Outbound Exotel IVR Adapter, `inbox` Webhook Deduplication & 2-Second Commit Budget
 * **Objective:** Reach duty clinicians on basic feature phones via outbound automated calls with strict webhook idempotency and sub-2-second response times.
@@ -1181,16 +1047,6 @@ rhp/
 * **Verification Gate:**
   * Complete a full `ACK` $\rightarrow$ `ACCEPT` + PIN `#` flow via simulated Exotel DTMF webhooks and verify `LEASE_GRANTED` commits with `channel='VOICE'`.
 
-> ### 🛑 HALF-MODULE `M9-A` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `9.1`, `9.2`, and `9.3` (Outbound Exotel IVR Adapter, `inbox` Dedup, 2s Commit Budget, AMD + Press-1 Human Gate, DTMF Menu & Per-Call PIN Verification).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_exotel_ivr.py`
-> - **Git Commit & Tag:** `git commit -m "feat(M9-A): outbound Exotel IVR, AMD + press-1 gate & DTMF PIN verification" && git tag step-M9A-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M9-A COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M9-B` until Gem 2 validates `M9-A` and Gem 1 issues the `M9-B` prompt.
-
----
-
-## HALF-MODULE M9-B (Prompt 2 of 2 for Module 9): TRAI DLT Static SMS & 9-Char Crockford Base32 Mod-37 Paper Code (Sub-Segments 9.4 – 9.5)
-
 ### 9.4 TRAI DLT-Compliant Static SMS Alert Adapter
 * **Objective:** Deliver SMS alerts without ever transmitting PHI or violating TRAI DLT variable-length rules (Closure P2).
 * **Files to Create:**
@@ -1213,19 +1069,15 @@ rhp/
 * **Verification Gate (`T2` Paper Code Gate):**
   * Run `pytest tests/test_paper_code_mod37.py` mutating 1,000 random valid paper codes with single-symbol errors and adjacent transpositions, asserting 100% rejection.
 
----
-
-> ### 🛑 HALF-MODULE `M9-B` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `9.4` and `9.5` (TRAI DLT-Compliant Static SMS Adapter & 9-Char Crockford Base32 + Mod-37 Paper Code Codec + Linking UI).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_dlt_sms_lint.py tests/test_paper_code_mod37.py && make gate-t2`
-> - **Git Commit & Tag:** `git commit -m "feat(M9-B): TRAI DLT static SMS adapter & 9-char Crockford Base32 mod-37 paper code" && git tag step-M9B-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M9-B COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. (Completes Module 9 & Gate G2 = T2 Pass)
+> ### 🛑 MODULE `M9` FULL-MODULE COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
+> - **Scope Completed in This Prompt:** Full Module 9 (`9.1`, `9.2`, `9.3`, `9.4`, and `9.5` — Outbound Exotel IVR Adapter, `inbox` Dedup, 2s Commit Budget, AMD + Press-1 Human Gate, DTMF Menu & Per-Call PIN Verification, TRAI DLT-Compliant Static SMS Adapter & 9-Char Crockford Base32 + Mod-37 Paper Code Codec + Linking UI).
+> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_exotel_ivr.py tests/test_dlt_sms_lint.py tests/test_paper_code_mod37.py && make gate-t2`
+> - **Git Commit & Tag:** `git commit -m "feat(M9): multi-channel reach Exotel IVR, DLT SMS & mod-37 paper code (T2 complete)" && git tag step-M9-loop1`
+> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 MODULE M9 COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M10` until Gem 2 validates `M9` (and **Gate G2 = T2 Pass**) and Gem 1 issues the `M10` prompt.
 
 ---
 
-## MODULE 10: Envelope Encryption, Crypto-Shredding & Command Centre Analytics (`T3_EXTRAS` Part A — Priority 10)
-
-## HALF-MODULE M10-A (Prompt 1 of 2 for Module 10): AES-256-GCM Envelope Encryption & Automated Crypto-Shredder (Sub-Segments 10.1 – 10.2)
+## MODULE 10 (`M10` — Prompt 10 of 12): Envelope Encryption, Crypto-Shredding & Command Centre Analytics (`T3_EXTRAS` Part A — Priority 10, Sub-Segments 10.1 – 10.4)
 
 ### 10.1 Per-Referral AES-256-GCM Envelope Encryption, Monthly KEK Wrapping & `event_secret` Binding
 * **Objective:** Encrypt all clinical payloads and sensitive event notes with per-referral Data Encryption Keys (DEKs) so deleting the DEK permanently crypto-shreds PHI without breaking the event hash chain (Closures D9, P5).
@@ -1253,16 +1105,6 @@ rhp/
 * **Verification Gate (`T-P5`):**
   * Create a referral, run `shred_referral`, verify `clinical_payload` and `wrapped_dek` are `NULL`/deleted, and run the Independent Runtime Monitor and Browser Verifier confirming `I5` hash chain verification still passes 100%.
 
-> ### 🛑 HALF-MODULE `M10-A` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `10.1` and `10.2` (Per-Referral AES-256-GCM Envelope Encryption, Monthly KEK Wrapping, `event_secret` Binding & Automated Crypto-Shredding Worker).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_envelope_crypto.py`
-> - **Git Commit & Tag:** `git commit -m "feat(M10-A): AES-256-GCM envelope encryption & automated crypto-shredder" && git tag step-M10A-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M10-A COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M10-B` until Gem 2 validates `M10-A` and Gem 1 issues the `M10-B` prompt.
-
----
-
-## HALF-MODULE M10-B (Prompt 2 of 2 for Module 10): District Command Centre Map/KPIs & Network Graph Aggregations (Sub-Segments 10.3 – 10.4)
-
 ### 10.3 District Command Centre: Live Map, Timestamped Capability Attestations & APOT-Separated KPIs
 * **Objective:** Provide district health officers with read-only bottleneck intelligence derived strictly from the event log, separating acceptance latency from physical handover latency to expose gaming.
 * **Files to Create:**
@@ -1285,19 +1127,15 @@ rhp/
 * **Verification Gate:**
   * Verify in `pytest` that a bucket with 4 referrals is suppressed (`count = "<5"`) while a bucket with 5 referrals is emitted.
 
----
-
-> ### 🛑 HALF-MODULE `M10-B` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `10.3` and `10.4` (District Command Centre Live Map/Capability Age/APOT KPIs & `networkx` Referral Graph + 4h Bucketed $k \ge 5$ Suppression).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_analytics_recompute.py`
-> - **Git Commit & Tag:** `git commit -m "feat(M10-B): district command centre live map/KPIs & network graph aggregations" && git tag step-M10B-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M10-B COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. (Completes Module 10)
+> ### 🛑 MODULE `M10` FULL-MODULE COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
+> - **Scope Completed in This Prompt:** Full Module 10 (`10.1`, `10.2`, `10.3`, and `10.4` — Per-Referral AES-256-GCM Envelope Encryption, Monthly KEK Wrapping, `event_secret` Binding, Automated Crypto-Shredding Worker, District Command Centre Live Map/Capability Age/APOT KPIs & `networkx` Referral Graph + 4h Bucketed $k \ge 5$ Suppression).
+> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_envelope_crypto.py tests/test_analytics_recompute.py`
+> - **Git Commit & Tag:** `git commit -m "feat(M10): envelope encryption, crypto-shredding & Command Centre analytics" && git tag step-M10-loop1`
+> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 MODULE M10 COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M11` until Gem 2 validates `M10` and Gem 1 issues the `M11` prompt.
 
 ---
 
-## MODULE 11: Cognitive-Forcing AI Intake, Interoperability Exports & Kotlin App (`T3_EXTRAS` Part B — Priority 11)
-
-## HALF-MODULE M11-A (Prompt 1 of 2 for Module 11): Cognitive-Forcing AI Intake Accelerator & FHIR R4 Exporter (Sub-Segments 11.1 – 11.2)
+## MODULE 11 (`M11` — Prompt 11 of 12): Cognitive-Forcing AI Intake, Interoperability Exports & Kotlin App (`T3_EXTRAS` Part B — Priority 11, Sub-Segments 11.1 – 11.4)
 
 ### 11.1 AI Intake Accelerator: `423 ANCHOR_REQUIRED` Cognitive Forcing Function & 20-Slip Seeded-Error Gate
 * **Objective:** Accelerate referral card drafting from photos/dictation while preventing clinician automation bias via a server-enforced Cognitive Forcing Function (Closures A1, A2).
@@ -1325,16 +1163,6 @@ rhp/
      * `Communication`: generated for each `OFFER_COUNTERED` and `OFFER_DECLINED` event with structured reason codes.
 * **Verification Gate:**
   * Validate the JSON output of `/v1/referrals/{id}/export/fhir` against the FHIR R4 JSON schema validator.
-
-> ### 🛑 HALF-MODULE `M11-A` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `11.1` and `11.2` (AI Intake Accelerator `423 ANCHOR_REQUIRED` Cognitive Forcing Function + 20-Slip Seeded-Error Gate & FHIR R4 Bundle Exporter).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_ai_seeded_errors.py tests/test_fhir_exporter.py`
-> - **Git Commit & Tag:** `git commit -m "feat(M11-A): cognitive-forcing AI intake accelerator & FHIR R4 bundle exporter" && git tag step-M11A-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M11-A COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M11-B` until Gem 2 validates `M11-A` and Gem 1 issues the `M11-B` prompt.
-
----
-
-## HALF-MODULE M11-B (Prompt 2 of 2 for Module 11): IEEE 1849 XES / BSA Evidence Generator & Kotlin Android EMT App (Sub-Segments 11.3 – 11.4)
 
 ### 11.3 IEEE 1849 XES Process-Mining Exporter & BSA 2023 s.63 Hash-Bearing Evidence Bundle Generator
 * **Objective:** Export 4-hour bucketed XES event logs for process mining and generate a hash-bearing evidence package with Part A (Custodian) and Part B (Expert) certificate templates under Bharatiya Sakshya Adhiniyam (BSA) 2023 s.63.
@@ -1364,19 +1192,15 @@ rhp/
 * **Verification Gate (`T-P3`):**
   * Run unit tests verifying the FCM adapter payload contains zero clinical keys (`{"wake": "1"}` only) and the Room outbox retries with the identical `Idempotency-Key`.
 
----
-
-> ### 🛑 HALF-MODULE `M11-B` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `11.3` and `11.4` (IEEE 1849 XES Exporter, BSA 2023 s.63 Hash-Bearing Evidence Bundle & Native Kotlin Android EMT Client).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_bsa_xes_exports.py tests/test_fcm_zero_payload.py && make gate-t3`
-> - **Git Commit & Tag:** `git commit -m "feat(M11-B): IEEE 1849 XES / BSA evidence generator & native Kotlin Android app" && git tag step-M11B-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M11-B COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. (Completes Module 11 & T3_EXTRAS)
+> ### 🛑 MODULE `M11` FULL-MODULE COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
+> - **Scope Completed in This Prompt:** Full Module 11 (`11.1`, `11.2`, `11.3`, and `11.4` — AI Intake Accelerator `423 ANCHOR_REQUIRED` Cognitive Forcing Function + 20-Slip Seeded-Error Gate, FHIR R4 Bundle Exporter, IEEE 1849 XES Exporter, BSA 2023 s.63 Hash-Bearing Evidence Bundle & Native Kotlin Android EMT Client).
+> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_ai_seeded_errors.py tests/test_fhir_exporter.py tests/test_bsa_xes_exports.py tests/test_fcm_zero_payload.py && make gate-t3`
+> - **Git Commit & Tag:** `git commit -m "feat(M11): cognitive-forcing AI intake, FHIR/XES/BSA exports & Kotlin EMT app (T3 complete)" && git tag step-M11-loop1`
+> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 MODULE M11 COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M12` until Gem 2 validates `M11` (and **T3_EXTRAS**) and Gem 1 issues the `M12` prompt.
 
 ---
 
-## MODULE 12: Toxiproxy Chaos Matrix, Self-Audit CI Scripts (`ST-1`..`ST-5`) & Final Gate Suite (Priority 12)
-
-## HALF-MODULE M12-A (Prompt 1 of 2 for Module 12): Toxiproxy Chaos Injection & Automated Self-Audit CI Suite ST-1..ST-5 (Sub-Segments 12.1 – 12.2)
+## MODULE 12 (`M12` — Prompt 12 of 12): Toxiproxy Chaos Matrix, Self-Audit CI Scripts (`ST-1`..`ST-5`) & Final Gate Suite (Priority 12, Sub-Segments 12.1 – 12.3)
 
 ### 12.1 Eight-Scenario Toxiproxy Fault-Injection Matrix & Container Kill Recovery
 * **Objective:** Prove the platform survives network partitions, TCP resets, packet slicing, bandwidth throttling, and sudden API container crashes with zero lost or duplicated events.
@@ -1412,16 +1236,6 @@ rhp/
 * **Verification Gate:**
   * Run `pytest tests/test_lock_order.py tests/test_tmax_profiles.py tests/test_ddl_constraints.py tests/test_idempotency_matrix.py tests/test_claims_lexicon.py` with 100% pass rate.
 
-> ### 🛑 HALF-MODULE `M12-A` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `12.1` and `12.2` (Eight-Scenario Toxiproxy Fault-Injection Matrix & Automated Self-Audit CI Scripts `ST-1`..`ST-5`).
-> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_toxiproxy_chaos.py tests/test_lock_order.py tests/test_tmax_profiles.py tests/test_ddl_constraints.py tests/test_idempotency_matrix.py tests/test_claims_lexicon.py`
-> - **Git Commit & Tag:** `git commit -m "feat(M12-A): Toxiproxy chaos injection & automated self-audit CI suite ST-1..ST-5" && git tag step-M12A-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M12-A COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. Do NOT start `M12-B` until Gem 2 validates `M12-A` and Gem 1 issues the `M12-B` prompt.
-
----
-
-## HALF-MODULE M12-B (Prompt 2 of 2 for Module 12): Master Tier Acceptance Gate Runner & Preflight Rehearsal (Sub-Segment 12.3)
-
 ### 12.3 Master Tier Acceptance Gate Runner (`Makefile`)
 * **Objective:** Provide single-command verification gates (`make gate-t0`, `make gate-t1`, `make gate-t2`, `make gate-t3`, `make gate-all`) measuring every acceptance criterion in the Definition of Done.
 * **Files to Create:**
@@ -1439,13 +1253,11 @@ rhp/
 * **Verification Gate:**
   * Execute `make gate-all` and `scripts/preflight.sh` and confirm all 4 tier gates exit `0`.
 
----
-
-> ### 🛑 HALF-MODULE `M12-B` COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
-> - **Scope Completed in This Prompt:** Sub-Segments `12.3` (Master Tier Acceptance Gate Runner `Makefile` `gate-t0..gate-all` & `scripts/preflight.sh` Rehearsal Suite).
-> - **Combined Command to Run & Paste Raw Output:** `make gate-all && bash scripts/preflight.sh`
-> - **Git Commit & Tag:** `git commit -m "feat(M12-B): master tier acceptance gate runner & preflight rehearsal suite" && git tag step-M12B-loop1`
-> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 HALF-MODULE M12-B COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. (Completes Module 12 & Gate G3)
+> ### 🛑 MODULE `M12` FULL-MODULE COMBINED VERIFICATION GATE & GEM 2 VALIDATION HANDOFF
+> - **Scope Completed in This Prompt:** Full Module 12 (`12.1`, `12.2`, and `12.3` — Eight-Scenario Toxiproxy Fault-Injection Matrix, Automated Self-Audit CI Scripts `ST-1`..`ST-5`, Master Tier Acceptance Gate Runner `Makefile` `gate-t0..gate-all` & `scripts/preflight.sh` Rehearsal Suite).
+> - **Combined Command to Run & Paste Raw Output:** `pytest tests/test_toxiproxy_chaos.py tests/test_lock_order.py tests/test_tmax_profiles.py tests/test_ddl_constraints.py tests/test_idempotency_matrix.py tests/test_claims_lexicon.py && make gate-all && bash scripts/preflight.sh`
+> - **Git Commit & Tag:** `git commit -m "feat(M12): Toxiproxy chaos matrix, self-audit CI scripts ST-1..ST-5 & final gate suite" && git tag step-M12-loop1`
+> - **Mandatory Routing Action:** **STOP HERE AND GO TO GEM 2 (VALIDATION GEM) NOW!** Output `🛑 MODULE M12 COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!` + `=== VALIDATION-REQUEST FOR GEM 2 ===`. (Completes Module 12 & Gate G3)
 
 ---
 
@@ -1453,44 +1265,31 @@ rhp/
 
 ### 13.1 Phase P — Pre-Event Spec Artifacts Only (Verify Against Event Rules `[verify]`)
 
-In Phase P, only machine-readable specification artifacts and declarative definitions are authored. Each prompt corresponds to a pre-event Half-Module and triggers immediate Gem 2 Validation:
+In Phase P, only machine-readable specification artifacts and declarative definitions are authored. Building the complete Module 1 specification & database spine (`P-M1`) in a single prompt triggers immediate Gem 2 Validation:
 
-| Step / Half-Module | Lane | Artifact / Task | Modules Covered | Spec Ref | Risk | Gem 2 Validation Trigger |
+| Step / Module | Lane | Artifact / Task | Modules Covered | Spec Ref | Risk | Gem 2 Validation Trigger |
 |---|---|---|---|---|---|---|
-| **P-M1A** | Lane A + B | `db/01_schema.sql`, `db/02_roles.sql`, `db/03_seed.sql`, `spec/profiles.json` (signed profiles + $T_{\max}$ validator) | Module 1.1, 1.2, 1.3 | §6, §7 | HIGH | **Validate in Gem 2** |
-| **P-M1B** | Lane A | `spec/transitions.yaml`, `spec/rhp1.qnt` (Quint formal spec), `spec/parity_vectors.json`, 28 conformance vectors | Module 1.4, 1.5, 1.6 | §4, §5, §12 | HIGH | **Validate in Gem 2 (Completes Module 1)** |
+| **P-M1** | Lane A + B | `db/01_schema.sql`, `db/02_roles.sql`, `db/03_seed.sql`, `spec/profiles.json` (signed profiles + $T_{\max}$ validator), `spec/transitions.yaml`, `spec/rhp1.qnt` (Quint formal spec), `spec/parity_vectors.json`, 28 conformance vectors | Module 1 (`1.1`–`1.6`) | §4, §5, §6, §7, §12 | HIGH | **Validate `P-M1` in Gem 2 (Completes Module 1)** |
 | **P-Preflight** | Lane B | Run §21 pre-event hardware & sandbox checklist (Exotel trial, iOS Safari noble JS, LAN QR) | Pre-Flight | §21 | LOW | **Validate in Gem 2** |
 
-### 13.2 Phase E — 24-Hour At-Event Execution Plan (24 Half-Module Prompts)
+### 13.2 Phase E — 24-Hour At-Event Execution Plan (12 Full-Module Prompts)
 
-Every prompt executes **exactly one Half-Module** (`M1-A` through `M12-B`). Antigravity builds all sub-segments in that half-module, runs the combined verification gate, and hands off to **Gem 2 (Milestone Validator)**:
+Every prompt executes **exactly one Full Module** (`M1` through `M12`). Antigravity builds all sub-segments in that module, runs the combined verification gate, and hands off to **Gem 2 (Milestone Validator)**:
 
-| Hour | Half-Module | Primary Lane | Scope & Sub-Segments Built | Combined Verification Gate Command | Gate / Tier Milestone | Gem 2 Trigger |
+| Hours | Module ID | Primary Lane | Scope & Sub-Segments Built in Single Prompt | Full-Module Combined Verification Gate Command | Gate / Tier Milestone | Gem 2 Trigger |
 |---|---|---|---|---|---|---|
-| `H00–H01` | **`M1-A`** | Lane A + B | `1.1`–`1.3`: Workspace, Docker topology, PG16 24-table DDL, seed & signed timing profiles | `pytest tests/test_boot_guards.py tests/test_ddl_constraints.py tests/test_tmax_profiles.py` | — | **Validate `M1-A` in Gem 2** |
-| `H01–H02` | **`M1-B`** | Lane A | `1.4`–`1.6`: RFC 8785 JCS parity, `transitions.yaml` loader, Quint `rhp1.qnt` & Explorer | `pytest tests/test_jcs_parity.py tests/test_transitions_table.py && python tests/explore_transitions.py && quint run spec/rhp1.qnt --invariant safety --max-steps 25 --max-samples 20000` | **Completes Module 1** | **Validate `M1-B` in Gem 2** |
-| `H02–H03` | **`M2-A`** | Lane A | `2.1`–`2.3`: Dual connection pools, sessions (cookie/voice), Argon2id autonomous lockout | `pytest tests/test_auth_sessions.py tests/test_pin_lockout_scope.py` | — | **Validate `M2-A` in Gem 2** |
-| `H03–H04` | **`M2-B`** | Lane A | `2.4`–`2.5`: Role-command authz matrix, Pydantic schemas, 10-step `apply_command()` pipeline | `pytest tests/test_authz_matrix.py tests/test_pipeline_core.py` | **Completes Module 2** | **Validate `M2-B` in Gem 2** |
-| `H04–H05` | **`M3-A`** | Lane A | `3.1`–`3.3`: `CREATE`, `ACK`, `RESOURCE_CONFIRM`, `ACCEPT` single-owner lease arbitration | `pytest tests/test_cmd_create.py tests/test_cmd_ack_confirm.py tests/test_cmd_accept.py` | — | **Validate `M3-A` in Gem 2** |
-| `H05–H06` | **`M3-B`** | Lane A | `3.4`–`3.6`: `DECLINE` + `advance()`, `COUNTER` negotiation, terminal commands (`CLOSE`, etc.) | `pytest tests/test_cmd_decline_advance.py tests/test_cmd_counter.py tests/test_cmd_lifecycle.py` | **Completes Module 3** | **Validate `M3-B` in Gem 2** |
-| `H06–H07` | **`M4-A`** | Lane B / A | `4.1`–`4.2`: Independent runtime monitor `monitor.py` (F17), 200-way concurrency barrier (`race200`), idempotency matrix | `pytest tests/test_monitor_fold.py tests/test_race200.py tests/test_idempotency_matrix.py` | — | **Validate `M4-A` in Gem 2** |
-| `H07–H08` | **`M4-B`** | Lane B / A | `4.3`–`4.4`: Safe `BROKEN_BUILD` scratch DB isolation, mutation tests `M1`–`M6`, 28 conformance vectors | `pytest tests/test_broken_build.py tests/test_mutations.py tests/test_conformance_vectors.py` | **Completes Module 4 / T0 Proof Core** | **Validate `M4-B` in Gem 2** |
-| `H08–H09` | **`M5-A`** | Lane A | `5.1`–`5.3`: Two-phase stateless poller, intra-facility notice ladder ($0, A/4, 3A/4$), outbox relay | `pytest tests/test_poller_liveness.py tests/test_notice_ladder_and_closure.py` | — | **Validate `M5-A` in Gem 2** |
-| `H09–H10` | **`M5-B`** | Lane A + B | `5.4`–`5.5`: Authorized SSE hub with `GRANT_REVOKED` stream stripping, heartbeats & clock-step guard | `pytest tests/test_sse_revoke.py tests/test_clock_and_heartbeats.py` | **Completes Module 5** | **Validate `M5-B` in Gem 2** |
-| `H10–H11` | **`M6-A`** | Lane A | `6.1`–`6.2`: Separate-OS-user witness signer 5s Merkle tree, off-box sync & cold-key `RESTORE` | `pytest tests/test_witness_merkle.py tests/test_tamper_vs_restore.py` | — | **Validate `M6-A` in Gem 2** |
-| `H11–H12` | **`M6-B`** | Lane B | `6.3`: Pure-JS browser verifier (`verifier.ts` with `@noble`) & superuser SQL `tamper.sh` | `npm --prefix pwa test -- verifier && bash scripts/tamper.sh --dry-check` | **Completes Module 6** | **Validate `M6-B` in Gem 2** |
-| `H12–H13` | **`M7-A`** | Lane B | `7.1`–`7.3`: React PWA shell, SSE state store, rotating judge QR admission, referring clinician card | `pytest tests/test_judge_join.py && npm --prefix pwa run build` | — | **Validate `M7-A` in Gem 2** |
-| `H13–H14` | **`M7-B`** | Lane B | `7.4`–`7.6`: Receiving duty desk, judge race desk + verifier drawer, Guarantee Arena big screen | `npm --prefix pwa test && make gate-t0` | **GATE G0 (T0 PASS)** | **Validate `M7-B` in Gem 2** |
-| `H14–H15` | **`M8-A`** | Lane A | `8.1`–`8.2`: Parallel transport track API, 6 arrival cases, Mapbox Matrix ETA service cache | `pytest tests/test_transport_and_arrivals.py` | — | **Validate `M8-A` in Gem 2** |
-| `H15–H16` | **`M8-B`** | Lane B | `8.3`–`8.4`: PWA ambulance client (foreground GPS) & Dispatcher Console with replay scrubber | `pytest tests/test_dispatcher_proxy_and_replay.py && make gate-t1` | **GATE G1 (T1 PASS)** | **Validate `M8-B` in Gem 2** |
-| `H16–H17` | **`M9-A`** | Lane B + A | `9.1`–`9.3`: Outbound Exotel IVR, AMD + Press-1 human gate, DTMF menu & per-call PIN verification | `pytest tests/test_exotel_ivr.py` | — | **Validate `M9-A` in Gem 2** |
-| `H17–H18` | **`M9-B`** | Lane B | `9.4`–`9.5`: TRAI DLT static SMS adapter & 9-char Crockford Base32 + mod-37 paper code codec | `pytest tests/test_dlt_sms_lint.py tests/test_paper_code_mod37.py && make gate-t2` | **GATE G2 (T2 PASS)** | **Validate `M9-B` in Gem 2** |
-| `H18–H19` | **`M10-A`** | Lane A | `10.1`–`10.2`: AES-256-GCM envelope encryption, monthly KEK wrapping, automated crypto-shredder | `pytest tests/test_envelope_crypto.py` | — | **Validate `M10-A` in Gem 2** |
-| `H19–H20` | **`M10-B`** | Lane A + B | `10.3`–`10.4`: District command centre live map/APOT KPIs & `networkx` graph aggregations ($k \ge 5$) | `pytest tests/test_analytics_recompute.py` | **Completes Module 10** | **Validate `M10-B` in Gem 2** |
-| `H20–H20:30` | **`M11-A`** | Lane A + B | `11.1`–`11.2`: Cognitive-forcing AI intake (`423 ANCHOR_REQUIRED`) + 20-slip gate, FHIR R4 exporter | `pytest tests/test_ai_seeded_errors.py tests/test_fhir_exporter.py` | — | **Validate `M11-A` in Gem 2** |
-| `H20:30–H21` | **`M11-B`** | Lane A + B | `11.3`–`11.4`: IEEE 1849 XES / BSA s.63 evidence generator & native Kotlin Android EMT client | `pytest tests/test_bsa_xes_exports.py tests/test_fcm_zero_payload.py && make gate-t3` | **Completes Module 11 (T3)** | **Validate `M11-B` in Gem 2** |
-| `H21–H21:45` | **`M12-A`** | Lane A | `12.1`–`12.2`: Eight-scenario Toxiproxy fault matrix & automated self-audit CI scripts (`ST-1`..`ST-5`) | `pytest tests/test_toxiproxy_chaos.py tests/test_lock_order.py tests/test_tmax_profiles.py tests/test_ddl_constraints.py tests/test_idempotency_matrix.py tests/test_claims_lexicon.py` | — | **Validate `M12-A` in Gem 2** |
-| `H21:45–H22` | **`M12-B`** | Lane A + B | `12.3`: Master tier acceptance gate runner `Makefile` (`gate-all`) & `scripts/preflight.sh` rehearsal | `make gate-all && bash scripts/preflight.sh` | **GATE G3 (REHEARSAL)** | **Validate `M12-B` in Gem 2** |
+| `H00–H02` | **`M1`** | Lane A + B | `1.1`–`1.6`: Workspace, Docker topology, PG16 24-table DDL, seed, signed timing profiles, RFC 8785 JCS parity, `transitions.yaml` loader, Quint `rhp1.qnt` & Explorer | `pytest tests/test_boot_guards.py tests/test_ddl_constraints.py tests/test_tmax_profiles.py tests/test_jcs_parity.py tests/test_transitions_table.py && python tests/explore_transitions.py && quint run spec/rhp1.qnt --invariant safety --max-steps 25 --max-samples 20000` | **Completes Module 1** | **Validate `M1` in Gem 2** |
+| `H02–H04` | **`M2`** | Lane A | `2.1`–`2.5`: Dual connection pools, sessions (cookie/voice), Argon2id autonomous lockout, role-command authz matrix, Pydantic schemas, 10-step `apply_command()` pipeline | `pytest tests/test_auth_sessions.py tests/test_pin_lockout_scope.py tests/test_authz_matrix.py tests/test_pipeline_core.py` | **Completes Module 2** | **Validate `M2` in Gem 2** |
+| `H04–H06` | **`M3`** | Lane A | `3.1`–`3.6`: `CREATE`, `ACK`, `RESOURCE_CONFIRM`, `ACCEPT` single-owner lease arbitration, `DECLINE` + `advance()`, `COUNTER` negotiation, terminal commands (`CLOSE`, etc.) | `pytest tests/test_cmd_create.py tests/test_cmd_ack_confirm.py tests/test_cmd_accept.py tests/test_cmd_decline_advance.py tests/test_cmd_counter.py tests/test_cmd_lifecycle.py` | **Completes Module 3** | **Validate `M3` in Gem 2** |
+| `H06–H08` | **`M4`** | Lane B / A | `4.1`–`4.4`: Independent runtime monitor `monitor.py` (F17), 200-way concurrency barrier (`race200`), idempotency matrix, safe `BROKEN_BUILD` scratch DB isolation, mutation tests `M1`–`M6`, 28 conformance vectors | `pytest tests/test_monitor_fold.py tests/test_race200.py tests/test_idempotency_matrix.py tests/test_broken_build.py tests/test_mutations.py tests/test_conformance_vectors.py` | **Completes Module 4 / T0 Proof Core** | **Validate `M4` in Gem 2** |
+| `H08–H10` | **`M5`** | Lane A + B | `5.1`–`5.5`: Two-phase stateless poller, intra-facility notice ladder ($0, A/4, 3A/4$), outbox relay, authorized SSE hub with `GRANT_REVOKED` stream stripping, heartbeats & clock-step guard | `pytest tests/test_poller_liveness.py tests/test_notice_ladder_and_closure.py tests/test_sse_revoke.py tests/test_clock_and_heartbeats.py` | **Completes Module 5** | **Validate `M5` in Gem 2** |
+| `H10–H12` | **`M6`** | Lane A + B | `6.1`–`6.3`: Separate-OS-user witness signer 5s Merkle tree, off-box sync & cold-key `RESTORE`, pure-JS browser verifier (`verifier.ts` with `@noble`) & superuser SQL `tamper.sh` | `pytest tests/test_witness_merkle.py tests/test_tamper_vs_restore.py && npm --prefix pwa test -- verifier && bash scripts/tamper.sh --dry-check` | **Completes Module 6** | **Validate `M6` in Gem 2** |
+| `H12–H14` | **`M7`** | Lane B | `7.1`–`7.6`: React PWA shell, SSE state store, rotating judge QR admission, referring clinician card, receiving duty desk, judge race desk + verifier drawer, Guarantee Arena big screen | `pytest tests/test_judge_join.py && npm --prefix pwa run build && npm --prefix pwa test && make gate-t0` | **GATE G0 (T0 PASS)** | **Validate `M7` in Gem 2** |
+| `H14–H16` | **`M8`** | Lane A + B | `8.1`–`8.4`: Parallel transport track API, 6 arrival cases, Mapbox Matrix ETA service cache, PWA ambulance client (foreground GPS) & Dispatcher Console with replay scrubber | `pytest tests/test_transport_and_arrivals.py tests/test_dispatcher_proxy_and_replay.py && make gate-t1` | **GATE G1 (T1 PASS)** | **Validate `M8` in Gem 2** |
+| `H16–H18` | **`M9`** | Lane B + A | `9.1`–`9.5`: Outbound Exotel IVR, AMD + Press-1 human gate, DTMF menu & per-call PIN verification, TRAI DLT static SMS adapter & 9-char Crockford Base32 + mod-37 paper code codec | `pytest tests/test_exotel_ivr.py tests/test_dlt_sms_lint.py tests/test_paper_code_mod37.py && make gate-t2` | **GATE G2 (T2 PASS)** | **Validate `M9` in Gem 2** |
+| `H18–H20` | **`M10`** | Lane A + B | `10.1`–`10.4`: AES-256-GCM envelope encryption, monthly KEK wrapping, automated crypto-shredder, District command centre live map/APOT KPIs & `networkx` graph aggregations ($k \ge 5$) | `pytest tests/test_envelope_crypto.py tests/test_analytics_recompute.py` | **Completes Module 10** | **Validate `M10` in Gem 2** |
+| `H20–H21` | **`M11`** | Lane A + B | `11.1`–`11.4`: Cognitive-forcing AI intake (`423 ANCHOR_REQUIRED`) + 20-slip gate, FHIR R4 exporter, IEEE 1849 XES / BSA s.63 evidence generator & native Kotlin Android EMT client | `pytest tests/test_ai_seeded_errors.py tests/test_fhir_exporter.py tests/test_bsa_xes_exports.py tests/test_fcm_zero_payload.py && make gate-t3` | **Completes Module 11 (T3)** | **Validate `M11` in Gem 2** |
+| `H21–H22` | **`M12`** | Lane A + B | `12.1`–`12.3`: Eight-scenario Toxiproxy fault matrix, automated self-audit CI scripts (`ST-1`..`ST-5`), Master tier acceptance gate runner `Makefile` (`gate-all`) & `scripts/preflight.sh` rehearsal | `pytest tests/test_toxiproxy_chaos.py tests/test_lock_order.py tests/test_tmax_profiles.py tests/test_ddl_constraints.py tests/test_idempotency_matrix.py tests/test_claims_lexicon.py && make gate-all && bash scripts/preflight.sh` | **GATE G3 (REHEARSAL)** | **Validate `M12` in Gem 2** |
 | `H22–H24` | **`FREEZE`** | Team A + B | **HARD CODE FREEZE AT H22:** Configuration-only tweaks, 30s live proof loop rehearsal $\times 3$, dual-uplink check | `bash scripts/preflight.sh` | **STAGE READY** | **Final Demo Polish** |
 
 ---

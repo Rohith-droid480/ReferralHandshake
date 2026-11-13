@@ -114,7 +114,7 @@ class BaseCommand(BaseModel):
 
     type: str
     referral_id: Optional[UUID] = None
-    expected_version: int = Field(default=0, ge=0, description="Optimistic referral version (Invariant I8)")
+    expected_version: Optional[int] = Field(default=None, ge=0, description="Optimistic referral version (Invariant I8)")
     expected_epoch: Optional[int] = Field(default=None, ge=0, description="Optimistic lease epoch (Invariant I8)")
     event_id: Optional[UUID] = Field(default=None, description="Pre-minted client event UUID")
     channel: Literal["PWA", "ANDROID", "VOICE", "SMS_LINK", "PAPER", "DISPATCHER_PROXY", "SYSTEM"] = "PWA"

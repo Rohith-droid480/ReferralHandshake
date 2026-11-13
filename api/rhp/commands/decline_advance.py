@@ -296,3 +296,4 @@ def execute_decline(
         "reason": decline_reason,
         "facility": str(target_offer.facility_id),
     }
+

@@ -180,6 +180,12 @@ def apply_command(
     Domain rejections rollback state changes to SAVEPOINT sp_cmd while logging to rejected_command.
     """
     now = datetime.now(timezone.utc)
+    actor_id: Optional[UUID] = None
+    ref_id: Optional[UUID] = None
+    session: Optional[Session] = None
+    cmd_type: str = "UNKNOWN"
+    sp_created: bool = False
+    ts: datetime = now
 
     # -------------------------------------------------------------------------
     # STEP 1: Idempotency (Before Referral Lock) (Closures F1, F14)
@@ -202,10 +208,24 @@ def apply_command(
         cmd = cmd_or_dict
     else:
         cmd = parse_command(cmd_or_dict)
+    cmd_type = cmd.type
 
     # Canonical request hash via RFC 8785 JCS canonical bytes
     canonical_body = jcs(cmd.model_dump(mode="json"))
     req_hash = hashlib.sha256(canonical_body).digest()
+
+    # Pre-minted event_id uniqueness check (F14, Invariant I4)
+    if getattr(cmd, "event_id", None):
+        cur_ev = conn.execute(
+            "SELECT 1 FROM event WHERE event_id = %s;",
+            (str(cmd.event_id),),
+        )
+        if cur_ev and cur_ev.fetchone():
+            raise TransitionReject(
+                409,
+                "DUPLICATE_EVENT_ID",
+                f"Event with event_id '{cmd.event_id}' has already been committed",
+            )
 
     # Acquire transaction-scoped advisory lock
     cur_adv = conn.execute(
@@ -270,6 +290,7 @@ def apply_command(
         conn.execute("SELECT set_config('rhp.locked_referral', %s, true);", (str(ref_id),))
         ts = get_monotone_ts(conn)
         conn.execute("SAVEPOINT sp_cmd;")
+        sp_created = True
     else:
         ref_id = cmd.referral_id
         if not ref_id:
@@ -296,6 +317,7 @@ def apply_command(
         head_ts = ref_row[20]
         ts = get_monotone_ts(conn, head_ts)
         conn.execute("SAVEPOINT sp_cmd;")
+        sp_created = True
 
         referral = ReferralState({
             "id": ref_row[0],
@@ -696,7 +718,7 @@ def apply_command(
         # ---------------------------------------------------------------------
         validate_event_detail(event_type, event_detail)
 
-        event_id = uuid4()
+        event_id = getattr(cmd, "event_id", None) or uuid4()
         core_event = {
             "referral_id": str(ref_id),
             "seq": seq,
@@ -796,39 +818,51 @@ def apply_command(
         # ---------------------------------------------------------------------
         # SAVEPOINT REJECTION HANDLER (Architecture §5 Step 10)
         # ---------------------------------------------------------------------
-        # Roll back state changes made after the savepoint
-        conn.execute("ROLLBACK TO SAVEPOINT sp_cmd;")
-
-        # Log audit entry into rejected_command
-        conn.execute(
-            """
-            INSERT INTO rejected_command (
-              actor_id, key, referral_id, command, http_status, reason_code, session_id, created_at
-            ) VALUES (
-              %s, %s, %s, %s, %s, %s, %s, %s
-            );
-            """,
-            (
-                str(actor_id), str(idem_key), str(ref_id) if ref_id else None,
-                cmd.type, exc.http_status, exc.reason_code, str(session.id) if session else None, ts,
-            ),
-        )
+        # Roll back state changes made after the savepoint if savepoint was created
+        if sp_created:
+            try:
+                conn.execute("ROLLBACK TO SAVEPOINT sp_cmd;")
+            except Exception:
+                pass
 
         err_response = {
             "status": "REJECTED",
             "reason": exc.reason_code,
             "message": exc.message,
-            "command": cmd.type,
+            "command": cmd_type,
         }
 
+        # Log audit entry into rejected_command if actor is identified
+        if actor_id:
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO rejected_command (
+                      actor_id, key, referral_id, command, http_status, reason_code, session_id, created_at
+                    ) VALUES (
+                      %s, %s, %s, %s, %s, %s, %s, %s
+                    );
+                    """,
+                    (
+                        str(actor_id), str(idem_key), str(ref_id) if ref_id else None,
+                        cmd_type, exc.http_status, exc.reason_code, str(session.id) if session else None, ts,
+                    ),
+                )
+            except Exception:
+                pass
+
         # Store deterministic rejection in idempotency table so replays return exact outcome
-        conn.execute(
-            """
-            UPDATE idempotency
-            SET status = 'DONE', http_status = %s, response = %s
-            WHERE actor_id = %s AND key = %s;
-            """,
-            (exc.http_status, json.dumps(err_response), str(actor_id), str(idem_key)),
-        )
+        if actor_id and idem_key:
+            try:
+                conn.execute(
+                    """
+                    UPDATE idempotency
+                    SET status = 'DONE', http_status = %s, response = %s
+                    WHERE actor_id = %s AND key = %s;
+                    """,
+                    (exc.http_status, json.dumps(err_response), str(actor_id), str(idem_key)),
+                )
+            except Exception:
+                pass
 
         return exc.http_status, err_response

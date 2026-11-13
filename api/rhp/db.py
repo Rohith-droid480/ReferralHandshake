@@ -14,6 +14,7 @@ from __future__ import annotations
 import contextlib
 import os
 import sys
+import threading
 from datetime import datetime, timezone
 from typing import Any, Dict, Generator, Optional, Set, Tuple, Union
 from uuid import UUID
@@ -57,7 +58,15 @@ class MockDatabase:
         self.sessions: Dict[str, Dict[str, Any]] = {}
         self.referrals: Dict[str, Dict[str, Any]] = {}
         self.advisory_locks: Set[str] = set()
+        self.row_locks: Dict[str, Any] = {}
+        self.row_locks_guard = threading.Lock()
         self.seed_defaults()
+
+    def get_row_lock(self, ref_id: str) -> Any:
+        with self.row_locks_guard:
+            if ref_id not in self.row_locks:
+                self.row_locks[ref_id] = threading.Lock()
+            return self.row_locks[ref_id]
 
     def seed_defaults(self) -> None:
         """Seeds default synthetic Karnataka facilities and roster slots."""
@@ -468,6 +477,7 @@ class MockConnection:
         self.staged_device_inserts: list[Dict[str, Any]] = []
         self.staged_session_inserts: list[Dict[str, Any]] = []
         self.staged_actions: list[Any] = []
+        self.held_row_locks: list[Any] = []
 
     def cursor(self) -> MockCursor:
         return MockCursor(self)
@@ -498,6 +508,14 @@ class MockConnection:
             self.db.advisory_locks.discard(lock_key)
         self.held_locks.clear()
 
+        # Release row locks held in transaction
+        for rk in self.held_row_locks:
+            try:
+                rk.release()
+            except Exception:
+                pass
+        self.held_row_locks.clear()
+
     def rollback(self) -> None:
         # Discard staged changes
         self.staged_ticket_inserts.clear()
@@ -509,6 +527,14 @@ class MockConnection:
         for lock_key in list(self.held_locks):
             self.db.advisory_locks.discard(lock_key)
         self.held_locks.clear()
+
+        # Release row locks held in transaction
+        for rk in self.held_row_locks:
+            try:
+                rk.release()
+            except Exception:
+                pass
+        self.held_row_locks.clear()
 
     def close(self) -> None:
         if self.staged_ticket_inserts or self.staged_device_inserts or self.staged_session_inserts or self.staged_actions:

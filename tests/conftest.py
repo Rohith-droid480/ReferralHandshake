@@ -126,8 +126,8 @@ def _wire_mock_engine() -> None:
             actor_id, key = str(p[0]), str(p[1])
             idem_id = f"{actor_id}:{key}"
             rec = db.idempotency.get(idem_id)
-            if rec:
-                self.result = [(rec["request_hash"], rec["status"], rec["http_status"], rec["response"])]
+            if rec and (rec.get("expires_at") is None or rec["expires_at"] > datetime.now(timezone.utc)):
+                self.result = [(rec["request_hash"], rec["status"], rec.get("http_status"), rec.get("response"))]
             else:
                 self.result = []
             return
@@ -171,6 +171,13 @@ def _wire_mock_engine() -> None:
         # ---------------------------------------------------------------------
         if "FROM REFERRAL" in nq and "WHERE ID = %S" in nq:
             ref_id = str(p[0])
+            if "FOR UPDATE" in nq and hasattr(db, "get_row_lock"):
+                lock = db.get_row_lock(ref_id)
+                if not hasattr(self.connection, "held_row_locks"):
+                    self.connection.held_row_locks = []
+                if lock not in self.connection.held_row_locks:
+                    lock.acquire()
+                    self.connection.held_row_locks.append(lock)
             r = db.referrals.get(ref_id)
             if r:
                 if nq.startswith("SELECT VERSION, HS_STATE FROM REFERRAL"):
@@ -733,11 +740,20 @@ def _wire_mock_engine() -> None:
         # ---------------------------------------------------------------------
         # 7. EVENT & OUTBOX
         # ---------------------------------------------------------------------
+        if "FROM EVENT" in nq and "WHERE EVENT_ID = %S" in nq:
+            ev_id_check = str(p[0])
+            matched = [e for e in db.events if e.get("event_id") == ev_id_check]
+            self.result = [(1,)] if matched else []
+            return
+
         if "INSERT INTO EVENT" in nq:
             (
                 r_id, seq, ev_id, ev_type, act_r, act_fac, chan, proxy, proxy_for,
                 epoch, detail, sec_hash, cli_ts, srv_ts, prev_h, ev_h
             ) = p
+            ev_id_str = str(ev_id)
+            if any(e.get("event_id") == ev_id_str for e in db.events):
+                raise RuntimeError("DUPLICATE_EVENT_ID")
             db.events.append({
                 "referral_id": str(r_id),
                 "seq": int(seq),

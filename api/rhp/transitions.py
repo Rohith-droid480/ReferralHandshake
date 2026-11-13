@@ -16,6 +16,8 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
+from api.rhp.config import get_settings
+
 PINNED_TRANSITIONS_RAW_SHA256 = "262d75ec6af32c6caf718027b960a302a2f39e59b235bee2f7c5832359c3af29"
 PINNED_TRANSITIONS_NORM_SHA256 = "d32d3a3c7fa5b80dbca2e8b508623521246808d24bb468c4773727f566837b31"
 
@@ -212,18 +214,19 @@ class TransitionsTable:
 
         # 3. Allowed Handshake States
         allowed_hs = pre.get("hs_state") or pre.get("allowed_hs")
+        is_broken_build = get_settings().BROKEN_BUILD == 1
         if allowed_hs is not None and hs_state is not None:
             if isinstance(allowed_hs, str):
                 allowed_hs = [allowed_hs]
-            if hs_state not in allowed_hs:
+            if hs_state not in allowed_hs and not (cmd_type == "ACCEPT" and is_broken_build):
                 raise TransitionReject(
                     409,
                     "INVALID_TRANSITION",
                     f"Command {cmd_type} requires hs_state in {allowed_hs}, got '{hs_state}'",
                 )
 
-        # 4. No Active Lease Precondition (for ACCEPT, CONFIRM_COUNTER)
-        if pre.get("no_active_lease") and referral is not None:
+        # 4. No Active Lease Precondition (for ACCEPT, CONFIRM_COUNTER) (bypassed in BROKEN_BUILD)
+        if pre.get("no_active_lease") and referral is not None and not is_broken_build:
             if hs_state == "ACCEPTED" or lease_offer_id is not None or lease_facility_id is not None:
                 raise TransitionReject(
                     409,

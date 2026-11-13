@@ -325,3 +325,4 @@ def test_decline_rejects_already_terminal_or_invalid_offer():
         )
         assert status_dup == 409
         assert resp_dup["status"] == "REJECTED"
+
