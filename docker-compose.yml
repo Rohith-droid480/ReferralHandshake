@@ -225,7 +225,12 @@ services:
       SCRATCH_WITNESS_PRIVATE_KEY_FILE: ${SCRATCH_WITNESS_PRIVATE_KEY_FILE:-/run/secrets/scratch_witness_ed25519.key}
     volumes:
       - witness_out:/var/log/rhp-witness
-      - ./secrets/witness_ed25519.key:/run/secrets/witness_ed25519.key:ro
+    secrets:
+      - source: witness_ed25519.key
+        target: /run/secrets/witness_ed25519.key
+        uid: "1002"
+        gid: "1002"
+        mode: 0400
     networks:
       - rhp_net
 
@@ -281,3 +286,7 @@ volumes:
 networks:
   rhp_net:
     driver: bridge
+
+secrets:
+  witness_ed25519.key:
+    file: ./secrets/witness_ed25519.key
