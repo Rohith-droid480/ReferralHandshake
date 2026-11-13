@@ -36,7 +36,7 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./spec/ddl:/docker-entrypoint-initdb.d:ro
+      - ./db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-rhp_main}"]
       interval: 2s
@@ -56,9 +56,9 @@ services:
       pg:
         condition: service_healthy
     ports:
-      - "8474:8474"   # Toxiproxy HTTP control API
-      - "5433:5433"   # Proxied PostgreSQL port for API↔DB chaos tests
-      - "8001:8001"   # Proxied FastAPI port for Phone↔API chaos tests
+      - "8474:8474"       # Toxiproxy HTTP control API
+      - "25432:25432"     # Proxied PostgreSQL port for API↔DB chaos tests
+      - "28000:28000"     # Proxied FastAPI port for Phone↔API chaos tests
     networks:
       - rhp_net
 
@@ -218,12 +218,14 @@ services:
       BROKEN_BUILD: ${BROKEN_BUILD:-0}
       DEPLOYMENT_ID: ${DEPLOYMENT_ID:-colossus3-bengaluru-demo}
       RHP_WITNESS_DSN: ${RHP_WITNESS_DSN:-postgresql://rhp_witness:rhp_witness_local_dev_only@pg:5432/rhp_main}
+      RHP_SCRATCH_WITNESS_DSN: ${RHP_SCRATCH_WITNESS_DSN:-postgresql://rhp_witness:rhp_witness_local_dev_only@pg:5432/rhp_scratch_broken}
       WITNESS_CHECKPOINT_INTERVAL_S: ${WITNESS_CHECKPOINT_INTERVAL_S:-5}
       WITNESS_SIGNER_KEY_ID: ${WITNESS_SIGNER_KEY_ID:-rhp1-witness-2026-11}
       WITNESS_PRIVATE_KEY_FILE: ${WITNESS_PRIVATE_KEY_FILE:-/run/secrets/witness_ed25519.key}
       SCRATCH_WITNESS_PRIVATE_KEY_FILE: ${SCRATCH_WITNESS_PRIVATE_KEY_FILE:-/run/secrets/scratch_witness_ed25519.key}
     volumes:
       - witness_out:/var/log/rhp-witness
+      - ./secrets/witness_ed25519.key:/run/secrets/witness_ed25519.key:ro
     networks:
       - rhp_net
 

@@ -1,0 +1,10 @@
+# =============================================================================
+# ReferralHandshake (RHP-1) — CODEOWNERS
+# Enforces human/lane ownership over frozen specs, schema, monitor & constitution
+# =============================================================================
+
+/spec/                  @person-a @person-b
+/db/schema.sql          @person-a
+/monitor/               @person-b
+/AGENTS.md              @person-a @person-b
+/GEMINI.md              @person-a @person-b
