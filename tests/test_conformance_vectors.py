@@ -552,3 +552,242 @@ def test_p1_code_disclosure_and_pinning():
             eng.apply_timeout(c_dl2["id"])
             assert eng.referral["hs_state"] == "CLOSED"
             assert eng.referral["outcome"] == "UNKNOWN_COUNTER_REFERRAL"
+
+
+# =============================================================================
+# RED-TEAM ATTACK TEST A-1 (Loop 3): Handover Deadline Cancellation (D-P1-6)
+# =============================================================================
+def test_p1_handover_deadline_cancellation():
+    """
+    Closes A-1 / D-P1-6:
+    1. Referral is ACCEPTED, creating a pending HANDOVER deadline.
+    2. Transport advances to HANDED_OVER.
+    3. The pending HANDOVER deadline must be marked DONE.
+    4. A new CLOSURE deadline is created (status=PENDING).
+    5. Invoking apply_timeout on the original HANDOVER deadline returns 200 NO_OP,
+       preventing spurious HANDOVER_OVERDUE alarms.
+    """
+    engine = TransitionEngine()
+    engine.apply_create("ref_a1", "PHC_A", ["CHC_B"])
+    code, _ = engine.apply_accept("off_1")
+    assert code == 200
+
+    # Locate the pending HANDOVER deadline
+    handover_dl = [d for d in engine.deadlines if d["kind"] == "HANDOVER" and d["status"] == "PENDING"]
+    assert len(handover_dl) == 1
+    h_id = handover_dl[0]["id"]
+
+    # Advance transport through to HANDED_OVER
+    engine.apply_tr_update("DISPATCHED")
+    engine.apply_tr_update("EN_ROUTE")
+    engine.apply_tr_update("ARRIVED", is_human=True)
+    code, res = engine.apply_tr_update("HANDED_OVER")
+    assert code == 200
+
+    # Verify original HANDOVER deadline is now DONE
+    h_dl_after = [d for d in engine.deadlines if d["id"] == h_id][0]
+    assert h_dl_after["status"] == "DONE"
+
+    # Verify a new CLOSURE deadline was armed
+    closure_dl = [d for d in engine.deadlines if d["kind"] == "CLOSURE" and d["status"] == "PENDING"]
+    assert len(closure_dl) == 1
+
+    # Verify subsequent timeout call on HANDOVER deadline is a safe NO_OP
+    code, res = engine.apply_timeout(h_id)
+    assert code == 200
+    assert res == "NO_OP"
+
+
+# =============================================================================
+# RED-TEAM ATTACK TEST A-2 (Loop 3): Counter Deadline Clamping Math & Timeout Status (D-P1-6)
+# =============================================================================
+def test_p1_counter_confirm_deadline_clamping_math():
+    """
+    Closes A-2 / D-P1-6:
+    1. Formula: ts + min(C, max(0, decision_due_at - ts)).
+    2. Given decision_due_at = ts + 10s and C = 90s, COUNTER_CONFIRM deadline must be ts + 10s.
+    3. On TIMEOUT of COUNTER_CONFIRM in SEQUENTIAL mode, offer transitions to SOFT_OPEN (or TIMED_OUT),
+       NOT DECLINED, and next offer in chain is advanced.
+    4. On TIMEOUT of COUNTER_CONFIRM in PARALLEL2 mode, offer transitions to TIMED_OUT, NOT DECLINED.
+    """
+    # 1 & 2. Clamping math check: decision_due_at is 10s away, C is 90s -> clamped to 10s
+    engine = TransitionEngine()
+    engine.apply_create("ref_a2", "PHC_A", ["CHC_B", "FRU_C"], mode="SEQUENTIAL")
+    engine.current_time_ms = 1000
+    engine.apply_ack("off_1")
+    engine.offers[0]["decision_due_at"] = 11000
+    engine.current_time_ms = 1000  # ts = 1000, remaining_d = 10000 ms = 10s
+    c_ttl = 90000  # C = 90s
+
+    code, res = engine.apply_counter("off_1", counter_ttl_ms=c_ttl)
+    assert code == 200
+    cc_dl = [d for d in engine.deadlines if d["kind"] == "COUNTER_CONFIRM" and d["status"] == "PENDING"][0]
+    # Clamped to 1000 + min(90000, 10000) = 11000
+    assert cc_dl["due_at"] == 11000
+
+    # 3. In SEQUENTIAL mode: timeout transitions offer to SOFT_OPEN (not DECLINED!)
+    code, res = engine.apply_timeout(cc_dl["id"])
+    assert code == 200
+    assert res == "COUNTER_TIMEOUT_PROCESSED"
+    assert engine.offers[0]["status"] == "SOFT_OPEN"  # NOT DECLINED
+    assert engine.offers[1]["status"] == "OPEN"
+    assert engine.count_open_offers() == 2
+
+    # 4. In PARALLEL2 mode: timeout transitions offer to TIMED_OUT (not DECLINED!)
+    eng_par = TransitionEngine()
+    eng_par.apply_create("ref_a2_par", "PHC_A", ["CHC_B", "FRU_C", "DH_D"], mode="PARALLEL2")
+    eng_par.apply_ack("off_1")
+    eng_par.apply_counter("off_1")
+    cc_dl_par = [d for d in eng_par.deadlines if d["kind"] == "COUNTER_CONFIRM" and d["status"] == "PENDING"][0]
+    code, _ = eng_par.apply_timeout(cc_dl_par["id"])
+    assert code == 200
+    assert eng_par.offers[0]["status"] == "TIMED_OUT"  # NOT DECLINED
+
+
+# =============================================================================
+# RED-TEAM ATTACK TEST A-3 (Loop 3): Arrival Desk Role Authorization (D-P1-7)
+# =============================================================================
+def test_p1_arrival_desk_role_authorization():
+    """
+    Closes A-3 / D-P1-7:
+    1. NURSE and CMO are authorized roles for TR_UPDATE.
+    2. When a receiving desk NURSE or CMO confirms arrival, TR_UPDATE(ARRIVED) succeeds with 200.
+    3. An unauthorized role (e.g. UNREGISTERED_ROLE) is rejected with 403 FORBIDDEN_ROLE.
+    4. ARRIVED requires is_human=True; is_human=False returns 403 HUMAN_CONFIRMATION_REQUIRED.
+    """
+    # 1 & 2. NURSE confirmation succeeds
+    eng_nurse = TransitionEngine()
+    eng_nurse.apply_create("ref_nurse", "PHC_A", ["CHC_B"])
+    eng_nurse.apply_accept("off_1")
+    eng_nurse.apply_tr_update("DISPATCHED")
+    eng_nurse.apply_tr_update("EN_ROUTE")
+    code, res = eng_nurse.apply_tr_update("ARRIVED", is_human=True, actor_role="NURSE")
+    assert code == 200
+    assert eng_nurse.referral["tr_state"] == "ARRIVED"
+
+    # CMO confirmation succeeds
+    eng_cmo = TransitionEngine()
+    eng_cmo.apply_create("ref_cmo", "PHC_A", ["CHC_B"])
+    eng_cmo.apply_accept("off_1")
+    eng_cmo.apply_tr_update("DISPATCHED")
+    eng_cmo.apply_tr_update("EN_ROUTE")
+    code, res = eng_cmo.apply_tr_update("ARRIVED", is_human=True, actor_role="CMO")
+    assert code == 200
+    assert eng_cmo.referral["tr_state"] == "ARRIVED"
+
+    # 3. Unauthorized role rejected
+    eng_bad = TransitionEngine()
+    eng_bad.apply_create("ref_bad_role", "PHC_A", ["CHC_B"])
+    code, res = eng_bad.apply_tr_update("DISPATCHED", actor_role="UNREGISTERED_INTERN")
+    assert code == 403
+    assert res == "FORBIDDEN_ROLE"
+
+    # 4. Machine/autonomous confirmation rejected
+    eng_auto = TransitionEngine()
+    eng_auto.apply_create("ref_auto", "PHC_A", ["CHC_B"])
+    eng_auto.apply_accept("off_1")
+    eng_auto.apply_tr_update("DISPATCHED")
+    eng_auto.apply_tr_update("EN_ROUTE")
+    code, res = eng_auto.apply_tr_update("ARRIVED", is_human=False, actor_role="CMO")
+    assert code == 403
+    assert res == "HUMAN_CONFIRMATION_REQUIRED"
+
+
+# =============================================================================
+# RED-TEAM ATTACK TEST A-4 (Loop 3): System Auto-Close PIN Exemption (D-P1-7)
+# =============================================================================
+def test_p1_system_autoclose_pin_exemption():
+    """
+    Closes A-4 / D-P1-7:
+    1. CLOSE by human roles (e.g. RECEIVING_ROLE) requires PIN; without PIN, returns 403 PIN_INVALID.
+    2. CLOSE by SYSTEM is explicitly exempt from PIN; succeeds with 200.
+    3. Stage 2 CLOSURE timeout fires auto-close as SYSTEM, cleanly transitioning to CLOSED
+       without being blocked by PIN validation.
+    """
+    engine = TransitionEngine()
+    engine.apply_create("ref_autoclose", "PHC_A", ["CHC_B"])
+    engine.apply_accept("off_1")
+    engine.apply_tr_update("DISPATCHED")
+    engine.apply_tr_update("EN_ROUTE")
+    engine.apply_tr_update("ARRIVED", is_human=True)
+    engine.apply_tr_update("HANDED_OVER")
+
+    # 1. Human CLOSE without PIN is rejected
+    code, res = engine.apply_close("ADMITTED_STABLE", actor_role="RECEIVING_ROLE", pin_verified=False)
+    assert code == 403
+    assert res == "PIN_INVALID"
+
+    # 2. SYSTEM CLOSE without PIN succeeds
+    eng_sys = TransitionEngine()
+    eng_sys.apply_create("ref_sys_close", "PHC_A", ["CHC_B"])
+    eng_sys.apply_accept("off_1")
+    code, res = eng_sys.apply_close("PATIENT_REFUSED", actor_role="SYSTEM", pin_verified=False)
+    assert code == 200
+    assert eng_sys.referral["hs_state"] == "CLOSED"
+
+    # 3. 2x CLOSURE deadline expiry auto-closes via SYSTEM
+    c_dl1 = [d for d in engine.deadlines if d["kind"] == "CLOSURE" and d["status"] == "PENDING"][0]
+    code, res1 = engine.apply_timeout(c_dl1["id"])
+    assert code == 200
+    assert res1 == "CLOSURE_OVERDUE_REARMED"
+
+    c_dl2 = [d for d in engine.deadlines if d["kind"] == "CLOSURE" and d["status"] == "PENDING"][0]
+    code, res2 = engine.apply_timeout(c_dl2["id"])
+    assert code == 200
+    assert res2 == "AUTO_CLOSED"
+    assert engine.referral["hs_state"] == "CLOSED"
+    assert engine.referral["outcome"] == "UNKNOWN_COUNTER_REFERRAL"
+
+
+# =============================================================================
+# RED-TEAM ATTACK TEST A-5 (Loop 3): Dispatcher Override from ACCEPTED (D-P1-7)
+# =============================================================================
+def test_p1_dispatcher_assign_override_from_accepted():
+    """
+    Closes A-5 / D-P1-7:
+    1. Referral is ACCEPTED by Facility CHC_B (holds active lease).
+    2. Dispatcher issues DISPATCHER_ASSIGN to DH_OVERRIDE (live emergency override).
+    3. CHC_B offer is marked SUPERSEDED; its grant is revoked.
+    4. DH_OVERRIDE becomes ACCEPTED with new lease; lease_epoch increments.
+    5. Prior HANDOVER deadline is marked DONE, and a new HANDOVER deadline is created.
+    6. Single lease invariant (I2) holds strictly: only 1 lease held.
+    """
+    engine = TransitionEngine()
+    engine.apply_create("ref_disp_override", "PHC_A", ["CHC_B", "FRU_C"])
+    code, _ = engine.apply_accept("off_1")
+    assert code == 200
+    assert engine.referral["hs_state"] == "ACCEPTED"
+    assert engine.referral["lease_facility"] == "CHC_B"
+    assert engine.referral["lease_epoch"] == 1
+    assert engine.offers[0]["status"] == "ACCEPTED"
+
+    old_handover_dl = [d for d in engine.deadlines if d["kind"] == "HANDOVER" and d["status"] == "PENDING"][0]
+
+    # Live emergency override by dispatcher to DH_OVERRIDE
+    code, res = engine.apply_dispatcher_assign("DH_OVERRIDE", actor_role="DISPATCHER", pin_verified=True)
+    assert code == 200
+    assert res == "ASSIGNED"
+
+    # CHC_B offer is now SUPERSEDED
+    assert engine.offers[0]["status"] == "SUPERSEDED"
+    # New offer is ACCEPTED
+    override_offer = [o for o in engine.offers if o["facility_id"] == "DH_OVERRIDE"][0]
+    assert override_offer["status"] == "ACCEPTED"
+    assert override_offer["source"] == "DISPATCHER"
+    assert override_offer["proxy"] is True
+
+    # Referral state
+    assert engine.referral["hs_state"] == "ACCEPTED"
+    assert engine.referral["lease_facility"] == "DH_OVERRIDE"
+    assert engine.referral["lease_epoch"] == 2  # Incremented!
+    assert engine.referral["open_offers"] == 0
+
+    # Old handover deadline is DONE, new one is PENDING
+    assert [d for d in engine.deadlines if d["id"] == old_handover_dl["id"]][0]["status"] == "DONE"
+    new_handover_dl = [d for d in engine.deadlines if d["kind"] == "HANDOVER" and d["status"] == "PENDING"]
+    assert len(new_handover_dl) == 1
+    assert new_handover_dl[0]["epoch"] == 2
+
+    # Check invariants: I2, I12, I1
+    ok, err = engine.check_invariants()
+    assert ok, err

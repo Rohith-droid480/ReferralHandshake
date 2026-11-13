@@ -362,9 +362,9 @@ class TransitionEngine:
             if d.get("offer_id") == offer_id and d["kind"] in ["DECISION", "ACK", "NOTICE_VOICE", "NOTICE_PROXY"] and d["status"] == "PENDING":
                 d["status"] = "DONE"
 
-        # Deadline formula: min(ts + C, remaining_D) (F13)
-        remaining_d = (target["decision_due_at"] - self.current_time_ms) if target.get("decision_due_at") else counter_ttl_ms
-        bounded_due = self.current_time_ms + min(counter_ttl_ms, max(1, remaining_d))
+        # Deadline formula: ts + min(C, max(0, decision_due_at - ts)) (F13, D-P1-6)
+        remaining_d = max(0, target["decision_due_at"] - self.current_time_ms) if target.get("decision_due_at") else counter_ttl_ms
+        bounded_due = self.current_time_ms + min(counter_ttl_ms, remaining_d)
 
         self.deadline_seq += 1
         self.deadlines.append({
@@ -573,9 +573,19 @@ class TransitionEngine:
         elif kind == "COUNTER_CONFIRM":
             offer = next((o for o in self.offers if o["id"] == d.get("offer_id")), None)
             if offer and offer["status"] == "COUNTERED":
-                offer["status"] = "DECLINED"
-                self.emit_event("OFFER_DECLINED_ON_COUNTER_TIMEOUT", {"offer_id": offer["id"]})
-                self.advance()
+                if self.referral["mode"] == "SEQUENTIAL":
+                    # Evict older SOFT_OPEN to maintain open_offers <= 2
+                    for o in self.offers:
+                        if o["status"] == "SOFT_OPEN":
+                            o["status"] = "TIMED_OUT"
+                            self.emit_event("OFFER_TIMED_OUT_EVICTED", {"offer_id": o["id"]})
+                    offer["status"] = "SOFT_OPEN"
+                    self.emit_event("OFFER_SOFT_OPEN", {"offer_id": offer["id"]})
+                    self.advance()
+                else:  # PARALLEL2
+                    offer["status"] = "TIMED_OUT"
+                    self.emit_event("OFFER_TIMED_OUT", {"offer_id": offer["id"]})
+                    self.advance()
             return 200, "COUNTER_TIMEOUT_PROCESSED"
 
         elif kind == "CLOSURE":
@@ -594,17 +604,13 @@ class TransitionEngine:
                 })
                 return 200, "CLOSURE_OVERDUE_REARMED"
             else:
-                # Stage 2: auto-close with UNKNOWN_COUNTER_REFERRAL
-                self.referral["hs_state"] = "CLOSED"
-                self.referral["outcome"] = "UNKNOWN_COUNTER_REFERRAL"
-                self.emit_event("CLOSED", {
-                    "outcome": "UNKNOWN_COUNTER_REFERRAL",
-                    "proxy": True,
-                    "actor": "SYSTEM"
-                })
+                # Stage 2: auto-close with UNKNOWN_COUNTER_REFERRAL as SYSTEM (D-P1-7)
+                code, res = self.apply_close("UNKNOWN_COUNTER_REFERRAL", actor_role="SYSTEM")
                 return 200, "AUTO_CLOSED"
 
         elif kind == "HANDOVER":
+            if self.referral.get("tr_state") == "HANDED_OVER":
+                return 200, "NO_OP"
             self.emit_event("HANDOVER_OVERDUE")
             self.deadline_seq += 1
             self.deadlines.append({
@@ -670,21 +676,22 @@ class TransitionEngine:
         if actor_role != "DISPATCHER":
             return 403, "FORBIDDEN"
 
-        # Single lease invariant
-        if self.get_active_lease() is not None:
-            return 409, "LEASE_HELD"
+        # Allowed pre-states (including ACCEPTED for emergency live override)
+        allowed_hs = self.spec["commands"]["DISPATCHER_ASSIGN"]["pre_state"]["allowed_hs"]
+        if self.referral["hs_state"] not in allowed_hs:
+            return 409, "INVALID_TRANSITION"
 
-        # Supersede open offers
+        # Supersede open and accepted offers (if overriding an active lease)
         for o in self.offers:
-            if o["status"] in ["OPEN", "ACKED", "COUNTERED", "SOFT_OPEN"]:
+            if o["status"] in ["OPEN", "ACKED", "COUNTERED", "SOFT_OPEN", "ACCEPTED"]:
                 o["status"] = "SUPERSEDED"
                 for g in self.grants:
                     if g.get("offer_id") == o["id"]:
                         g["active"] = False
 
-        # Cancel open deadlines
+        # Cancel open deadlines (including any prior HANDOVER deadline)
         for d in self.deadlines:
-            if d["status"] == "PENDING" and d["kind"] in ["ACK", "DECISION", "COUNTER_CONFIRM", "DISPATCH_ACTION", "NOTICE_VOICE", "NOTICE_PROXY"]:
+            if d["status"] == "PENDING" and d["kind"] in ["ACK", "DECISION", "COUNTER_CONFIRM", "DISPATCH_ACTION", "NOTICE_VOICE", "NOTICE_PROXY", "HANDOVER"]:
                 d["status"] = "DONE"
 
         self.offer_seq += 1
@@ -720,9 +727,13 @@ class TransitionEngine:
         return 200, "ASSIGNED"
 
     def apply_tr_update(self, new_tr_state: str, is_human: bool = True,
-                        arrived_at_facility: Optional[str] = None) -> Tuple[int, Any]:
+                        arrived_at_facility: Optional[str] = None,
+                        actor_role: str = "EMT") -> Tuple[int, Any]:
         if not self.referral:
             return 409, "REFERRAL_NOT_FOUND"
+
+        if actor_role not in self.spec["commands"]["TR_UPDATE"]["actor_roles"]:
+            return 403, "FORBIDDEN_ROLE"
 
         # Non-terminal check
         if self.referral["hs_state"] in ["CLOSED", "CANCELLED"]:
@@ -751,8 +762,12 @@ class TransitionEngine:
         self.referral["tr_state"] = new_tr_state
         self.emit_event("TR_UPDATED", {"tr_state": new_tr_state})
 
-        # On HANDED_OVER: arm CLOSURE deadline
+        # On HANDED_OVER: mark HANDOVER deadline DONE and arm CLOSURE deadline (D-P1-6)
         if new_tr_state == "HANDED_OVER":
+            for d in self.deadlines:
+                if d["kind"] == "HANDOVER" and d["status"] == "PENDING":
+                    d["status"] = "DONE"
+
             self.deadline_seq += 1
             self.deadlines.append({
                 "id": f"d_{self.deadline_seq}",
@@ -815,7 +830,8 @@ class TransitionEngine:
         return 200, "CANCELLED"
 
     def apply_close(self, outcome: str, actor_role: str = "RECEIVING_ROLE", pin_verified: bool = True) -> Tuple[int, Any]:
-        if not pin_verified:
+        # D-P1-7: actor=SYSTEM is exempt from PIN verification for auto-close
+        if actor_role != "SYSTEM" and not pin_verified:
             return 403, "PIN_INVALID"
 
         if not self.referral or self.referral["hs_state"] not in ["ACCEPTED", "ESCALATED_TO_DISPATCHER"]:
@@ -991,7 +1007,7 @@ def explore_state_space() -> Dict[str, Any]:
                     queue.append((nxt, clone))
 
         # 9. DISPATCHER_ASSIGN
-        if hs == "ESCALATED_TO_DISPATCHER":
+        if hs in ["ESCALATED_TO_DISPATCHER", "ACCEPTED"]:
             clone = copy.deepcopy(eng)
             code, _ = clone.apply_dispatcher_assign("MC_E")
             if code == 200:

@@ -198,7 +198,7 @@ v7_mapping:
     event_type: "CANCELLED"
   CLOSED:
     hs_state: "CLOSED"
-    tr_state: "HANDED_OVER"
+    tr_state: ["HANDED_OVER", "any"]
     offer_status: null
     event_type: "CLOSED"
 
@@ -340,7 +340,7 @@ commands:
         mark_done: ["DECISION", "ACK", "NOTICE_VOICE", "NOTICE_PROXY"]
         create:
           - kind: "COUNTER_CONFIRM"
-            due: "min(ts + C, remaining_D)"
+            due: "ts + min(C, max(0, decision_due_at - ts))"
     errors:
       401: "SESSION_INVALID"
       403: "PIN_INVALID"
@@ -441,8 +441,13 @@ commands:
           current_offer: "TIMED_OUT"
           advance_next: true
       COUNTER_CONFIRM_TIMEOUT:
-        current_offer: "DECLINED"
-        advance_next: true
+        sequential:
+          current_offer: "SOFT_OPEN"   # or TIMED_OUT if cap reached
+          older_soft_open: "TIMED_OUT"
+          advance_next: true
+        parallel2:
+          current_offer: "TIMED_OUT"
+          advance_next: true
       NOTICE_VOICE_TIMEOUT:
         action: "TRIGGER_VOICE_CALL"
         offer_status_change: false
@@ -499,7 +504,7 @@ commands:
     needs_pin: true
     pre_state:
       referral_exists: true
-      allowed_hs: ["ESCALATED_TO_DISPATCHER", "OFFERED", "ACKNOWLEDGED", "COUNTERED"]
+      allowed_hs: ["ESCALATED_TO_DISPATCHER", "OFFERED", "ACKNOWLEDGED", "COUNTERED", "ACCEPTED"]
     effects:
       new_offer:
         status: "ACCEPTED"
@@ -516,7 +521,7 @@ commands:
         hs_state: "ACCEPTED"
         open_offers: 0
       deadlines:
-        mark_done: ["ACK", "DECISION", "COUNTER_CONFIRM", "DISPATCH_ACTION"]
+        mark_done: ["ACK", "DECISION", "COUNTER_CONFIRM", "DISPATCH_ACTION", "NOTICE_VOICE", "NOTICE_PROXY", "HANDOVER"]
         create:
           - kind: "HANDOVER"
             due: "ts + H"
@@ -527,7 +532,7 @@ commands:
 
   TR_UPDATE:
     id: 11
-    actor_roles: ["EMT", "DISPATCHER", "SYSTEM"]
+    actor_roles: ["EMT", "DISPATCHER", "NURSE", "CMO", "SYSTEM"]
     requires_pin: false
     needs_pin: false
     pre_state:
@@ -552,6 +557,7 @@ commands:
         tr_state: "new_tr_state"
       on_handed_over:
         deadlines:
+          mark_done: ["HANDOVER"]
           create:
             - kind: "CLOSURE"
               due: "ts + CLOSURE_MS"
@@ -582,6 +588,7 @@ commands:
     pre_state:
       referral_exists: true
       hs_non_terminal: true
+      outcome_in_taxonomy: true
     effects:
       referral:
         hs_state: "CANCELLED"
@@ -603,8 +610,9 @@ commands:
   CLOSE:
     id: 14
     actor_roles: ["RECEIVING_ROLE", "DISPATCHER", "SYSTEM"]
-    requires_pin: true
+    requires_pin: true             # Exempt when actor is SYSTEM (e.g. stage 2 auto-close)
     needs_pin: true
+    pin_exemption_roles: ["SYSTEM"]
     pre_state:
       referral_exists: true
       hs_state: ["ACCEPTED", "ESCALATED_TO_DISPATCHER"]
