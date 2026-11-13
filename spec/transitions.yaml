@@ -532,7 +532,7 @@ commands:
 
   TR_UPDATE:
     id: 11
-    actor_roles: ["EMT", "DISPATCHER", "NURSE", "CMO", "SYSTEM"]
+    actor_roles: ["EMT", "DISPATCHER", "NURSE", "CMO", "CONSULTANT", "SYSTEM"]
     requires_pin: false
     needs_pin: false
     pre_state:
@@ -589,6 +589,11 @@ commands:
       referral_exists: true
       hs_non_terminal: true
       outcome_in_taxonomy: true
+    allowed_outcomes:
+      - "PATIENT_REFUSED"
+      - "TRANSPORT_CANCELLED"
+      - "DELIVERED_EN_ROUTE"
+      - "DETERIORATED_OR_DIED_PRE_HANDOVER"
     effects:
       referral:
         hs_state: "CANCELLED"
