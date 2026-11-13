@@ -14,7 +14,7 @@ Specification Anchors:
 
 import hashlib
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
 import pytest
@@ -275,4 +275,186 @@ def test_event_hash_chain_and_outbox_emission():
         assert ob["kind"] == "REFERRAL_CREATED"
         assert ob["status"] == "PENDING"
         assert ob["channel"] == "SSE"
+
+
+def test_attack_a6_i15_staleness_bypass():
+    """Attack A-6 (Invariant I15, Closure F12): Expired capability confirmation rejects ACCEPT with 409 STALE_CONFIRMATION_RECONFIRM_REQUIRED."""
+    roster_id = "00000000-0000-0000-0000-000000000010"
+    fac_id = "00000000-0000-0000-0000-000000000001"
+
+    with get_main_connection() as conn:
+        raw_token, _ = create_enrollment_ticket(conn, roster_id, roster_id)
+        session_token, _ = redeem_enrollment_ticket(conn, raw_token, secrets.token_bytes(32), "android")
+
+        # 1. Create referral
+        status, resp = apply_command(
+            conn,
+            {
+                "type": "CREATE",
+                "need_class": "OB_ECLAMPSIA",
+                "origin_facility_id": fac_id,
+                "expected_version": 0,
+                "chain": [fac_id],
+            },
+            session_token=session_token,
+            idem_key="a6-create-referral-1",
+        )
+        assert status == 200
+        ref_id = resp["referral_id"]
+
+        cur_off = conn.execute("SELECT id FROM offer WHERE referral_id = %s;", (str(ref_id),))
+        off_id = cur_off.fetchone()[0]
+
+        # 2. Seed an EXPIRED resource confirmation in offer_resource_confirmation
+        now = datetime.now(timezone.utc)
+        conn.db.offer_resource_confirmations[f"{off_id}:OT"] = {
+            "offer_id": str(off_id),
+            "capability": "OT",
+            "confirmed_by": str(roster_id),
+            "confirmed_at": now - timedelta(hours=2),
+            "expires_at": now - timedelta(minutes=5),  # EXPIRED!
+        }
+
+        # 3. Destination clinician attempts to ACCEPT
+        status_accept, resp_accept = apply_command(
+            conn,
+            {
+                "type": "ACCEPT",
+                "referral_id": ref_id,
+                "offer_id": off_id,
+                "expected_version": 2,
+                "candidate_pin": "4321",
+            },
+            session_token=session_token,
+            idem_key="a6-accept-expired-conf",
+        )
+
+        assert status_accept == 409
+        assert resp_accept["status"] == "REJECTED"
+        assert resp_accept["reason"] == "STALE_CONFIRMATION_RECONFIRM_REQUIRED"
+        assert "confirmation is missing or expired" in resp_accept["message"]
+
+
+def test_attack_a7_transaction_rollback_and_state_leak():
+    """Attack A-7 (Closures F1, F14): Domain rejection cleanly rolls back state changes to savepoint and logs to rejected_command."""
+    roster_id = "00000000-0000-0000-0000-000000000010"
+    fac_id = "00000000-0000-0000-0000-000000000001"
+
+    with get_main_connection() as conn:
+        raw_token, _ = create_enrollment_ticket(conn, roster_id, roster_id)
+        session_token, _ = redeem_enrollment_ticket(conn, raw_token, secrets.token_bytes(32), "android")
+
+        # 1. Create referral
+        status, resp = apply_command(
+            conn,
+            {
+                "type": "CREATE",
+                "need_class": "OB_ECLAMPSIA",
+                "origin_facility_id": fac_id,
+                "expected_version": 0,
+                "chain": [fac_id],
+            },
+            session_token=session_token,
+            idem_key="a7-create-referral-1",
+        )
+        assert status == 200
+        ref_id = resp["referral_id"]
+        v_before = resp["version"]
+
+        # Check pre-rejection state via SQL
+        cur_pre = conn.execute("SELECT version, hs_state FROM referral WHERE id = %s;", (str(ref_id),))
+        row_pre = cur_pre.fetchone()
+        assert row_pre[0] == v_before
+        assert row_pre[1] == "OFFERED"
+
+        # 2. Submit a domain rejection command (stale version 999)
+        cur_off = conn.execute("SELECT id FROM offer WHERE referral_id = %s;", (str(ref_id),))
+        off_id = cur_off.fetchone()[0]
+
+        status_rej, resp_rej = apply_command(
+            conn,
+            {
+                "type": "ACCEPT",
+                "referral_id": ref_id,
+                "offer_id": off_id,
+                "expected_version": 999,
+                "candidate_pin": "4321",
+            },
+            session_token=session_token,
+            idem_key="a7-rejection-cmd-1",
+        )
+        assert status_rej == 412
+        assert resp_rej["reason"] == "STALE_PRECONDITION"
+
+        # 3. Query DB: State in referral table MUST be completely unchanged (no state leak across rollback)
+        cur_post = conn.execute("SELECT version, hs_state FROM referral WHERE id = %s;", (str(ref_id),))
+        row_post = cur_post.fetchone()
+        assert row_post[0] == row_pre[0]
+        assert row_post[1] == row_pre[1]
+
+        # 4. Query rejected_command table: Rejection MUST be audited
+        cur_rej = conn.execute("SELECT http_status, reason_code, command FROM rejected_command WHERE key = %s;", ("a7-rejection-cmd-1",))
+        rej_row = cur_rej.fetchone()
+        assert rej_row is not None
+        assert rej_row[0] == 412
+        assert rej_row[1] == "STALE_PRECONDITION"
+        assert rej_row[2] == "ACCEPT"
+
+
+def test_attack_a8_concurrency_race_child_locks():
+    """Attack A-8 (Closure F1, Architecture §5 Step 6): apply_command explicitly acquires row locks on offer and deadline tables."""
+    roster_id = "00000000-0000-0000-0000-000000000010"
+    fac_id = "00000000-0000-0000-0000-000000000001"
+
+    with get_main_connection() as conn:
+        raw_token, _ = create_enrollment_ticket(conn, roster_id, roster_id)
+        session_token, _ = redeem_enrollment_ticket(conn, raw_token, secrets.token_bytes(32), "android")
+
+        # 1. Create referral
+        status, resp = apply_command(
+            conn,
+            {
+                "type": "CREATE",
+                "need_class": "OB_ECLAMPSIA",
+                "origin_facility_id": fac_id,
+                "expected_version": 0,
+                "chain": [fac_id],
+            },
+            session_token=session_token,
+            idem_key="a8-create-referral-1",
+        )
+        assert status == 200
+        ref_id = resp["referral_id"]
+
+        cur_off = conn.execute("SELECT id FROM offer WHERE referral_id = %s;", (str(ref_id),))
+        off_id = cur_off.fetchone()[0]
+
+        # Reset held locks before ACK command
+        if hasattr(conn, "held_table_locks"):
+            conn.held_table_locks.clear()
+
+        # 2. Submit ACK command, which executes Step 6 child locks
+        status_ack, _ = apply_command(
+            conn,
+            {
+                "type": "ACK",
+                "referral_id": ref_id,
+                "offer_id": off_id,
+                "expected_version": 2,
+            },
+            session_token=session_token,
+            idem_key="a8-ack-locks-cmd-1",
+        )
+        assert status_ack == 200
+
+        # 3. Query pg_locks: verifies that RowExclusiveLock was acquired on both offer and deadline
+        cur_locks = conn.execute("SELECT locktype, relation, mode FROM pg_locks;")
+        locks = cur_locks.fetchall()
+        locked_relations = {row[1]: row[2] for row in locks}
+
+        assert "offer" in locked_relations
+        assert locked_relations["offer"] == "RowExclusiveLock"
+        assert "deadline" in locked_relations
+        assert locked_relations["deadline"] == "RowExclusiveLock"
+
 
