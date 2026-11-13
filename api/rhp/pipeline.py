@@ -31,7 +31,16 @@ from uuid import UUID, uuid4
 from api.rhp.auth import AuthError, Session, load_session, verify_pin_or_lockout
 from api.rhp.commands.accept import execute_accept
 from api.rhp.commands.ack_confirm import execute_ack, execute_resource_confirm
+from api.rhp.commands.counter import execute_confirm_counter, execute_counter
 from api.rhp.commands.create import execute_create
+from api.rhp.commands.decline_advance import advance, execute_decline
+from api.rhp.commands.lifecycle import (
+    execute_arrival_rejected,
+    execute_cancel,
+    execute_close,
+    execute_dispatcher_assign,
+    execute_revoke_grant,
+)
 from api.rhp.crypto import GENESIS_PREV_HASH_BYTES, compute_event_hash, jcs
 from api.rhp.db import get_monotone_ts
 from api.rhp.schemas import BaseCommand, authorize, parse_command, validate_event_detail
@@ -384,6 +393,13 @@ def apply_command(
                 if str(o.id) == str(cmd_offer_id):
                     target_offer = o
                     break
+        elif cmd.type == "CONFIRM_COUNTER":
+            for o in offers_list:
+                if o.status == "COUNTERED":
+                    target_offer = o
+                    break
+            if not target_offer and offers_list:
+                target_offer = max(offers_list, key=lambda x: (x.step, x.created_at))
         elif offers_list:
             target_offer = max(offers_list, key=lambda x: (x.step, x.created_at))
 
@@ -402,7 +418,7 @@ def apply_command(
         # ---------------------------------------------------------------------
         # STEP 7: Staleness & Live Reconfirmation Check (Address D-7, F12, I15)
         # ---------------------------------------------------------------------
-        if cmd.type in ("ACCEPT", "CONFIRM_COUNTER"):
+        if cmd.type == "ACCEPT" or (cmd.type == "CONFIRM_COUNTER" and getattr(cmd, "confirmed", False)):
             if target_offer is not None:
                 if target_offer.status not in ("OPEN", "ACKED", "COUNTERED", "SOFT_OPEN"):
                     raise TransitionReject(
@@ -491,167 +507,17 @@ def apply_command(
         # 5. COUNTER
         elif cmd.type == "COUNTER" and referral is not None and target_offer is not None:
             event_type = "OFFER_COUNTERED"
-            conn.execute(
-                "UPDATE offer SET status = 'COUNTERED', counter_round = counter_round + 1, counter_mask = %s WHERE id = %s;",
-                (int(cmd.counter_mask), str(target_offer.id)),
-            )
-            conn.execute(
-                "UPDATE deadline SET status = 'DONE' WHERE referral_id = %s AND kind IN ('DECISION', 'ACK', 'NOTICE_VOICE', 'NOTICE_PROXY') AND status = 'PENDING';",
-                (str(ref_id),),
-            )
-            conn.execute(
-                """
-                INSERT INTO deadline (id, referral_id, offer_id, kind, step, epoch, due_at, created_at)
-                VALUES (%s, %s, %s, 'COUNTER_CONFIRM', %s, %s, %s, %s);
-                """,
-                (str(uuid4()), str(ref_id), str(target_offer.id), target_offer.step, referral.lease_epoch, ts + timedelta(seconds=60), ts),
-            )
-            referral.hs_state = "COUNTERED"
-            event_detail = {
-                "round": target_offer.counter_round + 1,
-                "mask": int(cmd.counter_mask),
-            }
+            event_detail = execute_counter(conn, referral, target_offer, session, cmd, ts)
 
         # 6. CONFIRM_COUNTER
         elif cmd.type == "CONFIRM_COUNTER" and referral is not None and target_offer is not None:
             event_type = "COUNTER_RESOLVED"
-            if cmd.confirmed:
-                conn.execute(
-                    "UPDATE offer SET status = 'ACCEPTED', decided_at = %s WHERE id = %s;",
-                    (ts, str(target_offer.id)),
-                )
-                conn.execute(
-                    "UPDATE offer SET status = 'SUPERSEDED' WHERE referral_id = %s AND id != %s AND status IN ('OPEN', 'ACKED', 'COUNTERED', 'SOFT_OPEN');",
-                    (str(ref_id), str(target_offer.id)),
-                )
-                conn.execute(
-                    "UPDATE deadline SET status = 'DONE' WHERE referral_id = %s AND kind = 'COUNTER_CONFIRM' AND status = 'PENDING';",
-                    (str(ref_id),),
-                )
-                conn.execute(
-                    """
-                    INSERT INTO deadline (id, referral_id, offer_id, kind, step, epoch, due_at, created_at)
-                    VALUES (%s, %s, %s, 'HANDOVER', %s, %s, %s, %s);
-                    """,
-                    (str(uuid4()), str(ref_id), str(target_offer.id), target_offer.step, referral.lease_epoch + 1, ts + timedelta(minutes=45), ts),
-                )
-                referral.lease_epoch += 1
-                referral.lease_offer_id = target_offer.id
-                referral.lease_facility_id = target_offer.facility_id
-                referral.open_offers = 0
-                referral.hs_state = "ACCEPTED"
-                event_detail = {"confirmed": True}
-            else:
-                conn.execute(
-                    "UPDATE offer SET status = 'DECLINED', decided_at = %s WHERE id = %s;",
-                    (ts, str(target_offer.id)),
-                )
-                conn.execute(
-                    "UPDATE deadline SET status = 'DONE' WHERE referral_id = %s AND kind = 'COUNTER_CONFIRM' AND status = 'PENDING';",
-                    (str(ref_id),),
-                )
-                conn.execute(
-                    "UPDATE payload_grant SET status = 'REVOKED', revoked_at = %s WHERE referral_id = %s AND facility_id = %s AND status = 'ACTIVE';",
-                    (ts, str(ref_id), str(target_offer.facility_id)),
-                )
-                # Advance or escalate
-                if referral.ladder_cursor + 1 < len(referral.chain):
-                    referral.ladder_cursor += 1
-                    next_fac = referral.chain[referral.ladder_cursor]
-                    next_off_id = uuid4()
-                    conn.execute(
-                        """
-                        INSERT INTO offer (id, referral_id, facility_id, step, source, status, counter_round, counter_mask, created_epoch, created_at)
-                        VALUES (%s, %s, %s, %s, 'CHAIN', 'OPEN', 0, 0, %s, %s);
-                        """,
-                        (str(next_off_id), str(ref_id), str(next_fac), referral.ladder_cursor, referral.lease_epoch, ts),
-                    )
-                    conn.execute(
-                        """
-                        INSERT INTO deadline (id, referral_id, offer_id, kind, step, epoch, due_at, created_at)
-                        VALUES (%s, %s, %s, 'ACK', %s, %s, %s, %s);
-                        """,
-                        (str(uuid4()), str(ref_id), str(next_off_id), referral.ladder_cursor, referral.lease_epoch, ts + timedelta(seconds=60), ts),
-                    )
-                    conn.execute(
-                        """
-                        INSERT INTO payload_grant (id, referral_id, facility_id, status, granted_at)
-                        VALUES (%s, %s, %s, 'ACTIVE', %s);
-                        """,
-                        (str(uuid4()), str(ref_id), str(next_fac), ts),
-                    )
-                    referral.hs_state = "OFFERED"
-                    referral.open_offers = 1
-                else:
-                    referral.hs_state = "ESCALATED_TO_DISPATCHER"
-                    referral.open_offers = 0
-                    conn.execute(
-                        """
-                        INSERT INTO deadline (id, referral_id, offer_id, kind, step, epoch, due_at, created_at)
-                        VALUES (%s, %s, NULL, 'DISPATCH_ACTION', 0, %s, %s, %s);
-                        """,
-                        (str(uuid4()), str(ref_id), referral.lease_epoch, ts + timedelta(seconds=300), ts),
-                    )
-                event_detail = {"confirmed": False}
+            event_detail = execute_confirm_counter(conn, referral, target_offer, session, cmd, ts)
 
         # 7. DECLINE
         elif cmd.type == "DECLINE" and referral is not None and target_offer is not None:
             event_type = "OFFER_DECLINED"
-            decline_reason = str(getattr(cmd, "reason", "DECLINED"))
-            conn.execute(
-                "UPDATE offer SET status = 'DECLINED', decided_at = %s, decline_reason = %s WHERE id = %s;",
-                (ts, decline_reason, str(target_offer.id)),
-            )
-            conn.execute(
-                "UPDATE deadline SET status = 'DONE' WHERE referral_id = %s AND kind IN ('ACK', 'DECISION', 'COUNTER_CONFIRM', 'NOTICE_VOICE', 'NOTICE_PROXY') AND status = 'PENDING';",
-                (str(ref_id),),
-            )
-            conn.execute(
-                "UPDATE payload_grant SET status = 'REVOKED', revoked_at = %s WHERE referral_id = %s AND facility_id = %s AND status = 'ACTIVE';",
-                (ts, str(ref_id), str(target_offer.facility_id)),
-            )
-            # Advance or escalate
-            if referral.ladder_cursor + 1 < len(referral.chain):
-                referral.ladder_cursor += 1
-                next_fac = referral.chain[referral.ladder_cursor]
-                next_off_id = uuid4()
-                conn.execute(
-                    """
-                    INSERT INTO offer (id, referral_id, facility_id, step, source, status, counter_round, counter_mask, created_epoch, created_at)
-                    VALUES (%s, %s, %s, %s, 'CHAIN', 'OPEN', 0, 0, %s, %s);
-                    """,
-                    (str(next_off_id), str(ref_id), str(next_fac), referral.ladder_cursor, referral.lease_epoch, ts),
-                )
-                conn.execute(
-                    """
-                    INSERT INTO deadline (id, referral_id, offer_id, kind, step, epoch, due_at, created_at)
-                    VALUES (%s, %s, %s, 'ACK', %s, %s, %s, %s);
-                    """,
-                    (str(uuid4()), str(ref_id), str(next_off_id), referral.ladder_cursor, referral.lease_epoch, ts + timedelta(seconds=60), ts),
-                )
-                conn.execute(
-                    """
-                    INSERT INTO payload_grant (id, referral_id, facility_id, status, granted_at)
-                    VALUES (%s, %s, %s, 'ACTIVE', %s);
-                    """,
-                    (str(uuid4()), str(ref_id), str(next_fac), ts),
-                )
-                referral.hs_state = "OFFERED"
-                referral.open_offers = 1
-            else:
-                referral.hs_state = "ESCALATED_TO_DISPATCHER"
-                referral.open_offers = 0
-                conn.execute(
-                    """
-                    INSERT INTO deadline (id, referral_id, offer_id, kind, step, epoch, due_at, created_at)
-                    VALUES (%s, %s, NULL, 'DISPATCH_ACTION', 0, %s, %s, %s);
-                    """,
-                    (str(uuid4()), str(ref_id), referral.lease_epoch, ts + timedelta(seconds=300), ts),
-                )
-            event_detail = {
-                "reason": decline_reason,
-                "facility": str(target_offer.facility_id),
-            }
+            event_detail = execute_decline(conn, referral, target_offer, session, cmd, ts)
 
         # 8. TIMEOUT
         elif cmd.type == "TIMEOUT" and referral is not None:
@@ -755,117 +621,12 @@ def apply_command(
         # 9. ARRIVAL_REJECTED
         elif cmd.type == "ARRIVAL_REJECTED" and referral is not None:
             event_type = "ARRIVAL_REJECTED"
-            rej_reason = str(getattr(cmd, "reason", "ARRIVAL_REJECTED"))
-            conn.execute(
-                "UPDATE offer SET status = 'ARRIVAL_REJECTED', decided_at = %s, decline_reason = %s WHERE referral_id = %s AND status = 'ACCEPTED';",
-                (ts, rej_reason, str(ref_id)),
-            )
-            conn.execute(
-                "UPDATE deadline SET status = 'DONE' WHERE referral_id = %s AND kind = 'HANDOVER' AND status = 'PENDING';",
-                (str(ref_id),),
-            )
-            old_lease_fac = referral.lease_facility_id
-            referral.lease_facility_id = None
-            referral.lease_offer_id = None
-            referral.lease_epoch += 1
-
-            if old_lease_fac:
-                conn.execute(
-                    "UPDATE payload_grant SET status = 'REVOKED', revoked_at = %s WHERE referral_id = %s AND facility_id = %s AND status = 'ACTIVE';",
-                    (ts, str(ref_id), str(old_lease_fac)),
-                )
-
-            # Advance or escalate
-            if referral.ladder_cursor + 1 < len(referral.chain):
-                referral.ladder_cursor += 1
-                next_fac = referral.chain[referral.ladder_cursor]
-                next_off_id = uuid4()
-                conn.execute(
-                    """
-                    INSERT INTO offer (id, referral_id, facility_id, step, source, status, counter_round, counter_mask, created_epoch, created_at)
-                    VALUES (%s, %s, %s, %s, 'CHAIN', 'OPEN', 0, 0, %s, %s);
-                    """,
-                    (str(next_off_id), str(ref_id), str(next_fac), referral.ladder_cursor, referral.lease_epoch, ts),
-                )
-                conn.execute(
-                    """
-                    INSERT INTO deadline (id, referral_id, offer_id, kind, step, epoch, due_at, created_at)
-                    VALUES (%s, %s, %s, 'ACK', %s, %s, %s, %s);
-                    """,
-                    (str(uuid4()), str(ref_id), str(next_off_id), referral.ladder_cursor, referral.lease_epoch, ts + timedelta(seconds=60), ts),
-                )
-                conn.execute(
-                    """
-                    INSERT INTO payload_grant (id, referral_id, facility_id, status, granted_at)
-                    VALUES (%s, %s, %s, 'ACTIVE', %s);
-                    """,
-                    (str(uuid4()), str(ref_id), str(next_fac), ts),
-                )
-                referral.hs_state = "OFFERED"
-                referral.open_offers = 1
-            else:
-                referral.hs_state = "ESCALATED_TO_DISPATCHER"
-                referral.open_offers = 0
-                conn.execute(
-                    """
-                    INSERT INTO deadline (id, referral_id, offer_id, kind, step, epoch, due_at, created_at)
-                    VALUES (%s, %s, NULL, 'DISPATCH_ACTION', 0, %s, %s, %s);
-                    """,
-                    (str(uuid4()), str(ref_id), referral.lease_epoch, ts + timedelta(seconds=300), ts),
-                )
-            event_detail = {
-                "reason": rej_reason,
-                "facility": str(old_lease_fac or referral.origin_facility_id),
-            }
+            event_detail = execute_arrival_rejected(conn, referral, session, cmd, ts)
 
         # 10. DISPATCHER_ASSIGN
         elif cmd.type == "DISPATCHER_ASSIGN" and referral is not None:
             event_type = "DISPATCHER_ASSIGNED"
-            new_off_id = uuid4()
-            target_fac = getattr(cmd, "target_facility_id")
-            conn.execute(
-                """
-                INSERT INTO offer (id, referral_id, facility_id, step, source, status, counter_round, counter_mask, created_epoch, created_at, decided_at)
-                VALUES (%s, %s, %s, %s, 'DISPATCHER', 'ACCEPTED', 0, 0, %s, %s, %s);
-                """,
-                (str(new_off_id), str(ref_id), str(target_fac), referral.ladder_cursor + 1, referral.lease_epoch + 1, ts, ts),
-            )
-            conn.execute(
-                "UPDATE offer SET status = 'SUPERSEDED' WHERE referral_id = %s AND id != %s AND status IN ('OPEN', 'ACKED', 'COUNTERED', 'SOFT_OPEN');",
-                (str(ref_id), str(new_off_id)),
-            )
-            conn.execute(
-                "UPDATE deadline SET status = 'DONE' WHERE referral_id = %s AND kind IN ('ACK', 'DECISION', 'COUNTER_CONFIRM', 'DISPATCH_ACTION', 'NOTICE_VOICE', 'NOTICE_PROXY', 'HANDOVER') AND status = 'PENDING';",
-                (str(ref_id),),
-            )
-            conn.execute(
-                """
-                INSERT INTO deadline (id, referral_id, offer_id, kind, step, epoch, due_at, created_at)
-                VALUES (%s, %s, %s, 'HANDOVER', %s, %s, %s, %s);
-                """,
-                (str(uuid4()), str(ref_id), str(new_off_id), referral.ladder_cursor + 1, referral.lease_epoch + 1, ts + timedelta(minutes=45), ts),
-            )
-            # Revoke other grants
-            conn.execute(
-                "UPDATE payload_grant SET status = 'REVOKED', revoked_at = %s WHERE referral_id = %s AND facility_id != %s AND facility_id != %s AND status = 'ACTIVE';",
-                (ts, str(ref_id), str(referral.origin_facility_id), str(target_fac)),
-            )
-            conn.execute(
-                """
-                INSERT INTO payload_grant (id, referral_id, facility_id, status, granted_at)
-                VALUES (%s, %s, %s, 'ACTIVE', %s);
-                """,
-                (str(uuid4()), str(ref_id), str(target_fac), ts),
-            )
-            referral.lease_epoch += 1
-            referral.lease_offer_id = new_off_id
-            referral.lease_facility_id = target_fac
-            referral.hs_state = "ACCEPTED"
-            referral.open_offers = 0
-            event_detail = {
-                "facility": str(target_fac),
-                "reason": str(getattr(cmd, "reason", "DISPATCHER_ASSIGN")),
-            }
+            event_detail = execute_dispatcher_assign(conn, referral, session, cmd, ts)
 
         # 11. TR_UPDATE
         elif cmd.type == "TR_UPDATE" and referral is not None:
@@ -914,59 +675,17 @@ def apply_command(
         # 13. CANCEL
         elif cmd.type == "CANCEL" and referral is not None:
             event_type = "CANCELLED"
-            referral.hs_state = "CANCELLED"
-            referral.outcome = getattr(cmd, "outcome", "TRANSPORT_CANCELLED")
-            referral.closed_at = ts
-            if referral.tr_state not in ("HANDED_OVER", "TR_CANCELLED"):
-                referral.tr_state = "TR_CANCELLED"
-            conn.execute(
-                "UPDATE offer SET status = 'WITHDRAWN' WHERE referral_id = %s AND status IN ('OPEN', 'ACKED', 'COUNTERED', 'SOFT_OPEN');",
-                (str(ref_id),),
-            )
-            conn.execute(
-                "UPDATE deadline SET status = 'CANCELLED' WHERE referral_id = %s AND status = 'PENDING';",
-                (str(ref_id),),
-            )
-            conn.execute(
-                "UPDATE payload_grant SET status = 'REVOKED', revoked_at = %s WHERE referral_id = %s AND status = 'ACTIVE';",
-                (ts, str(ref_id)),
-            )
-            event_detail = {
-                "outcome": referral.outcome,
-                "reason": str(getattr(cmd, "reason", "USER_CANCELLED")),
-            }
+            event_detail = execute_cancel(conn, referral, session, cmd, ts)
 
         # 14. CLOSE
         elif cmd.type == "CLOSE" and referral is not None:
             event_type = "CLOSED"
-            referral.hs_state = "CLOSED"
-            referral.outcome = getattr(cmd, "outcome", "ADMITTED_STABLE")
-            referral.closed_at = ts
-            conn.execute(
-                "UPDATE deadline SET status = 'DONE' WHERE referral_id = %s AND kind IN ('HANDOVER', 'CLOSURE', 'DISPATCH_ACTION') AND status = 'PENDING';",
-                (str(ref_id),),
-            )
-            conn.execute(
-                "UPDATE payload_grant SET status = 'REVOKED', revoked_at = %s WHERE referral_id = %s AND status = 'ACTIVE';",
-                (ts, str(ref_id)),
-            )
-            event_detail = {
-                "outcome": referral.outcome,
-                "reason": str(getattr(cmd, "reason", "DISCHARGED")),
-            }
+            event_detail = execute_close(conn, referral, session, cmd, ts)
 
         # 15. REVOKE_GRANT
         elif cmd.type == "REVOKE_GRANT" and referral is not None:
             event_type = "GRANT_REVOKED"
-            target_fac = getattr(cmd, "target_facility_id")
-            conn.execute(
-                "UPDATE payload_grant SET status = 'REVOKED', revoked_at = %s WHERE referral_id = %s AND facility_id = %s AND status = 'ACTIVE';",
-                (ts, str(ref_id), str(target_fac)),
-            )
-            event_detail = {
-                "facility": str(target_fac),
-                "reason": str(getattr(cmd, "reason", "MANUAL_REVOKE")),
-            }
+            event_detail = execute_revoke_grant(conn, referral, session, cmd, ts)
 
         else:
             event_type = f"{cmd.type}_APPLIED"

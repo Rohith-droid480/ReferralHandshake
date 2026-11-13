@@ -434,12 +434,16 @@ def authorize(
 
     # 7. Terminal Commands: CLOSE, CANCEL, ARRIVAL_REJECTED
     if cmd.type == "CLOSE":
+        if role == "DISPATCHER":
+            return
         lease_fac = getattr(referral, "lease_facility_id", None) if referral else None
         if lease_fac and actor_fac == lease_fac and role in ("NURSE", "CMO", "CONSULTANT"):
             return
         raise AuthError(403, "ROLE_UNAUTHORIZED", f"Role {role} cannot close referral")
 
     if cmd.type == "CANCEL":
+        if role == "DISPATCHER":
+            return
         origin_fac = getattr(referral, "origin_facility_id", None) if referral else None
         if origin_fac and actor_fac == origin_fac and role in ("CLINICIAN", "CMO"):
             return

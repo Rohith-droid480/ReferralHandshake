@@ -239,13 +239,93 @@ def _wire_mock_engine() -> None:
                         version, hs_state, tr_state, lad_cur, lease_off, lease_fac, lease_ep,
                         open_off, tr_fac, h_seq, h_hash, h_ts, outcome, closed_at, _
                     ) = p
-                    r["ladder_cursor"] = int(lad_cur)
+                    r["ladder_cursor"] = int(lad_cur) if lad_cur is not None else 0
                     r["tr_facility_id"] = str(tr_fac) if tr_fac else None
+                    r["version"] = int(version)
+                    r["hs_state"] = str(hs_state)
+                    r["tr_state"] = str(tr_state)
+                    r["lease_offer_id"] = str(lease_off) if lease_off else None
+                    r["lease_facility_id"] = str(lease_fac) if lease_fac else None
+                    r["lease_epoch"] = int(lease_ep)
+                    r["open_offers"] = int(open_off)
+                    r["head_seq"] = int(h_seq)
+                    r["head_hash"] = bytes(h_hash) if isinstance(h_hash, bytes) else bytes.fromhex(str(h_hash))
+                    r["head_ts"] = h_ts
+                    r["outcome"] = str(outcome) if outcome else None
+                    r["closed_at"] = closed_at
+                    self.result = []
+                    return
                 elif len(p) == 13:
                     (
                         version, hs_state, tr_state, lease_off, lease_fac, lease_ep,
                         open_off, h_seq, h_hash, h_ts, outcome, closed_at, _
                     ) = p
+                    r["version"] = int(version)
+                    r["hs_state"] = str(hs_state)
+                    r["tr_state"] = str(tr_state)
+                    r["lease_offer_id"] = str(lease_off) if lease_off else None
+                    r["lease_facility_id"] = str(lease_fac) if lease_fac else None
+                    r["lease_epoch"] = int(lease_ep)
+                    r["open_offers"] = int(open_off)
+                    r["head_seq"] = int(h_seq)
+                    r["head_hash"] = bytes(h_hash) if isinstance(h_hash, bytes) else bytes.fromhex(str(h_hash))
+                    r["head_ts"] = h_ts
+                    r["outcome"] = str(outcome) if outcome else None
+                    r["closed_at"] = closed_at
+                    self.result = []
+                    return
+                elif "HS_STATE = 'ESCALATED_TO_DISPATCHER'" in nq:
+                    r["hs_state"] = "ESCALATED_TO_DISPATCHER"
+                    r["open_offers"] = 0
+                    self.result = []
+                    return
+                elif "HS_STATE = 'OFFERED'" in nq:
+                    r["hs_state"] = "OFFERED"
+                    if len(p) >= 2 and isinstance(p[0], int):
+                        r["ladder_cursor"] = int(p[0])
+                    r["open_offers"] = 1
+                    self.result = []
+                    return
+                elif "HS_STATE = 'COUNTERED'" in nq:
+                    r["hs_state"] = "COUNTERED"
+                    self.result = []
+                    return
+                elif "HS_STATE = 'CANCELLED'" in nq:
+                    r["hs_state"] = "CANCELLED"
+                    r["open_offers"] = 0
+                    if len(p) == 4:
+                        r["tr_state"] = str(p[0])
+                        r["outcome"] = str(p[1])
+                        r["closed_at"] = p[2]
+                    elif len(p) >= 3:
+                        r["outcome"] = str(p[0])
+                        r["closed_at"] = p[1]
+                    self.result = []
+                    return
+                elif "HS_STATE = 'CLOSED'" in nq:
+                    r["hs_state"] = "CLOSED"
+                    r["open_offers"] = 0
+                    if len(p) >= 3:
+                        r["outcome"] = str(p[0])
+                        r["closed_at"] = p[1]
+                    self.result = []
+                    return
+                elif "LEASE_OFFER_ID = NULL" in nq or "LEASE_OFFER_ID IS NULL" in nq:
+                    r["lease_offer_id"] = None
+                    r["lease_facility_id"] = None
+                    if len(p) >= 2 and isinstance(p[0], int):
+                        r["lease_epoch"] = int(p[0])
+                    self.result = []
+                    return
+                elif len(p) == 4 and "LEASE_OFFER_ID" in nq:
+                    r["hs_state"] = "ACCEPTED"
+                    r["lease_offer_id"] = str(p[0])
+                    r["lease_facility_id"] = str(p[1])
+                    r["lease_epoch"] = int(p[2])
+                    r["open_offers"] = 0
+                    r["tr_facility_id"] = str(p[1])
+                    self.result = []
+                    return
                 elif len(p) == 5 and "LEASE_OFFER_ID" in nq:
                     r["hs_state"] = "ACCEPTED"
                     r["lease_offer_id"] = str(p[0])
@@ -260,7 +340,7 @@ def _wire_mock_engine() -> None:
                     r["open_offers"] = int(p[1])
                     self.result = []
                     return
-                else:
+                elif len(p) >= 12:
                     version = p[0]
                     hs_state = p[1]
                     tr_state = p[2]
@@ -274,18 +354,18 @@ def _wire_mock_engine() -> None:
                     outcome = p[10]
                     closed_at = p[11]
 
-                r["version"] = int(version)
-                r["hs_state"] = str(hs_state)
-                r["tr_state"] = str(tr_state)
-                r["lease_offer_id"] = str(lease_off) if lease_off else None
-                r["lease_facility_id"] = str(lease_fac) if lease_fac else None
-                r["lease_epoch"] = int(lease_ep)
-                r["open_offers"] = int(open_off)
-                r["head_seq"] = int(h_seq)
-                r["head_hash"] = bytes(h_hash) if isinstance(h_hash, bytes) else bytes.fromhex(str(h_hash))
-                r["head_ts"] = h_ts
-                r["outcome"] = str(outcome) if outcome else None
-                r["closed_at"] = closed_at
+                    r["version"] = int(version)
+                    r["hs_state"] = str(hs_state)
+                    r["tr_state"] = str(tr_state)
+                    r["lease_offer_id"] = str(lease_off) if lease_off else None
+                    r["lease_facility_id"] = str(lease_fac) if lease_fac else None
+                    r["lease_epoch"] = int(lease_ep)
+                    r["open_offers"] = int(open_off)
+                    r["head_seq"] = int(h_seq)
+                    r["head_hash"] = bytes(h_hash) if isinstance(h_hash, bytes) else bytes.fromhex(str(h_hash))
+                    r["head_ts"] = h_ts
+                    r["outcome"] = str(outcome) if outcome else None
+                    r["closed_at"] = closed_at
             self.result = []
             return
 
@@ -309,6 +389,8 @@ def _wire_mock_engine() -> None:
                 if "STATUS = 'SOFT_OPEN'" in nq:
                     matched = [m for m in matched if m.get("status") == "SOFT_OPEN"]
                 self.result = [(m["id"], m["facility_id"]) for m in matched]
+            elif "SELECT FACILITY_ID FROM OFFER" in nq:
+                self.result = [(m["facility_id"],) for m in matched]
             elif "SELECT ID FROM OFFER" in nq:
                 self.result = [(m["id"],) for m in matched]
             elif "SELECT STATUS, FACILITY_ID FROM OFFER" in nq:
@@ -356,6 +438,10 @@ def _wire_mock_engine() -> None:
             matched.sort(key=lambda x: str(x.get("id", "")))
             if "SELECT ID, KIND FROM DEADLINE" in nq:
                 self.result = [(m["id"], m["kind"]) for m in matched]
+            elif "SELECT DUE_AT FROM DEADLINE" in nq:
+                if "KIND = 'DECISION'" in nq:
+                    matched = [m for m in matched if m.get("kind") == "DECISION"]
+                self.result = [(m["due_at"],) for m in matched]
             else:
                 self.result = [
                     (
@@ -421,9 +507,13 @@ def _wire_mock_engine() -> None:
             if "DECLINE_REASON" in nq and "WHERE ID = %S" in nq:
                 if len(p) >= 4:
                     status, dec_at, dec_reason, o_id = str(p[0]), p[1], str(p[2]), str(p[3])
-                else:
+                elif len(p) == 3:
                     status = "DECLINED"
                     dec_at, dec_reason, o_id = p[0], str(p[1]), str(p[2])
+                else:
+                    status = "DECLINED"
+                    dec_reason = "COUNTER_REJECTED" if "COUNTER_REJECTED" in nq else "DECLINED"
+                    dec_at, o_id = p[0], str(p[1])
                 if o_id in db.offers:
                     db.offers[o_id]["status"] = status
                     db.offers[o_id]["decided_at"] = dec_at
@@ -435,6 +525,12 @@ def _wire_mock_engine() -> None:
                         off["status"] = "ARRIVAL_REJECTED"
                         off["decided_at"] = dec_at
                         off["decline_reason"] = dec_reason
+            elif "SET STATUS = 'COUNTERED'" in nq:
+                c_round, c_mask, o_id = int(p[0]), int(p[1]), str(p[2])
+                if o_id in db.offers:
+                    db.offers[o_id]["status"] = "COUNTERED"
+                    db.offers[o_id]["counter_round"] = c_round
+                    db.offers[o_id]["counter_mask"] = c_mask
             elif "SET STATUS = 'SUPERSEDED'" in nq:
                 r_id, excl_id = str(p[0]), str(p[1])
                 for off in db.offers.values():
@@ -495,10 +591,10 @@ def _wire_mock_engine() -> None:
                 d_id, r_id, o_id, kind, step, epoch, due_at, cr_at = p
             elif len(p) == 7:
                 d_id, r_id, o_id, step, epoch, due_at, cr_at = p
-                kind = "HANDOVER" if "HANDOVER" in nq else ("DECISION" if "DECISION" in nq else "ACK")
+                kind = "HANDOVER" if "HANDOVER" in nq else ("DECISION" if "DECISION" in nq else ("COUNTER_CONFIRM" if "COUNTER_CONFIRM" in nq else ("DISPATCH_ACTION" if "DISPATCH_ACTION" in nq else "ACK")))
             else:
                 d_id, r_id, o_id = p[0], p[1], p[2]
-                kind = "HANDOVER" if "HANDOVER" in nq else ("DECISION" if "DECISION" in nq else ("DISPATCH_ACTION" if "DISPATCH_ACTION" in nq else "ACK"))
+                kind = "HANDOVER" if "HANDOVER" in nq else ("DECISION" if "DECISION" in nq else ("COUNTER_CONFIRM" if "COUNTER_CONFIRM" in nq else ("DISPATCH_ACTION" if "DISPATCH_ACTION" in nq else "ACK")))
                 step, epoch = 0, 0
                 due_at, cr_at = p[-2], p[-1]
             db.deadlines[str(d_id)] = {

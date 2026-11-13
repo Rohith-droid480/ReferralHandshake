@@ -63,12 +63,12 @@ def execute_accept(
             f"Offer {target_offer.id} is in status '{target_offer.status}'; late accept rejected",
         )
 
-    if target_offer.status not in ("OPEN", "ACKED", "SOFT_OPEN"):
+    if target_offer.status not in ("OPEN", "ACKED", "COUNTERED", "SOFT_OPEN"):
         raise TransitionReject(
             409,
             "INVALID_OFFER_STATE",
             f"Offer {target_offer.id} is in status '{target_offer.status}', cannot ACCEPT "
-            f"(must be 'OPEN', 'ACKED', or 'SOFT_OPEN')",
+            f"(must be 'OPEN', 'ACKED', 'COUNTERED', or 'SOFT_OPEN')",
         )
 
     # 3. Invariant I15 & Closure F12: Capability Staleness Check
