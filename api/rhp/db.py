@@ -113,6 +113,74 @@ class MockDatabase:
             "valid_to": None,
         }
 
+        # Roster: CMO at Ramanagara CHC (f2_id, PIN 4321)
+        r20_id = "00000000-0000-0000-0000-000000000020"
+        self.rosters[r20_id] = {
+            "id": r20_id,
+            "facility_id": f2_id,
+            "role_slot": "CMO",
+            "slot_no": 1,
+            "phone_e164": "+919880000003",
+            "pin_hash": "$argon2id$v=19$m=8192,t=1,p=1$vQoGkV5iWhVVmQujX4+uUA$Pf/bMEIxCtXwWUZuHJyIL5KZpztGt5Ank9Ht9ac3yvo",
+            "valid_from": datetime.now(timezone.utc),
+            "valid_to": None,
+        }
+
+        # Roster: Consultant at Mandya DH (PIN 4321)
+        r30_id = "00000000-0000-0000-0000-000000000030"
+        self.rosters[r30_id] = {
+            "id": r30_id,
+            "facility_id": "00000000-0000-0000-0000-000000000003",
+            "role_slot": "CONSULTANT",
+            "slot_no": 1,
+            "phone_e164": "+919880000004",
+            "pin_hash": "$argon2id$v=19$m=8192,t=1,p=1$vQoGkV5iWhVVmQujX4+uUA$Pf/bMEIxCtXwWUZuHJyIL5KZpztGt5Ank9Ht9ac3yvo",
+            "valid_from": datetime.now(timezone.utc),
+            "valid_to": None,
+        }
+
+        # Synthetic Karnataka Roster Slots (matching db/03_seed.sql)
+        self.rosters["a1111111-0000-0000-0000-000000000001"] = {
+            "id": "a1111111-0000-0000-0000-000000000001",
+            "facility_id": "11111111-1111-1111-1111-111111111111",
+            "role_slot": "CLINICIAN",
+            "slot_no": 1,
+            "phone_e164": "+919000000001",
+            "pin_hash": "$argon2id$v=19$m=8192,t=1,p=1$vQoGkV5iWhVVmQujX4+uUA$Pf/bMEIxCtXwWUZuHJyIL5KZpztGt5Ank9Ht9ac3yvo",
+            "valid_from": datetime.now(timezone.utc),
+            "valid_to": None,
+        }
+        self.rosters["a2222222-0000-0000-0000-000000000001"] = {
+            "id": "a2222222-0000-0000-0000-000000000001",
+            "facility_id": "22222222-2222-2222-2222-222222222222",
+            "role_slot": "CMO",
+            "slot_no": 1,
+            "phone_e164": "+919000000003",
+            "pin_hash": "$argon2id$v=19$m=8192,t=1,p=1$vQoGkV5iWhVVmQujX4+uUA$Pf/bMEIxCtXwWUZuHJyIL5KZpztGt5Ank9Ht9ac3yvo",
+            "valid_from": datetime.now(timezone.utc),
+            "valid_to": None,
+        }
+        self.rosters["a4444444-0000-0000-0000-000000000001"] = {
+            "id": "a4444444-0000-0000-0000-000000000001",
+            "facility_id": "44444444-4444-4444-4444-444444444444",
+            "role_slot": "CONSULTANT",
+            "slot_no": 1,
+            "phone_e164": "+919000000008",
+            "pin_hash": "$argon2id$v=19$m=8192,t=1,p=1$vQoGkV5iWhVVmQujX4+uUA$Pf/bMEIxCtXwWUZuHJyIL5KZpztGt5Ank9Ht9ac3yvo",
+            "valid_from": datetime.now(timezone.utc),
+            "valid_to": None,
+        }
+        self.rosters["a5555555-0000-0000-0000-000000000001"] = {
+            "id": "a5555555-0000-0000-0000-000000000001",
+            "facility_id": "55555555-5555-5555-5555-555555555555",
+            "role_slot": "CONSULTANT",
+            "slot_no": 1,
+            "phone_e164": "+919000000013",
+            "pin_hash": "$argon2id$v=19$m=8192,t=1,p=1$vQoGkV5iWhVVmQujX4+uUA$Pf/bMEIxCtXwWUZuHJyIL5KZpztGt5Ank9Ht9ac3yvo",
+            "valid_from": datetime.now(timezone.utc),
+            "valid_to": None,
+        }
+
         # Referral 1
         ref1_id = "00000000-0000-0000-0000-000000000100"
         self.referrals[ref1_id] = {

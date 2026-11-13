@@ -12,6 +12,7 @@ import json
 import pytest
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Union
+from uuid import uuid4
 
 from api.rhp.db import MockConnection, MockCursor
 
@@ -72,6 +73,19 @@ def _wire_mock_engine() -> None:
                 "NEONATAL": ["NICU", "PAEDIATRICIAN"],
                 "TRAUMA": ["OT", "BLOOD", "ANAESTHETIST"],
                 "CARDIAC": ["OT"],
+            }
+        if not hasattr(db, "catchment_chains"):
+            db.catchment_chains = {
+                ("11111111-1111-1111-1111-111111111111", "OBSTETRIC_EMERGENCY"): [
+                    "22222222-2222-2222-2222-222222222222",
+                    "44444444-4444-4444-4444-444444444444",
+                    "55555555-5555-5555-5555-555555555555",
+                ],
+                ("11111111-1111-1111-1111-111111111111", "OB_ECLAMPSIA"): [
+                    "22222222-2222-2222-2222-222222222222",
+                    "44444444-4444-4444-4444-444444444444",
+                    "55555555-5555-5555-5555-555555555555",
+                ],
             }
         if not hasattr(self.connection, "held_table_locks"):
             self.connection.held_table_locks = set()
@@ -232,6 +246,20 @@ def _wire_mock_engine() -> None:
                         version, hs_state, tr_state, lease_off, lease_fac, lease_ep,
                         open_off, h_seq, h_hash, h_ts, outcome, closed_at, _
                     ) = p
+                elif len(p) == 5 and "LEASE_OFFER_ID" in nq:
+                    r["hs_state"] = "ACCEPTED"
+                    r["lease_offer_id"] = str(p[0])
+                    r["lease_facility_id"] = str(p[1])
+                    r["lease_epoch"] = int(p[2])
+                    r["open_offers"] = 0
+                    r["tr_facility_id"] = str(p[3])
+                    self.result = []
+                    return
+                elif len(p) == 3 and "HS_STATE" in nq and "OPEN_OFFERS" in nq:
+                    r["hs_state"] = str(p[0])
+                    r["open_offers"] = int(p[1])
+                    self.result = []
+                    return
                 else:
                     version = p[0]
                     hs_state = p[1]
@@ -264,7 +292,7 @@ def _wire_mock_engine() -> None:
         # ---------------------------------------------------------------------
         # 4. CHILD LOCKS: OFFER & DEADLINE (Step 6)
         # ---------------------------------------------------------------------
-        if "FROM OFFER" in nq and "WHERE REFERRAL_ID = %S" in nq:
+        if ("FROM OFFER " in nq or "FROM OFFER\n" in nq) and "WHERE REFERRAL_ID = %S" in nq and "OFFER_RESOURCE_CONFIRMATION" not in nq:
             if "FOR UPDATE" in nq:
                 self.connection.held_table_locks.add("offer")
             ref_id = str(p[0])
@@ -277,6 +305,10 @@ def _wire_mock_engine() -> None:
             matched.sort(key=lambda x: str(x.get("id", "")))
             if "SELECT ID, STATUS FROM OFFER" in nq:
                 self.result = [(m["id"], m["status"]) for m in matched]
+            elif "SELECT ID, FACILITY_ID FROM OFFER" in nq:
+                if "STATUS = 'SOFT_OPEN'" in nq:
+                    matched = [m for m in matched if m.get("status") == "SOFT_OPEN"]
+                self.result = [(m["id"], m["facility_id"]) for m in matched]
             elif "SELECT ID FROM OFFER" in nq:
                 self.result = [(m["id"],) for m in matched]
             elif "SELECT STATUS, FACILITY_ID FROM OFFER" in nq:
@@ -293,7 +325,7 @@ def _wire_mock_engine() -> None:
                 ]
             return
 
-        if "FROM OFFER" in nq and "WHERE ID = %S" in nq:
+        if ("FROM OFFER " in nq or "FROM OFFER\n" in nq) and "WHERE ID = %S" in nq and "OFFER_RESOURCE_CONFIRMATION" not in nq:
             off_id = str(p[0])
             off = db.offers.get(off_id)
             if off:
@@ -351,7 +383,7 @@ def _wire_mock_engine() -> None:
                 self.result = []
             return
 
-        if "INSERT INTO OFFER" in nq:
+        if ("INSERT INTO OFFER (" in nq or "INSERT INTO OFFER " in nq) and "OFFER_RESOURCE_CONFIRMATION" not in nq:
             if len(p) == 11:
                 o_id, r_id, fac_id, step, source, status, c_round, c_mask, c_epoch, cr_at, dec_at = p
             elif len(p) == 10:
@@ -362,7 +394,7 @@ def _wire_mock_engine() -> None:
                 source, status, c_round, c_mask, dec_at = "CHAIN", "OPEN", 0, 0, None
             else:
                 o_id, r_id, fac_id = p[0], p[1], p[2]
-                step = p[3] if len(p) > 3 else 0
+                step = p[3] if len(p) > 4 and isinstance(p[3], (int, str)) else 0
                 source, status, c_round, c_mask, c_epoch = "CHAIN", "OPEN", 0, 0, 0
                 cr_at = p[-1]
                 dec_at = None
@@ -385,7 +417,7 @@ def _wire_mock_engine() -> None:
             self.result = []
             return
 
-        if "UPDATE OFFER" in nq:
+        if "UPDATE OFFER " in nq and "OFFER_RESOURCE_CONFIRMATION" not in nq:
             if "DECLINE_REASON" in nq and "WHERE ID = %S" in nq:
                 if len(p) >= 4:
                     status, dec_at, dec_reason, o_id = str(p[0]), p[1], str(p[2]), str(p[3])
@@ -463,10 +495,11 @@ def _wire_mock_engine() -> None:
                 d_id, r_id, o_id, kind, step, epoch, due_at, cr_at = p
             elif len(p) == 7:
                 d_id, r_id, o_id, step, epoch, due_at, cr_at = p
-                kind = "ACK"
+                kind = "HANDOVER" if "HANDOVER" in nq else ("DECISION" if "DECISION" in nq else "ACK")
             else:
                 d_id, r_id, o_id = p[0], p[1], p[2]
-                kind, step, epoch = "ACK", 0, 0
+                kind = "HANDOVER" if "HANDOVER" in nq else ("DECISION" if "DECISION" in nq else ("DISPATCH_ACTION" if "DISPATCH_ACTION" in nq else "ACK"))
+                step, epoch = 0, 0
                 due_at, cr_at = p[-2], p[-1]
             db.deadlines[str(d_id)] = {
                 "id": str(d_id),
@@ -484,14 +517,14 @@ def _wire_mock_engine() -> None:
             return
 
         if "UPDATE DEADLINE" in nq:
-            if "WHERE REFERRAL_ID = %S" in nq and "KIND IN" in nq:
-                if len(p) >= 2:
+            if "KIND IN" in nq:
+                if "SET STATUS = %S" in nq:
                     st_val = str(p[0])
                     ref_id = str(p[1])
                 else:
-                    st_val = "DONE"
+                    st_val = "CANCELLED" if "CANCELLED" in nq else "DONE"
                     ref_id = str(p[0])
-                kinds = [k.strip("'") for k in nq.split("KIND IN (")[1].split(")")[0].split(",")]
+                kinds = [k.strip().strip("'") for k in nq.split("KIND IN (")[1].split(")")[0].split(",")]
                 for d in db.deadlines.values():
                     if d.get("referral_id") == ref_id and d.get("status") == "PENDING":
                         if d.get("kind") in kinds:
@@ -565,8 +598,19 @@ def _wire_mock_engine() -> None:
             self.result = []
             return
 
+        if "FROM CATCHMENT_CHAIN" in nq:
+            orig_fac = str(p[0])
+            need_class = str(p[1])
+            chains = db.catchment_chains.get((orig_fac, need_class), [])
+            self.result = [(c,) for c in chains]
+            return
+
         if "INSERT INTO OFFER_RESOURCE_CONFIRMATION" in nq:
-            c_id, off_id, cap, conf_by, exp_at, cr_at = p[0], p[1], p[2], p[3], p[4], p[5]
+            if len(p) == 5:
+                off_id, cap, conf_by, cr_at, exp_at = p
+                c_id = str(uuid4())
+            else:
+                c_id, off_id, cap, conf_by, exp_at, cr_at = p[:6]
             db.offer_resource_confirmations[f"{off_id}:{cap}"] = {
                 "id": str(c_id),
                 "offer_id": str(off_id),

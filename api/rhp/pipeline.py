@@ -29,6 +29,9 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID, uuid4
 
 from api.rhp.auth import AuthError, Session, load_session, verify_pin_or_lockout
+from api.rhp.commands.accept import execute_accept
+from api.rhp.commands.ack_confirm import execute_ack, execute_resource_confirm
+from api.rhp.commands.create import execute_create
 from api.rhp.crypto import GENESIS_PREV_HASH_BYTES, compute_event_hash, jcs
 from api.rhp.db import get_monotone_ts
 from api.rhp.schemas import BaseCommand, authorize, parse_command, validate_event_detail
@@ -439,96 +442,16 @@ def apply_command(
         # 1. CREATE
         if cmd.type == "CREATE":
             event_type = "REFERRAL_CREATED"
-            chain_list = getattr(cmd, "chain", [])
-            initial_fac = chain_list[0] if chain_list else None
-            initial_open_offers = 1 if initial_fac else 0
-            initial_hs = "OFFERED" if initial_fac else "ESCALATED_TO_DISPATCHER"
-
-            # Insert Referral row
-            conn.execute(
-                """
-                INSERT INTO referral (
-                  id, version, hs_state, tr_state, mode, need_class, origin_facility_id,
-                  chain, ladder_cursor, lease_epoch, open_offers, mgso4_status, profile_id,
-                  profile_hash, paper_code, head_seq, head_hash, head_ts, created_by, created_at
-                ) VALUES (
-                  %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-                );
-                """,
-                (
-                    str(ref_id), 1, initial_hs, "REQUESTED",
-                    cmd.mode, cmd.need_class, str(cmd.origin_facility_id),
-                    [str(c) for c in chain_list], 0, 0, initial_open_offers,
-                    cmd.mgso4_status, cmd.profile_id, b"\x00" * 32,
-                    f"RHP-{str(ref_id)[:8].upper()}", 0, GENESIS_PREV_HASH_BYTES,
-                    ts, str(session.roster_id), ts,
-                ),
-            )
-
-            # Insert active payload grant for origin facility
-            conn.execute(
-                """
-                INSERT INTO payload_grant (id, referral_id, facility_id, status, granted_at)
-                VALUES (%s, %s, %s, 'ACTIVE', %s);
-                """,
-                (str(uuid4()), str(ref_id), str(cmd.origin_facility_id), ts),
-            )
-
-            # Insert initial offer row if destination facility present
-            if initial_fac:
-                first_offer_id = uuid4()
-                conn.execute(
-                    """
-                    INSERT INTO offer (
-                      id, referral_id, facility_id, step, source, status, counter_round,
-                      counter_mask, created_epoch, created_at
-                    ) VALUES (
-                      %s, %s, %s, %s, 'CHAIN', 'OPEN', 0, 0, %s, %s
-                    );
-                    """,
-                    (str(first_offer_id), str(ref_id), str(initial_fac), 0, 0, ts),
-                )
-
-                # Insert ACK, voice and proxy deadlines
-                conn.execute(
-                    """
-                    INSERT INTO deadline (id, referral_id, offer_id, kind, step, epoch, due_at, created_at)
-                    VALUES (%s, %s, %s, 'ACK', %s, %s, %s, %s);
-                    """,
-                    (str(uuid4()), str(ref_id), str(first_offer_id), 0, 0, ts + timedelta(seconds=60), ts),
-                )
-                conn.execute(
-                    """
-                    INSERT INTO deadline (id, referral_id, offer_id, kind, step, epoch, due_at, created_at)
-                    VALUES (%s, %s, %s, 'NOTICE_VOICE', %s, %s, %s, %s);
-                    """,
-                    (str(uuid4()), str(ref_id), str(first_offer_id), 0, 0, ts + timedelta(seconds=15), ts),
-                )
-                conn.execute(
-                    """
-                    INSERT INTO deadline (id, referral_id, offer_id, kind, step, epoch, due_at, created_at)
-                    VALUES (%s, %s, %s, 'NOTICE_PROXY', %s, %s, %s, %s);
-                    """,
-                    (str(uuid4()), str(ref_id), str(first_offer_id), 0, 0, ts + timedelta(seconds=45), ts),
-                )
-
-                # Active payload grant for offered facility
-                conn.execute(
-                    """
-                    INSERT INTO payload_grant (id, referral_id, facility_id, status, granted_at)
-                    VALUES (%s, %s, %s, 'ACTIVE', %s);
-                    """,
-                    (str(uuid4()), str(ref_id), str(initial_fac), ts),
-                )
-            else:
-                # Chain empty: dispatch action deadline
-                conn.execute(
-                    """
-                    INSERT INTO deadline (id, referral_id, offer_id, kind, step, epoch, due_at, created_at)
-                    VALUES (%s, %s, NULL, 'DISPATCH_ACTION', 0, 0, %s, %s);
-                    """,
-                    (str(uuid4()), str(ref_id), ts + timedelta(seconds=300), ts),
-                )
+            (
+                ref_id,
+                initial_hs,
+                open_offers,
+                chain_list,
+                paper_code,
+                event_detail,
+                created_offers,
+                outbox_entries,
+            ) = execute_create(conn, cmd, session, ts, ref_id)
 
             referral = ReferralState({
                 "id": str(ref_id),
@@ -539,118 +462,31 @@ def apply_command(
                 "need_class": cmd.need_class,
                 "origin_facility_id": str(cmd.origin_facility_id),
                 "chain": [str(c) for c in chain_list],
-                "ladder_cursor": 0,
+                "ladder_cursor": len(created_offers) - 1 if created_offers else 0,
                 "lease_epoch": 0,
-                "open_offers": initial_open_offers,
+                "open_offers": open_offers,
                 "mgso4_status": cmd.mgso4_status,
                 "profile_id": cmd.profile_id,
+                "paper_code": paper_code,
                 "head_seq": 0,
                 "head_hash": GENESIS_PREV_HASH_BYTES,
                 "head_ts": ts,
             })
 
-            event_detail = {
-                "mode": cmd.mode,
-                "need_class": cmd.need_class,
-                "chain_len": len(chain_list),
-                "profile": cmd.profile_id,
-                "mgso4": cmd.mgso4_status,
-            }
-
         # 2. ACK
         elif cmd.type == "ACK" and referral is not None and target_offer is not None:
             event_type = "OFFER_ACKED"
-            conn.execute(
-                "UPDATE offer SET status = 'ACKED', acked_at = %s, acked_by = %s WHERE id = %s;",
-                (ts, str(session.roster_id), str(target_offer.id)),
-            )
-            conn.execute(
-                "UPDATE deadline SET status = 'DONE' WHERE referral_id = %s AND kind IN ('ACK', 'NOTICE_VOICE', 'NOTICE_PROXY') AND status = 'PENDING';",
-                (str(ref_id),),
-            )
-            # Create decision deadline
-            conn.execute(
-                """
-                INSERT INTO deadline (id, referral_id, offer_id, kind, step, epoch, due_at, created_at)
-                VALUES (%s, %s, %s, 'DECISION', %s, %s, %s, %s);
-                """,
-                (str(uuid4()), str(ref_id), str(target_offer.id), target_offer.step, referral.lease_epoch, ts + timedelta(seconds=180), ts),
-            )
-            # In SEQUENTIAL mode, any prior SOFT_OPEN offer transitions to TIMED_OUT
-            if referral.mode == "SEQUENTIAL":
-                conn.execute(
-                    "UPDATE offer SET status = 'TIMED_OUT' WHERE referral_id = %s AND status = 'SOFT_OPEN' AND id != %s;",
-                    (str(ref_id), str(target_offer.id)),
-                )
-                referral.open_offers = 1
-
-            if referral.hs_state != "ACCEPTED":
-                referral.hs_state = "ACKNOWLEDGED"
-
-            event_detail = {"channel": cmd.channel}
+            event_detail = execute_ack(conn, referral, target_offer, session, cmd, ts)
 
         # 3. RESOURCE_CONFIRM
         elif cmd.type == "RESOURCE_CONFIRM" and referral is not None and target_offer is not None:
             event_type = "RESOURCE_CONFIRMED"
-            caps = getattr(cmd, "capabilities", [])
-            for cap in caps:
-                conn.execute(
-                    """
-                    INSERT INTO offer_resource_confirmation (id, offer_id, capability, confirmed_by, expires_at, created_at)
-                    VALUES (%s, %s, %s, %s, %s, %s);
-                    """,
-                    (str(uuid4()), str(target_offer.id), cap, str(session.roster_id), ts + timedelta(minutes=15), ts),
-                )
-            event_detail = {"capability": caps[0] if caps else "OT"}
+            event_detail = execute_resource_confirm(conn, referral, target_offer, session, cmd, ts)
 
         # 4. ACCEPT
         elif cmd.type == "ACCEPT" and referral is not None and target_offer is not None:
             event_type = "OFFER_ACCEPTED"
-            conn.execute(
-                "UPDATE offer SET status = 'ACCEPTED', decided_at = %s WHERE id = %s;",
-                (ts, str(target_offer.id)),
-            )
-            # Supersede other open offers
-            conn.execute(
-                "UPDATE offer SET status = 'SUPERSEDED' WHERE referral_id = %s AND id != %s AND status IN ('OPEN', 'ACKED', 'COUNTERED', 'SOFT_OPEN');",
-                (str(ref_id), str(target_offer.id)),
-            )
-            # Mark existing deadlines DONE
-            conn.execute(
-                "UPDATE deadline SET status = 'DONE' WHERE referral_id = %s AND kind IN ('ACK', 'DECISION', 'COUNTER_CONFIRM', 'NOTICE_VOICE', 'NOTICE_PROXY') AND status = 'PENDING';",
-                (str(ref_id),),
-            )
-            # Create HANDOVER deadline
-            conn.execute(
-                """
-                INSERT INTO deadline (id, referral_id, offer_id, kind, step, epoch, due_at, created_at)
-                VALUES (%s, %s, %s, 'HANDOVER', %s, %s, %s, %s);
-                """,
-                (str(uuid4()), str(ref_id), str(target_offer.id), target_offer.step, referral.lease_epoch + 1, ts + timedelta(minutes=45), ts),
-            )
-            # Revoke superseded payload grants
-            conn.execute(
-                "UPDATE payload_grant SET status = 'REVOKED', revoked_at = %s WHERE referral_id = %s AND facility_id != %s AND facility_id != %s AND status = 'ACTIVE';",
-                (ts, str(ref_id), str(referral.origin_facility_id), str(target_offer.facility_id)),
-            )
-            # Grant active payload grant to lease facility
-            conn.execute(
-                """
-                INSERT INTO payload_grant (id, referral_id, facility_id, status, granted_at)
-                VALUES (%s, %s, %s, 'ACTIVE', %s);
-                """,
-                (str(uuid4()), str(ref_id), str(target_offer.facility_id), ts),
-            )
-            referral.lease_epoch += 1
-            referral.lease_offer_id = target_offer.id
-            referral.lease_facility_id = target_offer.facility_id
-            referral.open_offers = 0
-            referral.hs_state = "ACCEPTED"
-            event_detail = {
-                "facility": str(target_offer.facility_id),
-                "epoch": referral.lease_epoch,
-                "reason": "ACCEPTED",
-            }
+            event_detail = execute_accept(conn, referral, target_offer, session, cmd, ts)
 
         # 5. COUNTER
         elif cmd.type == "COUNTER" and referral is not None and target_offer is not None:
