@@ -1517,25 +1517,6 @@ def api_arena_restore(body: Dict[str, Any] = None):
     }
 
 
-@router.post("/arena/stale-capability")
-def api_arena_stale_capability(body: Dict[str, Any] = None):
-    """Simulates a capability going stale (e.g. blood bank depleted) so acceptance is blocked."""
-    body = body or {}
-    ref_id = body.get("referral_id", "00000000-0000-0000-0000-000000000100")
-    past_ts = (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()
-    with get_main_connection() as conn:
-        if hasattr(conn, "db"):
-            for conf in conn.db.offer_resource_confirmations.values():
-                if str(conf.get("referral_id")) == str(ref_id):
-                    conf["expires_at"] = past_ts
-    return {
-        "status": "CAPABILITY_STALED",
-        "referral_id": str(ref_id),
-        "message": "Resource confirmations marked expired. Acceptance blocked until reconfirmed.",
-    }
-
-
-
 @router.post("/arena/spawn-silence-ladder")
 def api_arena_spawn_silence_ladder():
     """Spawns a DEMO_FAST referral (A=3s, D=4s, F=3) to demonstrate the notice ladder."""
@@ -1666,14 +1647,5 @@ def api_crypto_shred_referral(referral_id: UUID):
         if hasattr(conn, "commit"):
             conn.commit()
         return res
-
-
-@router.post("/demo/reset-and-seed")
-def api_demo_reset_and_seed():
-    """Resets and re-seeds synthetic demonstration referrals for repeatable demo flows."""
-    from api.rhp.db import GLOBAL_MOCK_DB
-    GLOBAL_MOCK_DB.seed_defaults()
-    return {"status": "SUCCESS", "message": "Synthetic demo referrals reset and re-seeded successfully."}
-
 
 

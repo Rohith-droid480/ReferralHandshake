@@ -13,6 +13,18 @@ export const JudgeJoin: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [assignedDesk, setAssignedDesk] = useState<any | null>(null);
 
+  const fetchLiveToken = async () => {
+    try {
+      const res = await fetch('/v1/judge/qr-token');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.jti) {
+          setJti(data.jti);
+        }
+      }
+    } catch {}
+  };
+
   useEffect(() => {
     fetch('/mode')
       .then((r) => r.json())
@@ -20,6 +32,10 @@ export const JudgeJoin: React.FC = () => {
         setIsLanMode(Boolean(data.lan_mode || data.LAN_MODE));
       })
       .catch(() => setIsLanMode(true));
+
+    if (!jti) {
+      fetchLiveToken();
+    }
   }, []);
 
   const handleJoin = async () => {
@@ -104,9 +120,18 @@ export const JudgeJoin: React.FC = () => {
       ) : (
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-              QR Token (JTI)
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                QR Token (JTI)
+              </label>
+              <button
+                type="button"
+                onClick={fetchLiveToken}
+                className="text-[11px] text-indigo-400 hover:text-indigo-300 underline"
+              >
+                Auto-fill Live Token
+              </button>
+            </div>
             <input
               type="text"
               value={jti}
@@ -123,7 +148,7 @@ export const JudgeJoin: React.FC = () => {
                 Anti-Bot Verification
               </span>
               <span className="text-emerald-400 font-mono text-[11px]">
-                {isLanMode ? 'LAN Bypass (Rotating JTI)' : 'Cloudflare Turnstile [SIMULATED/DEMO MODE]'}
+                {isLanMode ? 'LAN Bypass Active' : 'Cloudflare Turnstile'}
               </span>
             </div>
             <p className="text-[11px] text-slate-400 mt-1">

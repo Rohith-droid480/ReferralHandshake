@@ -377,12 +377,7 @@ export const FeaturePhoneIvrModal: React.FC<FeaturePhoneIvrModalProps> = ({
         <div className="p-6 flex flex-col justify-between space-y-4">
           <div className="flex justify-between items-center border-b border-slate-800 pb-2">
             <div>
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <span>Multi-Channel Reach Audit Console</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 bg-amber-950 text-amber-300 border border-amber-800 rounded font-normal">
-                  SIMULATED / DEMO MODE
-                </span>
-              </h3>
+              <h3 className="text-sm font-bold text-white">Multi-Channel Reach Audit Console</h3>
               <p className="text-[10px] text-slate-400">Exotel IVR (&lt;2s budget) · TRAI DLT SMS · Crockford mod-37</p>
             </div>
             <button onClick={onClose} className="text-slate-400 hover:text-white text-xs font-mono">

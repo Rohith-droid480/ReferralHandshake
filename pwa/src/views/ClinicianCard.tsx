@@ -313,18 +313,19 @@ export const ClinicianCard: React.FC = () => {
                 <div className="w-full">
                   <p className="font-bold text-slate-500">MgSO4 DRUG SAFETY STATUS</p>
                   <p
-                    className={`font-black text-sm mt-1 px-2 py-0.5 inline-block rounded ${mgso4Status === 'GIVEN'
+                    className={`font-black text-sm mt-1 px-2 py-0.5 inline-block rounded ${
+                      mgso4Status === 'GIVEN'
                         ? 'bg-emerald-100 text-emerald-900'
                         : mgso4Status === 'NONE_GIVEN'
-                          ? 'bg-slate-100 text-slate-800'
-                          : 'bg-red-100 text-red-900 border border-red-300'
-                      }`}
+                        ? 'bg-slate-100 text-slate-800'
+                        : 'bg-red-100 text-red-900 border border-red-300'
+                    }`}
                   >
                     {mgso4Status === 'GIVEN'
                       ? `GIVEN: ${mgso4Dose}`
                       : mgso4Status === 'NONE_GIVEN'
-                        ? 'NONE GIVEN'
-                        : 'UNKNOWN (VERIFY BEFORE DOSING)'}
+                      ? 'NONE GIVEN'
+                      : 'UNKNOWN (VERIFY BEFORE DOSING)'}
                   </p>
                 </div>
                 <div className="mt-2">
@@ -422,12 +423,7 @@ export const ClinicianCard: React.FC = () => {
           <div className="p-4 bg-slate-900/60 rounded-xl border border-indigo-500/20 space-y-2">
             <div className="flex items-center justify-between">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-indigo-300">AI Intake Accelerator</span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 bg-slate-800 text-slate-400 border border-slate-700 rounded">
-                    SIMULATED / DEMO MODE
-                  </span>
-                </div>
+                <span className="text-xs font-bold text-indigo-300">AI Intake Accelerator</span>
                 <span className="text-[10px] text-slate-400 block">
                   Cognitive Forcing Function: Commit Need Class & MgSO4 Status before reveal (Closure A1, A2).
                 </span>
@@ -484,20 +480,22 @@ export const ClinicianCard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setMode('SEQUENTIAL')}
-                  className={`py-2 px-3 text-xs font-bold rounded-lg border transition ${mode === 'SEQUENTIAL'
+                  className={`py-2 px-3 text-xs font-bold rounded-lg border transition ${
+                    mode === 'SEQUENTIAL'
                       ? 'bg-indigo-600 text-white border-indigo-500'
                       : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-white'
-                    }`}
+                  }`}
                 >
                   Sequential (Catchment)
                 </button>
                 <button
                   type="button"
                   onClick={() => setMode('PARALLEL2')}
-                  className={`py-2 px-3 text-xs font-bold rounded-lg border transition ${mode === 'PARALLEL2'
+                  className={`py-2 px-3 text-xs font-bold rounded-lg border transition ${
+                    mode === 'PARALLEL2'
                       ? 'bg-amber-600 text-white border-amber-500'
                       : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-white'
-                    }`}
+                  }`}
                 >
                   Parallel-2 (Race Demo)
                 </button>
@@ -519,30 +517,33 @@ export const ClinicianCard: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setMgso4Status('GIVEN')}
-                className={`py-2 px-3 text-xs font-bold rounded-lg border text-center transition ${mgso4Status === 'GIVEN'
+                className={`py-2 px-3 text-xs font-bold rounded-lg border text-center transition ${
+                  mgso4Status === 'GIVEN'
                     ? 'bg-emerald-600 text-white border-emerald-500'
                     : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'
-                  }`}
+                }`}
               >
                 GIVEN
               </button>
               <button
                 type="button"
                 onClick={() => setMgso4Status('NONE_GIVEN')}
-                className={`py-2 px-3 text-xs font-bold rounded-lg border text-center transition ${mgso4Status === 'NONE_GIVEN'
+                className={`py-2 px-3 text-xs font-bold rounded-lg border text-center transition ${
+                  mgso4Status === 'NONE_GIVEN'
                     ? 'bg-slate-600 text-white border-slate-400'
                     : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'
-                  }`}
+                }`}
               >
                 NONE GIVEN
               </button>
               <button
                 type="button"
                 onClick={() => setMgso4Status('UNKNOWN')}
-                className={`py-2 px-3 text-xs font-bold rounded-lg border text-center transition ${mgso4Status === 'UNKNOWN'
+                className={`py-2 px-3 text-xs font-bold rounded-lg border text-center transition ${
+                  mgso4Status === 'UNKNOWN'
                     ? 'bg-red-600 text-white border-red-500 animate-pulse'
                     : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'
-                  }`}
+                }`}
               >
                 UNKNOWN (SAFE)
               </button>
@@ -638,5 +639,4 @@ export const ClinicianCard: React.FC = () => {
     </div>
   );
 };
-
 

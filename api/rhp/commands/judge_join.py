@@ -48,6 +48,7 @@ judge_app.include_router(router)
 class JudgeJoinRequest(BaseModel):
     jti: str = Field(description="Single-use QR admission token identifier")
     turnstile_response: Optional[str] = Field(default=None, description="Cloudflare Turnstile client response")
+    turnstile_token: Optional[str] = Field(default=None, description="Client alias for turnstile response")
     preferred_facility: Optional[str] = Field(default=None, description="Optional facility preference")
 
 
@@ -218,12 +219,16 @@ def allocate_judge_desk(
 
     cookie_val = format_session_cookie(session_token)
 
+    facility_display_name = f"CHC Ramanagara (Desk #{available_slot})" if available_slot % 2 == 1 else f"DH Mandya (Desk #{available_slot})"
+
     return {
         "status": "OK",
         "slot_no": available_slot,
+        "desk_number": available_slot,
         "roster_id": str(roster_id),
         "facility_id": str(facility_id),
         "facility_code": facility_code,
+        "facility_name": facility_display_name,
         "session_token": session_token,
         "cookie_header": cookie_val,
     }
@@ -245,11 +250,12 @@ def api_get_qr_token(response: Response) -> Dict[str, Any]:
 @router.post("/join")
 def api_judge_join(req: JudgeJoinRequest, response: Response) -> Dict[str, Any]:
     """Judge scans QR token to claim one of 20 competing hospital desks."""
+    turnstile_resp = req.turnstile_response or req.turnstile_token
     with get_main_connection() as conn:
         res = allocate_judge_desk(
             conn=conn,
             jti=req.jti,
-            turnstile_response=req.turnstile_response,
+            turnstile_response=turnstile_resp,
             preferred_facility=req.preferred_facility,
         )
         response.headers["Set-Cookie"] = res["cookie_header"]

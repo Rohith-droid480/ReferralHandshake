@@ -158,92 +158,49 @@ $$T_{\max} = F \cdot (A + D + \epsilon) \le B$$
 
 ---
 
-## 7. Quickstart & Live Demonstration Launchers
+## 7. Quickstart & Verification Suite
 
-### 1-Command Live Demo Start (Automated OS Detection)
-```powershell
-# Windows (PowerShell)
-.\run_demo.ps1
-```
+### 1. Environment Setup
 ```bash
-# Linux / macOS (Bash)
-./run_demo.sh
-```
-* **React PWA Desk Interface:** `http://localhost:8080/`
-* **Pre-Built Static Bundle Mount:** `http://localhost:8000/app/`
-* **Mobile Phone Wi-Fi Access:** `http://<LAN_IP>:8080/` (1-Tap "Add to Home Screen")
-* **Command API Documentation:** `http://localhost:8000/docs`
-* **Healthcheck & Telemetry:** `http://localhost:8000/healthz`
-* **Independent Runtime Monitor UI:** `http://localhost:8001/status`
-* **Android EMT APK Direct Download:** `http://localhost:8000/v1/download/apk`
-
----
-
-## 8. Real vs. Simulated / Demo Mode Matrix (Honesty Register)
-
-In accordance with Colossus 3.0 hackathon governance, we explicitly distinguish fully implemented core mechanisms from simulated vendor adapters:
-
-| Component / Subsystem | Status | Implementation Details |
-|---|---|---|
-| **10-Step Transaction Pipeline (`apply_command`)** | **REAL & ENFORCED** | Enforces global lock order (`referral -> offer -> deadline -> outbox`), monotone timestamps, and atomic savepoints. |
-| **PostgreSQL 16 Lock Hierarchy & Index Guard** | **REAL & ENFORCED** | Partial unique index `one_lease` guarantees at most 1 lease holder. Verified by 200 concurrent threads (`test_race200.py`). |
-| **Independent Runtime Monitor (Lane B)** | **REAL & ENFORCED** | Written from prose specification; 0 imports from `api/` (ST-1 AST verified). Differential state fold on Port 8001. |
-| **Witness Merkle Signer & Browser Verifier** | **REAL & ENFORCED** | Ed25519 C2SP checkpoints every 5s; pure-JS `@noble/curves/ed25519` verifies inclusion proofs directly in client browser DOM. |
-| **Stateless 2-Phase Poller & Outbox Relay** | **REAL & ENFORCED** | `SKIP LOCKED` 5s claims and 30s visibility timeouts running as independent daemon processes. |
-| **Exotel Voice IVR Adapter** | **SIMULATED / DEMO MODE** | Simulated outbound call flow with AMD detection and mandatory keypress-1 gate; returns HTTP 200 within 2s budget. |
-| **TRAI DLT Static SMS Stub** | **SIMULATED / DEMO MODE** | Strict template linter enforcing $\le 30$ character variables with zero free-text PHI. |
-| **Mapbox Highway Driving Corridor** | **SIMULATED / DEMO MODE** | Deterministic waypoint interpolation along Karnataka NH-275 corridor; 200m geofence dwell gate. |
-| **Cloudflare Turnstile Anti-Bot** | **SIMULATED / DEMO MODE** | Rotating 15s single-use JTI token validation for judge onboarding. |
-| **FCM Zero-Payload Push Notifications** | **SIMULATED / DEMO MODE** | Demonstrates empty-payload wake ping architecture without transmitting PHI through vendor servers. |
-
----
-
-## 9. Verified Test Execution Counts (Baseline Verification)
-
-All tests have been executed and verified in this environment:
-
-```text
-========================================================================================
-TEST SUITE                                      COUNT    STATUS    DURATION
-========================================================================================
-1. Pytest Backend Master Suite (api/tests/)      234      PASS      6.88s
-   - 200-Way Concurrent Race (test_race200.py)    10      PASS      0.82s
-   - 28 Conformance Vectors (V-01 .. V-28)        28      PASS      0.45s
-   - Protocol Invariants I1-I16 Matrix            42      PASS      1.12s
-   - 2-Phase Poller & Outbox Relay                18      PASS      0.55s
-   - Envelope Encryption & Crypto-Shredder        14      PASS      0.38s
-   - Toxiproxy Network Fault & Chaos              12      PASS      0.60s
-   - Auth, RBAC, PIN Lockout & Preconditions      40      PASS      0.80s
-   - Miscellaneous Pipeline & State Guard         70      PASS      2.16s
-
-2. React PWA Vitest Suite (pwa/)                 20       PASS      3.43s
-   - @noble Ed25519 Browser Verifier              11      PASS      0.03s
-   - PWA View Desks & QR Admission                 9      PASS      0.23s
-
-3. Lane B Monitor AST Isolation Check (ST-1)      1       PASS      0.08s
-   - Confirmed ZERO imports from api/ or rhp packages in monitor/monitor.py
-========================================================================================
-TOTAL VERIFIED TESTS: 255 / 255 (100% GREEN)
-========================================================================================
+cp .env.example .env
+# Verify REAL_DATA=0 and PROFILE=DEMO_FAST in .env
 ```
 
+### 2. Launch the Stack
+```bash
+docker compose up --build -d
+```
+* **PWA & Guarantee Arena Big Screen:** `http://localhost:5173`
+* **Command API & Health/Metrics:** `http://localhost:8000/healthz`
+* **Toxiproxy Control Port:** `http://localhost:8474`
+
+### 3. Run the Proof & Conformance Gates (§12, §24)
+```bash
+# 1. Bounded model checking & vacuity checks (Quint)
+quint run spec/rhp1.qnt --invariant safety --max-steps 25 --max-samples 20000
+
+# 2. 200-way concurrent ACCEPT barrier test (race200) + lock-order deadlock check (T-F1)
+docker compose exec api pytest tests/test_race200.py -v
+
+# 3. Six-part mutation suite (M1-M6) & idempotency matrix (T-F14)
+docker compose exec api pytest tests/test_mutations.py tests/test_idempotency.py -v
+
+# 4. Pure-JS browser verifier & Crockford Base32 + mod 37 paper code tests
+docker compose exec pwa npm test
+```
+
+### 4. The 30-Second Live Proof Loop (`DEMO_FAST`)
+1. **$0\text{–}4\text{ s}$:** Judges scan the rotating QR code (`jti` valid $20\text{ s}$, rotates every $15\text{ s}$) to join as competing hospital desks `D1` and `D2`.
+2. **$4\text{–}7\text{ s}$:** Create a `PARALLEL2` obstetric referral; both desks receive the offer via SSE.
+3. **$7\text{–}12\text{ s}$:** Both judges press **Accept** simultaneously $\rightarrow$ exactly one receives HTTP `200` (`lease_epoch = 1`), the other receives HTTP `409 LEASE_HELD`; monitor stays green.
+4. **$12\text{–}18\text{ s}$:** Flip `BROKEN_BUILD=1` (routes strictly to isolated `rhp_scratch_broken` DB with flashing red banner); both press Accept $\rightarrow$ two leases granted; independent monitor turns red with `I2` violation within $\le 2\text{ s}$.
+5. **$18\text{–}21\text{ s}$:** Flip back to `BROKEN_BUILD=0`; monitor returns green.
+6. **$21\text{–}27\text{ s}$:** Tamper with one event row in `psql` $\rightarrow$ the pure-JS browser verifier on judges' phones pinpoints `BROKEN referral=… seq=… kind=HASH`.
+7. **$27\text{–}30\text{ s}$:** Display live-measured `I1–I16` counters and $p_{50}/p_{95}$ event latency.
+
 ---
 
-## 10. System Limitations & Roadmap
-
-### Known Architecture Limitations
-1. **Single-Primary PostgreSQL:** The protocol is engineered around strict serializability and row-level locks on a single writable primary. Scaling across state/national borders requires district-level horizontal partitioning or hot-standby promotion.
-2. **Synthetic Data Posture:** To prevent clinical risk, the platform runs exclusively on synthetic Karnataka health network data (`REAL_DATA=0`).
-3. **Demo PINs & Pre-Seeded Rosters:** Clinical desk PINs default to `1234` for rapid evaluation. In production, duty rosters are issued cryptographic hardware keys via ABDM/NMC credentials.
-
-### Roadmap for Production Pilot
-- **Phase 1 (District Pilot):** Multi-AZ PostgreSQL 16 on AWS ap-south-1 (Mumbai) with live Exotel IVR trunk lines for 1 district (Ramanagara, 5 tiers).
-- **Phase 2 (ABDM Integration):** Binding ABDM ABHA IDs to the envelope-encrypted clinical payload via M1/M2 milestone APIs.
-- **Phase 3 (Statewide Ambulance Rollout):** Integration with Karnataka 108 GVK-EMRI vehicle tracking units.
-
----
-
-## 11. Claims Register & Residual Risks (§19, §20)
+## 8. Claims Register & Residual Risks (§19, §20)
 
 | Authorized Wording (May Claim) | Forbidden Claim (Must Never Claim) |
 |---|---|

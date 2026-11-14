@@ -35,13 +35,25 @@ export const JudgeDesk: React.FC = () => {
   const [verifyResult, setVerifyResult] = useState<VerificationResult | null>(null);
 
   useEffect(() => {
+    fetch('/v1/referrals')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setReferrals(data);
+          setActiveRef((prev) => prev || data[0]);
+        }
+      })
+      .catch(() => {});
+
     const unsub = sseClient.subscribe((state) => {
       const list = Object.values(state.referrals);
-      setReferrals(list);
-      if (list.length > 0 && !activeRef) {
-        setActiveRef(list[0]);
-      } else if (activeRef) {
-        setActiveRef(state.referrals[activeRef.id] || list[0] || null);
+      if (list.length > 0) {
+        setReferrals(list);
+        if (!activeRef) {
+          setActiveRef(list[0]);
+        } else {
+          setActiveRef(state.referrals[activeRef.id] || list[0] || null);
+        }
       }
     });
 

@@ -42,23 +42,11 @@ export const ReceivingDesk: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch('/v1/referrals')
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setReferrals(data);
-          setSelectedRef((prev) => prev || data[0]);
-        }
-      })
-      .catch(() => {});
-
     const unsub = sseClient.subscribe((state) => {
       const list = Object.values(state.referrals);
-      if (list.length > 0) {
-        setReferrals(list);
-        if (selectedRef) {
-          setSelectedRef(state.referrals[selectedRef.id] || null);
-        }
+      setReferrals(list);
+      if (selectedRef) {
+        setSelectedRef(state.referrals[selectedRef.id] || null);
       }
     });
 

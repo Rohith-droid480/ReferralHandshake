@@ -1,136 +1,175 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Compass, ShieldCheck } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  Compass,
+  ChevronDown,
+  ChevronUp,
+  Stethoscope,
+  Hospital,
+  Tv,
+  Navigation,
+  PhoneCall,
+  Activity,
+  KeyRound,
+  CheckCircle2,
+  ExternalLink,
+} from 'lucide-react';
 
 interface DemoStep {
-  step: number;
-  title: string;
   path: string;
-  roleKey: string;
-  roleName: string;
-  instruction: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  roleHint: string;
+  actionHint: string;
+  invariantBadge: string;
 }
 
 const DEMO_STEPS: DemoStep[] = [
   {
-    step: 1,
-    title: 'Step 1 of 6: Referring Clinician & MgSO4 Safety Lock (S1)',
     path: '/clinician',
-    roleKey: 'PHC_CHANNAPATNA',
-    roleName: 'Dr. Asha (Clinician @ PHC Channapatna)',
-    instruction: 'Create emergency obstetric referral. Observe that MgSO4 UNKNOWN never blocks referral, but arms the safety banner.',
+    label: '1. Clinician Card',
+    icon: Stethoscope,
+    roleHint: 'Role: PHC Channapatna (CLINICIAN)',
+    actionHint: 'Click "1. Severe Eclampsia" scenario -> Note UNKNOWN MgSO4 -> Click "Sign & Dispatch Referral"',
+    invariantBadge: 'D1 Drug Safety Lock',
   },
   {
-    step: 2,
-    title: 'Step 2 of 6: Receiving Hospital Triage & Anti-Goodhart Desk (S1)',
     path: '/receiving-desk',
-    roleKey: 'CHC_RAMANAGARA',
-    roleName: 'Dr. Suresh (CMO @ CHC Ramanagara)',
-    instruction: 'View priority queue (zero countdown clocks). See red MgSO4 warning banner. Confirm capabilities & accept with PIN 1234.',
+    label: '2. Receiving Desk',
+    icon: Hospital,
+    roleHint: 'Role: CHC Ramanagara (CMO)',
+    actionHint: 'Notice zero ticking countdown clocks -> Confirm OT/Blood -> Enter PIN 1234 -> Click "Sign & Commit Acceptance"',
+    invariantBadge: 'I2 Single Leaseholder',
   },
   {
-    step: 3,
-    title: 'Step 3 of 6: Two-Hospital Concurrency Race (S2)',
     path: '/arena',
-    roleKey: 'CHC_RAMANAGARA',
-    roleName: 'Judge / Arena View',
-    instruction: 'Demonstrate Invariant I2. Exactly 1 facility wins the lease; the other receives 409 CONFLICT.',
+    label: '3. Guarantee Arena',
+    icon: Tv,
+    roleHint: 'Big Screen Concurrency Race',
+    actionHint: 'Watch DH Mandya transition to SUPERSEDED -> Scan QR or click "Join as Judge Desk" -> Run pure-JS verifier',
+    invariantBadge: 'F8 Ed25519 Merkle Proof',
   },
   {
-    step: 4,
-    title: 'Step 4 of 6: Unresponsive Facility Silence Escalation (S3)',
-    path: '/dispatcher',
-    roleKey: 'DISPATCH_108_CENTRAL',
-    roleName: 'Officer Ramesh (108 Central Dispatcher)',
-    instruction: 'When facilities fail to acknowledge, the accelerated notice ladder automatically escalates the case to the 108 Dispatcher.',
-  },
-  {
-    step: 5,
-    title: 'Step 5 of 6: Ambulance Highway Telemetry & Human Arrival Gate',
     path: '/ambulance',
-    roleKey: 'DISPATCH_108_CENTRAL',
-    roleName: 'EMT Manjunath (108 Ambulance KA-05-EM-1082)',
-    instruction: 'Stream GPS telemetry on NH-275. Cross 200m geofence: system suggests arrival, but care handover requires human confirmation.',
+    label: '4. Ambulance PWA',
+    icon: Navigation,
+    roleHint: 'Role: 108 Emergency EMT',
+    actionHint: 'Click "Start Highway Simulation" along NH-275 -> Cross 200m geofence -> Click human "Confirm Arrival"',
+    invariantBadge: 'D2 Human Arrival Gate',
   },
   {
-    step: 6,
-    title: 'Step 6 of 6: Pure-JS Browser Verifier & Tamper Proof (S6)',
-    path: '/arena',
-    roleKey: 'CHC_RAMANAGARA',
-    roleName: 'Independent Verifier',
-    instruction: 'Browser verifies Ed25519 Merkle root with zero server trust. Click "Inject SQL Tamper" to see browser instantly detect tampering.',
+    path: '/dispatcher',
+    label: '5. Dispatcher Hub',
+    icon: PhoneCall,
+    roleHint: 'Role: 108 Central Dispatcher',
+    actionHint: 'Select escalated case -> Drag "Deterministic Time-Scrubber" slider to audit history -> Assign to Apex College',
+    invariantBadge: 'I13 Finite Bound T_max',
+  },
+  {
+    path: '/command-centre',
+    label: '6. Command Centre',
+    icon: Activity,
+    roleHint: 'Role: District Health Officer',
+    actionHint: 'Export FHIR R4 / IEEE 1849 XES / BSA s.63 Certificate -> Click "1-Click DPDP 2023 Crypto-Shred"',
+    invariantBadge: 'Closure F9 DPDP Shred',
   },
 ];
 
 export const GuidedDemoBanner: React.FC = () => {
+  const location = useLocation();
   const navigate = useNavigate();
-  const [currentStepIdx, setCurrentStepIdx] = useState<number>(() => {
-    const saved = localStorage.getItem('rhp_demo_step');
-    return saved ? parseInt(saved, 10) : 0;
-  });
+  const [collapsed, setCollapsed] = useState(false);
 
-  const step = DEMO_STEPS[currentStepIdx] || DEMO_STEPS[0];
-
-  const goToStep = (idx: number) => {
-    if (idx < 0 || idx >= DEMO_STEPS.length) return;
-    setCurrentStepIdx(idx);
-    localStorage.setItem('rhp_demo_step', String(idx));
-    const target = DEMO_STEPS[idx];
-    navigate(target.path);
-
-    // Update role if switcher exists
-    fetch('/v1/auth/demo-session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role_key: target.roleKey }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        localStorage.setItem('rhp_demo_role_key', target.roleKey);
-        localStorage.setItem('rhp_session_token', data.token);
-        localStorage.setItem('rhp_facility_id', data.facility_id);
-        window.dispatchEvent(new Event('rhp-session-changed'));
-      })
-      .catch(() => {});
-  };
+  // Find active step matching current path
+  const currentStepIndex = DEMO_STEPS.findIndex((s) => s.path === location.pathname);
+  const activeStep = currentStepIndex !== -1 ? DEMO_STEPS[currentStepIndex] : null;
 
   return (
-    <div className="bg-slate-900 border-b border-teal-900/60 px-4 py-2 text-xs text-slate-200">
-      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 bg-teal-900/80 text-teal-300 border border-teal-700/60 rounded font-bold font-mono text-[10px]">
-            DEMO GUIDE
-          </span>
-          <span className="font-bold text-white tracking-tight">{step.title}</span>
-          <span className="text-slate-400 hidden sm:inline">— {step.roleName}</span>
-        </div>
+    <div className="bg-slate-900 border-b border-indigo-900/50 shadow-md">
+      <div className="max-w-7xl mx-auto px-4 py-2 flex flex-col gap-2">
+        {/* Header row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-indigo-600/30 text-indigo-400 rounded border border-indigo-500/30">
+              <Compass className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-white tracking-wide uppercase">
+                Interactive Judge Walkthrough Guide
+              </span>
+              <span className="ml-2 text-[11px] text-slate-400">
+                Protocol RHP-1 Multi-Desk Demonstration
+              </span>
+            </div>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <p className="text-slate-300 text-[11px] hidden md:block max-w-lg truncate">{step.instruction}</p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => goToStep(currentStepIdx - 1)}
-              disabled={currentStepIdx === 0}
-              className="p-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 hover:text-white transition"
-              title="Previous Demo Step"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="font-mono text-[11px] text-teal-400 px-1 font-bold">
-              {currentStepIdx + 1}/{DEMO_STEPS.length}
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-medium">
+              <KeyRound className="w-3 h-3 text-emerald-400" />
+              Demo PIN: 1234
             </span>
             <button
-              onClick={() => goToStep(currentStepIdx + 1)}
-              disabled={currentStepIdx === DEMO_STEPS.length - 1}
-              className="p-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 hover:text-white transition"
-              title="Next Demo Step"
+              onClick={() => setCollapsed(!collapsed)}
+              className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition"
             >
-              <ChevronRight className="w-4 h-4" />
+              {collapsed ? (
+                <>
+                  <span className="text-[11px]">Expand Steps</span>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </>
+              ) : (
+                <>
+                  <span className="text-[11px]">Minimize</span>
+                  <ChevronUp className="w-3.5 h-3.5" />
+                </>
+              )}
             </button>
           </div>
         </div>
+
+        {/* Step buttons bar */}
+        {!collapsed && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5">
+            {DEMO_STEPS.map((step, idx) => {
+              const Icon = step.icon;
+              const isActive = location.pathname === step.path;
+              return (
+                <button
+                  key={step.path}
+                  onClick={() => navigate(step.path)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition border ${
+                    isActive
+                      ? 'bg-indigo-600 text-white border-indigo-400 shadow-sm'
+                      : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{step.label}</span>
+                  {isActive && <CheckCircle2 className="w-3 h-3 text-emerald-300 ml-0.5" />}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Active contextual hint */}
+        {activeStep && (
+          <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 bg-slate-950/70 border border-slate-800 rounded-lg text-xs">
+            <div className="flex items-center gap-2">
+              <span className="text-amber-400 font-semibold uppercase text-[10px] tracking-wider px-1.5 py-0.5 bg-amber-950/40 border border-amber-600/30 rounded">
+                Current Action
+              </span>
+              <span className="text-slate-200">{activeStep.actionHint}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400 text-[11px]">{activeStep.roleHint}</span>
+              <span className="px-2 py-0.5 bg-indigo-950/50 border border-indigo-600/40 text-indigo-300 rounded text-[11px] font-mono">
+                {activeStep.invariantBadge}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
-
