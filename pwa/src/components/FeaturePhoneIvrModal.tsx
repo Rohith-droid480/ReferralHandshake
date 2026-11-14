@@ -19,7 +19,7 @@ export const FeaturePhoneIvrModal: React.FC<FeaturePhoneIvrModalProps> = ({
   facilityName,
   activeFacilityName,
   needClass = 'OBSTETRIC_EMERGENCY',
-  paperCode = '4K8M2T91*',
+  paperCode = '4K8M2T91J',
   isOpen,
   onClose,
   onOfferUpdated,
@@ -34,7 +34,7 @@ export const FeaturePhoneIvrModal: React.FC<FeaturePhoneIvrModalProps> = ({
   const [commitLatencyMs, setCommitLatencyMs] = useState<number | null>(null);
 
   // DLT SMS state
-  const cleanCode = (paperCode || '9K7M2W34X').replace(/[^A-Za-z0-9]/g, 'X');
+  const cleanCode = (paperCode || '4K8M2T91J').replace(/[^A-Za-z0-9]/g, 'X');
   const [smsVariable, setSmsVariable] = useState<string>('r/' + cleanCode);
   const [smsOutput, setSmsOutput] = useState<string | null>(null);
   const [smsError, setSmsError] = useState<string | null>(null);
@@ -42,6 +42,12 @@ export const FeaturePhoneIvrModal: React.FC<FeaturePhoneIvrModalProps> = ({
   // Paper Code test state
   const [testPaperCode, setTestPaperCode] = useState<string>(paperCode);
   const [paperCodeResult, setPaperCodeResult] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (paperCode) {
+      setTestPaperCode(paperCode);
+    }
+  }, [paperCode]);
 
   useEffect(() => {
     if (isOpen && callState === 'IDLE') {
@@ -212,20 +218,28 @@ export const FeaturePhoneIvrModal: React.FC<FeaturePhoneIvrModalProps> = ({
 
   const handleTestPaperCode = async (injectTypo: boolean) => {
     setPaperCodeResult(null);
-    const code = injectTypo ? paperCode.slice(0, -1) + '8' : paperCode;
+    let codeToTest = testPaperCode.trim().toUpperCase();
+    if (injectTypo) {
+      // Mutate the check character to '8' (or '9' if already '8') to demonstrate mod-37 arithmetic catching typo
+      const typoChar = codeToTest.endsWith('8') ? '9' : '8';
+      codeToTest = codeToTest.slice(0, -1) + typoChar;
+      setTestPaperCode(codeToTest);
+    }
     try {
       const resp = await fetch('/v1/paper-code/resolve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code: codeToTest }),
       });
-      const data = await resp.json();
-      if (resp.ok) {
-        setPaperCodeResult(`VALID: Referral ${data.referral_id} (State: ${data.hs_state})`);
-        log(`Paper Code Resolved: ${code} -> State ${data.hs_state}`);
+      const data = await resp.json().catch(() => ({}));
+      if (resp.ok && data.referral_id) {
+        setPaperCodeResult(`VALID: Referral ${data.referral_id} (${data.hs_state})`);
+        log(`Paper Code Resolved: ${codeToTest} -> State ${data.hs_state}`);
+      } else if (resp.ok && data.status === 'NOT_FOUND') {
+        setPaperCodeResult(`VALID CHECKSUM: No referral bound to ${codeToTest}`);
       } else {
         setPaperCodeResult(`HTTP ${resp.status}: ${data.detail || 'Checksum mismatch'}`);
-        log(`Checksum Catch: Typo in ${code} caught by mod-37 arithmetic!`);
+        log(`Checksum Catch: Typo in ${codeToTest} caught by mod-37 arithmetic!`);
       }
     } catch (e: any) {
       setPaperCodeResult(`Checksum validation failed: ${e?.message}`);

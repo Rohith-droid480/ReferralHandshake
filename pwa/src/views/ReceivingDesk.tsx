@@ -610,6 +610,7 @@ export const ReceivingDesk: React.FC = () => {
         isOpen={showIvrModal}
         onClose={() => setShowIvrModal(false)}
         activeReferralId={selectedRef?.id}
+        paperCode={selectedRef?.paper_code || '4K8M2T91J'}
         activeFacilityName="CHC Ramanagara"
         onOfferUpdated={() => {
           if (selectedRef) {

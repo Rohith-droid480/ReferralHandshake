@@ -649,6 +649,7 @@ export const ArenaBigScreen: React.FC = () => {
         isOpen={showIvrModal}
         onClose={() => setShowIvrModal(false)}
         activeReferralId={activeRef?.id}
+        paperCode={activeRef?.paper_code || '4K8M2T91J'}
         activeFacilityName="CHC Ramanagara"
         onOfferUpdated={() => {
           if (activeRef) {
