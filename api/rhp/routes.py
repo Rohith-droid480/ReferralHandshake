@@ -1649,3 +1649,12 @@ def api_crypto_shred_referral(referral_id: UUID):
         return res
 
 
+@router.post("/demo/reset-and-seed")
+def api_demo_reset_and_seed():
+    """Resets and re-seeds synthetic demonstration referrals for repeatable demo flows."""
+    from api.rhp.db import GLOBAL_MOCK_DB
+    GLOBAL_MOCK_DB.seed_defaults()
+    return {"status": "SUCCESS", "message": "Synthetic demo referrals reset and re-seeded successfully."}
+
+
+
