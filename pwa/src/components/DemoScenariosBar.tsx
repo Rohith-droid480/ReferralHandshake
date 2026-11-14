@@ -122,3 +122,4 @@ export const DemoScenariosBar: React.FC<DemoScenariosBarProps> = ({
     </div>
   );
 };
+

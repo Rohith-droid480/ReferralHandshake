@@ -33,7 +33,8 @@ export const ModeBanner: React.FC = () => {
           let stale = false;
           if (healthData.components) {
             for (const comp of Object.values<any>(healthData.components)) {
-              if (comp.last_heartbeat_ms && nowMs - comp.last_heartbeat_ms > 15000) {
+              const age = comp.age_seconds ?? (comp.last_heartbeat_ms ? (nowMs - comp.last_heartbeat_ms) / 1000 : 0);
+              if (age > 15) {
                 stale = true;
                 break;
               }

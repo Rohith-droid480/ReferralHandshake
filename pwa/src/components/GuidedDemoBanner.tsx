@@ -173,3 +173,4 @@ export const GuidedDemoBanner: React.FC = () => {
     </div>
   );
 };
+
