@@ -515,3 +515,148 @@ def api_get_referral_inclusion_proof(referral_id: UUID, response: Response):
                 "audit_path": [],
             }
         return proof
+
+
+# -----------------------------------------------------------------------------
+# 7. Referral Listing, Demo Session Switcher & APK Download
+# -----------------------------------------------------------------------------
+
+@router.get("/referrals")
+def api_list_referrals():
+    """Lists recent referrals for live walkthroughs and PWA views."""
+    with get_main_connection() as conn:
+        if hasattr(conn, "db"):
+            refs = list(conn.db.referrals.values())
+            refs.sort(key=lambda x: str(x.get("created_at", "")), reverse=True)
+            return refs
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT id, hs_state, tr_state, mode, need_class, origin_facility_id,
+                   lease_facility_id, lease_epoch, open_offers, paper_code, created_at
+              FROM referral
+             ORDER BY created_at DESC LIMIT 50;
+            """
+        )
+        rows = cur.fetchall()
+        return [
+            {
+                "id": str(r[0]),
+                "hs_state": r[1],
+                "tr_state": r[2],
+                "mode": r[3],
+                "need_class": r[4],
+                "origin_facility_id": str(r[5]),
+                "lease_facility_id": str(r[6]) if r[6] else None,
+                "lease_epoch": r[7],
+                "open_offers": r[8],
+                "paper_code": r[9],
+                "created_at": r[10].isoformat() if r[10] else None,
+            }
+            for r in rows
+        ]
+
+
+DEMO_ROSTERS = {
+    "PHC_CHANNAPATNA": {
+        "facility_id": "11111111-1111-1111-1111-111111111111",
+        "roster_id": "a1111111-0000-0000-0000-000000000001",
+        "role_slot": "CLINICIAN",
+        "name": "Channapatna Primary Health Centre",
+    },
+    "CHC_RAMANAGARA": {
+        "facility_id": "22222222-2222-2222-2222-222222222222",
+        "roster_id": "a2222222-0000-0000-0000-000000000001",
+        "role_slot": "CMO",
+        "name": "Ramanagara Community Health Centre",
+    },
+    "DH_MANDYA": {
+        "facility_id": "44444444-4444-4444-4444-444444444444",
+        "roster_id": "a4444444-0000-0000-0000-000000000004",
+        "role_slot": "CMO",
+        "name": "Mandya District Hospital",
+    },
+    "MC_BENGALURU_OB": {
+        "facility_id": "55555555-5555-5555-5555-555555555555",
+        "roster_id": "a5555555-0000-0000-0000-000000000001",
+        "role_slot": "CONSULTANT",
+        "name": "Bengaluru Apex Obstetric Medical College",
+    },
+    "DISPATCH_108_CENTRAL": {
+        "facility_id": "66666666-6666-6666-6666-666666666666",
+        "roster_id": "a6666666-0000-0000-0000-000000000001",
+        "role_slot": "DISPATCHER",
+        "name": "Karnataka 108 Central Dispatch Hub",
+    },
+}
+
+
+@router.post("/auth/demo-session")
+def api_auth_demo_session(body: Dict[str, Any], response: Response):
+    """Provides 1-click demo role switching and auto-authentication for live walkthroughs."""
+    import secrets
+    from api.rhp.auth import create_enrollment_ticket, redeem_enrollment_ticket
+
+    role_key = body.get("role_key", "PHC_CHANNAPATNA").upper()
+    role_info = DEMO_ROSTERS.get(role_key)
+    if not role_info:
+        # Default to PHC Channapatna Clinician
+        role_key = "PHC_CHANNAPATNA"
+        role_info = DEMO_ROSTERS[role_key]
+
+    with get_main_connection() as conn:
+        roster_id = role_info["roster_id"]
+        # Ensure roster exists in MockDatabase if running in mock mode
+        if hasattr(conn, "db") and roster_id not in conn.db.rosters:
+            conn.db.rosters[roster_id] = {
+                "id": roster_id,
+                "facility_id": role_info["facility_id"],
+                "role_slot": role_info["role_slot"],
+                "slot_no": 1,
+                "phone_e164": "+919000000001",
+                "pin_hash": "$argon2id$v=19$m=65536,t=2,p=2$W+Qt/9/Xsvafi862Fv/Ifg$/ryJxRUjAhM4Ld3S8Zb4pzgiu6xcnUpPiJXgRKp8s98",
+                "valid_from": datetime.now(timezone.utc),
+                "valid_to": None,
+            }
+
+        ticket, _ = create_enrollment_ticket(conn, roster_id, roster_id, ttl_seconds=86400 * 30)
+        token, sess = redeem_enrollment_ticket(conn, ticket, secrets.token_bytes(32), "pwa", ttl_hours=720)
+        if hasattr(conn, "commit"):
+            conn.commit()
+
+    response.set_cookie(
+        key="rhp_session",
+        value=token,
+        httponly=False,  # Allow frontend JS reading for Authorization Bearer header
+        samesite="lax",
+        secure=False,
+        max_age=86400 * 30,
+    )
+
+    return {
+        "status": "AUTHENTICATED",
+        "token": token,
+        "role_key": role_key,
+        "roster_id": role_info["roster_id"],
+        "facility_id": role_info["facility_id"],
+        "facility_name": role_info["name"],
+        "role_slot": role_info["role_slot"],
+        "pin": "1234",
+    }
+
+
+@router.get("/download/apk")
+def api_download_apk():
+    """Serves the standalone installable Android EMT debug APK."""
+    import os
+    from fastapi.responses import FileResponse
+    apk_path = "pwa/public/rhp-emt-debug.apk"
+    if not os.path.exists(apk_path):
+        raise HTTPException(status_code=404, detail="APK build not found")
+    return FileResponse(
+        path=apk_path,
+        media_type="application/vnd.android.package-archive",
+        filename="rhp-emt-debug.apk",
+    )
+
+

@@ -270,3 +270,10 @@ def run_relay_loop(
             logger.warning(f"Relay cycle error: {e}")
 
         stop_event.wait(timeout=sleep_sec)
+
+
+if __name__ == "__main__":
+    from api.rhp.db import get_main_connection
+    print("[RHP-RELAY] Starting transactional outbox relay daemon...")
+    run_relay_loop(get_main_connection)
+

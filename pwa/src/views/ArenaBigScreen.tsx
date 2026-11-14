@@ -78,7 +78,11 @@ export const ArenaBigScreen: React.FC = () => {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const monRes = await fetch('http://127.0.0.1:8001/status').catch(() => null);
+        // Dynamic hostname resolution for mobile phones and local network
+        const monitorUrl = window.location.port === '8080' || window.location.port === '5173'
+          ? `http://${window.location.hostname}:8001/status`
+          : '/status';
+        const monRes = await fetch(monitorUrl).catch(() => fetch('/status')).catch(() => null);
         if (monRes && monRes.ok) {
           const monData = await monRes.json();
           let holding = true;

@@ -27,8 +27,11 @@ Heartbeats:
 
 from __future__ import annotations
 
+import json
 import logging
+import os
 import secrets
+import tempfile
 import threading
 import time
 from dataclasses import dataclass
@@ -221,11 +224,30 @@ def upsert_heartbeat(
 ) -> None:
     """Upserts worker liveness into heartbeat table (Closure F11)."""
     now = datetime.now(timezone.utc)
+    # File-backed IPC for mock multi-process mode
+    ipc_path = os.path.join(tempfile.gettempdir(), "rhp_heartbeats_ipc.json")
+    try:
+        data = {}
+        if os.path.exists(ipc_path):
+            with open(ipc_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        data[f"{subject_kind.upper()}:{subject_id}"] = {
+            "subject_kind": subject_kind.upper(),
+            "subject_id": subject_id,
+            "last_seen": now.isoformat(),
+            "ntp_offset_ms": ntp_offset_ms,
+        }
+        with open(ipc_path + ".tmp", "w", encoding="utf-8") as f:
+            json.dump(data, f)
+        os.replace(ipc_path + ".tmp", ipc_path)
+    except Exception:
+        pass
+
     if hasattr(conn, "db"):
         if not hasattr(conn.db, "heartbeats"):
             conn.db.heartbeats = {}
-        conn.db.heartbeats[(subject_kind, subject_id)] = {
-            "subject_kind": subject_kind,
+        conn.db.heartbeats[(subject_kind.upper(), subject_id)] = {
+            "subject_kind": subject_kind.upper(),
             "subject_id": subject_id,
             "last_seen": now,
             "ntp_offset_ms": ntp_offset_ms,
@@ -292,7 +314,7 @@ def run_poller_loop(
 
     settings = get_settings()
     if interval_ms is None:
-        interval_ms = 250 if settings.DEMO_FAST else 1000
+        interval_ms = 250 if getattr(settings, "profile", "DEMO_FAST") == "DEMO_FAST" else 1000
 
     last_hb = 0.0
     sleep_sec = interval_ms / 1000.0
@@ -316,3 +338,10 @@ def run_poller_loop(
             logger.warning(f"Poller cycle error: {e}")
 
         stop_event.wait(timeout=sleep_sec)
+
+
+if __name__ == "__main__":
+    from api.rhp.db import get_main_connection
+    print("[RHP-POLLER] Starting 2-phase stateless deadline poller daemon...")
+    run_poller_loop(get_main_connection)
+

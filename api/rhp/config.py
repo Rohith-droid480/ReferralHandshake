@@ -56,6 +56,22 @@ class Settings(BaseSettings):
     T2_REACH: int = Field(default=1, description="Tier 2: Voice IVR, DLT SMS, Crockford paper codes")
     T3_EXTRAS: int = Field(default=0, description="Tier 3: Envelope crypto, AI intake, native Android")
 
+    @property
+    def broken_build(self) -> int:
+        return self.BROKEN_BUILD
+
+    @property
+    def lan_mode(self) -> int:
+        return self.LAN_MODE
+
+    @property
+    def profile(self) -> str:
+        return self.PROFILE
+
+    @property
+    def real_data(self) -> int:
+        return self.REAL_DATA
+
     # 3. Database Connection Strings (§7, §12)
     APP_DSN: str = Field(
         default="postgresql://rhp_app:rhp_app_local_dev_only@pg:5432/rhp_main",
@@ -111,7 +127,7 @@ class Settings(BaseSettings):
         check_boot_guards(self)
 
 
-def check_boot_guards(settings: Settings) -> None:
+def check_boot_guards(settings: Optional[Settings] = None) -> None:
     """Enforces non-negotiable boot refusal invariants with exit code 78 (EX_CONFIG).
 
     Specification Closures:
@@ -120,6 +136,8 @@ def check_boot_guards(settings: Settings) -> None:
       exclusively to the isolated scratch database rhp_scratch_broken.
     - LAN Mode Safety: LAN_MODE=1 is strictly forbidden with REAL_DATA=1.
     """
+    if settings is None:
+        settings = get_settings()
     # Guard 1 (F2): Demo profiles refuse boot on real data
     if settings.REAL_DATA == 1 and settings.PROFILE in ("DEMO_FAST", "DEMO_VOICE"):
         sys.stderr.write(

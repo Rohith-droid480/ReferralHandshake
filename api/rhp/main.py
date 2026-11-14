@@ -13,7 +13,9 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import queue
+import tempfile
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Any, AsyncGenerator, Dict, List, Optional
@@ -46,12 +48,23 @@ def evaluate_heartbeats(conn: Any) -> Dict[str, Any]:
     is_amber = False
     alarms: List[str] = []
 
-    # Read from MockDatabase or PostgreSQL
+    # Read from MockDatabase, IPC file, or PostgreSQL
     raw_rows: Dict[str, Dict[str, Any]] = {}
+    ipc_path = os.path.join(tempfile.gettempdir(), "rhp_heartbeats_ipc.json")
+    if os.path.exists(ipc_path):
+        try:
+            with open(ipc_path, "r", encoding="utf-8") as f:
+                ipc_data = json.load(f)
+                for k, v in ipc_data.items():
+                    raw_rows[v["subject_kind"].upper()] = v
+        except Exception:
+            pass
+
     if hasattr(conn, "db"):
         if hasattr(conn.db, "heartbeats"):
             for (kind, sid), data in conn.db.heartbeats.items():
-                raw_rows[kind.upper()] = data
+                if kind.upper() not in raw_rows:
+                    raw_rows[kind.upper()] = data
     else:
         cur = conn.execute("SELECT subject_kind, subject_id, last_seen, ntp_offset_ms FROM heartbeat;")
         rows = cur.fetchall() if cur else []

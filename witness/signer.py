@@ -17,10 +17,18 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import json
 import logging
 import os
+import sys
+import tempfile
 import threading
 import time
+
+# Ensure repo root is on sys.path for direct execution
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from uuid import UUID
@@ -71,6 +79,24 @@ def get_witness_public_key_hex(priv_key: Optional[ed25519.Ed25519PrivateKey] = N
 def upsert_witness_heartbeat(conn: Any, subject_id: str = "witness-1", ntp_offset_ms: int = 0) -> None:
     """Upserts witness liveness into the database heartbeat table (Closure F11)."""
     now = datetime.now(timezone.utc)
+    ipc_path = os.path.join(tempfile.gettempdir(), "rhp_heartbeats_ipc.json")
+    try:
+        data = {}
+        if os.path.exists(ipc_path):
+            with open(ipc_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        data[f"WITNESS:{subject_id}"] = {
+            "subject_kind": "WITNESS",
+            "subject_id": subject_id,
+            "last_seen": now.isoformat(),
+            "ntp_offset_ms": ntp_offset_ms,
+        }
+        with open(ipc_path + ".tmp", "w", encoding="utf-8") as f:
+            json.dump(data, f)
+        os.replace(ipc_path + ".tmp", ipc_path)
+    except Exception:
+        pass
+
     if hasattr(conn, "db"):
         if not hasattr(conn.db, "heartbeats"):
             conn.db.heartbeats = {}
@@ -228,7 +254,7 @@ def witness_cycle(
     now = datetime.now(timezone.utc)
     cp_id = 1
     if hasattr(conn, "db"):
-        if not hasattr(conn.db, "checkpoints"):
+        if not hasattr(conn.db, "checkpoints") or not isinstance(conn.db.checkpoints, list):
             conn.db.checkpoints = []
         cp_id = len(conn.db.checkpoints) + 1
         conn.db.checkpoints.append({

@@ -57,6 +57,18 @@ class MockDatabase:
         self.enrollment_tickets: Dict[bytes, Dict[str, Any]] = {}
         self.sessions: Dict[str, Dict[str, Any]] = {}
         self.referrals: Dict[str, Dict[str, Any]] = {}
+        self.offers: Dict[str, Dict[str, Any]] = {}
+        self.deadlines: Dict[str, Dict[str, Any]] = {}
+        self.events: List[Dict[str, Any]] = []
+        self.outbox: List[Dict[str, Any]] = []
+        self.payload_grants: Dict[str, Dict[str, Any]] = {}
+        self.heartbeats: Dict[Tuple[str, str], Dict[str, Any]] = {}
+        self.checkpoints: List[Dict[str, Any]] = []
+        self.rejected_commands: List[Dict[str, Any]] = []
+        self.resource_confirmations: Dict[str, Dict[str, Any]] = {}
+        self.key_versions: Dict[str, Dict[str, Any]] = {}
+        self.clinical_payloads: Dict[str, Dict[str, Any]] = {}
+        self.event_secrets: Dict[Any, Dict[str, Any]] = {}
         self.advisory_locks: Set[str] = set()
         self.row_locks: Dict[str, Any] = {}
         self.row_locks_guard = threading.Lock()
@@ -91,6 +103,53 @@ class MockDatabase:
             "tier": "CHC",
             "lat_e5": 1271500,
             "lon_e5": 7728100,
+            "active": True,
+        }
+
+        # Curated Karnataka Obstetric Network Facilities (matching db/03_seed.sql)
+        self.facilities["11111111-1111-1111-1111-111111111111"] = {
+            "id": "11111111-1111-1111-1111-111111111111",
+            "code": "PHC_CHANNAPATNA",
+            "name": "Channapatna Primary Health Centre",
+            "tier": "PHC",
+            "lat_e5": 1265180,
+            "lon_e5": 7720890,
+            "active": True,
+        }
+        self.facilities["22222222-2222-2222-2222-222222222222"] = {
+            "id": "22222222-2222-2222-2222-222222222222",
+            "code": "CHC_RAMANAGARA",
+            "name": "Ramanagara Community Health Centre",
+            "tier": "CHC",
+            "lat_e5": 1272090,
+            "lon_e5": 7727990,
+            "active": True,
+        }
+        self.facilities["44444444-4444-4444-4444-444444444444"] = {
+            "id": "44444444-4444-4444-4444-444444444444",
+            "code": "DH_MANDYA",
+            "name": "Mandya District Hospital",
+            "tier": "DH",
+            "lat_e5": 1252390,
+            "lon_e5": 7689660,
+            "active": True,
+        }
+        self.facilities["55555555-5555-5555-5555-555555555555"] = {
+            "id": "55555555-5555-5555-5555-555555555555",
+            "code": "MC_BENGALURU_OB",
+            "name": "Bengaluru Apex Obstetric Medical College",
+            "tier": "MC",
+            "lat_e5": 1297160,
+            "lon_e5": 7759460,
+            "active": True,
+        }
+        self.facilities["66666666-6666-6666-6666-666666666666"] = {
+            "id": "66666666-6666-6666-6666-666666666666",
+            "code": "DISPATCH_108_CENTRAL",
+            "name": "Karnataka 108 Central Dispatch Hub",
+            "tier": "DISPATCH",
+            "lat_e5": 1297670,
+            "lon_e5": 7759010,
             "active": True,
         }
 
@@ -194,16 +253,55 @@ class MockDatabase:
         ref1_id = "00000000-0000-0000-0000-000000000100"
         self.referrals[ref1_id] = {
             "id": ref1_id,
+            "origin_facility_id": "11111111-1111-1111-1111-111111111111",
             "from_facility_id": f2_id,
             "need_class": "OB_ECLAMPSIA",
             "mgso4_status": "GIVEN",
-            "hs_state": "CREATED",
+            "mode": "PARALLEL2",
+            "hs_state": "OFFERED",
             "tr_state": "REQUESTED",
-            "head_seq": 0,
+            "lease_facility_id": None,
+            "lease_epoch": 0,
+            "open_offers": 2,
+            "paper_code": "4K8M2T91*",
+            "head_seq": 1,
             "head_hash": bytes(32),
             "head_ts": datetime.now(timezone.utc),
             "version": 1,
+            "created_at": datetime.now(timezone.utc),
         }
+
+        # Referral 2 — Live En-Route Transport Referral
+        ref2_id = "00000000-0000-0000-0000-000000000200"
+        self.referrals[ref2_id] = {
+            "id": ref2_id,
+            "origin_facility_id": "11111111-1111-1111-1111-111111111111",
+            "from_facility_id": "11111111-1111-1111-1111-111111111111",
+            "need_class": "OB_HEMORRHAGE",
+            "mgso4_status": "NONE_GIVEN",
+            "mode": "SEQUENTIAL",
+            "hs_state": "ACCEPTED",
+            "tr_state": "EN_ROUTE",
+            "lease_facility_id": "55555555-5555-5555-5555-555555555555",
+            "lease_epoch": 1,
+            "open_offers": 0,
+            "paper_code": "9X7P3N18~",
+            "head_seq": 4,
+            "head_hash": bytes(32),
+            "head_ts": datetime.now(timezone.utc),
+            "version": 4,
+            "created_at": datetime.now(timezone.utc),
+        }
+
+        # Seed initial component heartbeats for health check
+        now = datetime.now(timezone.utc)
+        for comp in ["POLLER", "RELAY", "MONITOR", "WITNESS"]:
+            self.heartbeats[(comp.lower(), f"{comp.lower()}-1")] = {
+                "subject_kind": comp,
+                "subject_id": f"{comp.lower()}-1",
+                "last_seen": now,
+                "ntp_offset_ms": 0,
+            }
 
 
 class MockCursor:
@@ -481,6 +579,11 @@ class MockConnection:
 
     def cursor(self) -> MockCursor:
         return MockCursor(self)
+
+    def execute(self, query: str, params: Optional[Any] = None) -> MockCursor:
+        cur = self.cursor()
+        cur.execute(query, params)
+        return cur
 
     def commit(self) -> None:
         # Apply staged ticket inserts

@@ -19,6 +19,17 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
 
+        <!-- Launcher Activity: Native EMT & Mobile Desk Hybrid Console -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|keyboardHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
         <!-- Continuous Ambulance Location Foreground Service (FOREGROUND_SERVICE_TYPE_LOCATION) -->
         <service
             android:name=".LocationForegroundService"
