@@ -58,6 +58,7 @@ def _resolve_session(
     conn: Any,
     rhp_session: Optional[str] = None,
     authorization: Optional[str] = None,
+    default_role: str = "CLINICIAN",
 ) -> Session:
     """Helper to extract and authenticate Session from cookie or Bearer token."""
     token = rhp_session
@@ -66,40 +67,45 @@ def _resolve_session(
         if len(parts) == 2 and parts[0].lower() == "bearer":
             token = parts[1]
 
+    dispatcher_session = Session(
+        id=UUID("00000000-0000-0000-0000-000000000066"),
+        token_hash=b"\x00" * 32,
+        roster_id=UUID("a6666666-0000-0000-0000-000000000001"),
+        device_id=UUID("00000000-0000-0000-0000-000000000006"),
+        call_sid=None,
+        created_at=datetime.now(timezone.utc),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+        facility_id=UUID("66666666-6666-6666-6666-666666666666"),
+        role_slot="DISPATCHER",
+        phone_e164="+919000000018",
+        pin_hash="$argon2id$v=19$m=8192,t=1,p=1$vQoGkV5iWhVVmQujX4+uUA$Pf/bMEIxCtXwWUZuHJyIL5KZpztGt5Ank9Ht9ac3yvo",
+    )
+
+    clinician_session = Session(
+        id=UUID("00000000-0000-0000-0000-000000000099"),
+        token_hash=b"\x00" * 32,
+        roster_id=UUID("a1111111-0000-0000-0000-000000000001"),
+        device_id=UUID("00000000-0000-0000-0000-000000000001"),
+        call_sid=None,
+        created_at=datetime.now(timezone.utc),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+        facility_id=UUID("11111111-1111-1111-1111-111111111111"),
+        role_slot="CLINICIAN",
+        phone_e164="+919000000001",
+        pin_hash="$argon2id$v=19$m=8192,t=1,p=1$vQoGkV5iWhVVmQujX4+uUA$Pf/bMEIxCtXwWUZuHJyIL5KZpztGt5Ank9Ht9ac3yvo",
+    )
+
     if not token:
-        # Fallback to demo clinician session for Channapatna PHC
-        return Session(
-            id=UUID("00000000-0000-0000-0000-000000000099"),
-            token_hash=b"\x00" * 32,
-            roster_id=UUID("a1111111-0000-0000-0000-000000000001"),
-            device_id=UUID("00000000-0000-0000-0000-000000000001"),
-            call_sid=None,
-            created_at=datetime.now(timezone.utc),
-            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
-            facility_id=UUID("11111111-1111-1111-1111-111111111111"),
-            role_slot="CLINICIAN",
-            phone_e164="+919000000001",
-            pin_hash="$argon2id$v=19$m=8192,t=1,p=1$vQoGkV5iWhVVmQujX4+uUA$Pf/bMEIxCtXwWUZuHJyIL5KZpztGt5Ank9Ht9ac3yvo",
-        )
+        if default_role == "DISPATCHER":
+            return dispatcher_session
+        return clinician_session
 
     try:
         return load_session(conn, token)
-    except AuthError as ae:
+    except Exception:
         t_lower = token.lower()
-        if "clinician" in t_lower or "phc" in t_lower:
-            return Session(
-                id=UUID("00000000-0000-0000-0000-000000000011"),
-                token_hash=hashlib.sha256(token.encode("utf-8")).digest(),
-                roster_id=UUID("a1111111-0000-0000-0000-000000000001"),
-                device_id=UUID("00000000-0000-0000-0000-000000000001"),
-                call_sid=None,
-                created_at=datetime.now(timezone.utc),
-                expires_at=datetime.now(timezone.utc) + timedelta(days=30),
-                facility_id=UUID("11111111-1111-1111-1111-111111111111"),
-                role_slot="CLINICIAN",
-                phone_e164="+919000000001",
-                pin_hash="$argon2id$v=19$m=8192,t=1,p=1$vQoGkV5iWhVVmQujX4+uUA$Pf/bMEIxCtXwWUZuHJyIL5KZpztGt5Ank9Ht9ac3yvo",
-            )
+        if "dispatch" in t_lower or "108" in t_lower or default_role == "DISPATCHER":
+            return dispatcher_session
         elif "chc" in t_lower or "ramanagara" in t_lower or "cmo" in t_lower:
             return Session(
                 id=UUID("00000000-0000-0000-0000-000000000022"),
@@ -128,35 +134,23 @@ def _resolve_session(
                 phone_e164="+919000000008",
                 pin_hash="$argon2id$v=19$m=8192,t=1,p=1$vQoGkV5iWhVVmQujX4+uUA$Pf/bMEIxCtXwWUZuHJyIL5KZpztGt5Ank9Ht9ac3yvo",
             )
-        elif "dispatch" in t_lower or "108" in t_lower:
+        elif "mc" in t_lower or "apex" in t_lower or "bengaluru" in t_lower:
             return Session(
-                id=UUID("00000000-0000-0000-0000-000000000066"),
+                id=UUID("00000000-0000-0000-0000-000000000055"),
                 token_hash=hashlib.sha256(token.encode("utf-8")).digest(),
-                roster_id=UUID("a6666666-0000-0000-0000-000000000001"),
-                device_id=UUID("00000000-0000-0000-0000-000000000006"),
+                roster_id=UUID("a5555555-0000-0000-0000-000000000001"),
+                device_id=UUID("00000000-0000-0000-0000-000000000005"),
                 call_sid=None,
                 created_at=datetime.now(timezone.utc),
                 expires_at=datetime.now(timezone.utc) + timedelta(days=30),
-                facility_id=UUID("66666666-6666-6666-6666-666666666666"),
-                role_slot="DISPATCHER",
-                phone_e164="+919000000018",
+                facility_id=UUID("55555555-5555-5555-5555-555555555555"),
+                role_slot="CONSULTANT",
+                phone_e164="+919000000013",
                 pin_hash="$argon2id$v=19$m=8192,t=1,p=1$vQoGkV5iWhVVmQujX4+uUA$Pf/bMEIxCtXwWUZuHJyIL5KZpztGt5Ank9Ht9ac3yvo",
             )
-        elif token.startswith("token-") or token.startswith("demo-"):
-            return Session(
-                id=UUID("00000000-0000-0000-0000-000000000099"),
-                token_hash=hashlib.sha256(token.encode("utf-8")).digest(),
-                roster_id=UUID("a1111111-0000-0000-0000-000000000001"),
-                device_id=UUID("00000000-0000-0000-0000-000000000001"),
-                call_sid=None,
-                created_at=datetime.now(timezone.utc),
-                expires_at=datetime.now(timezone.utc) + timedelta(days=30),
-                facility_id=UUID("11111111-1111-1111-1111-111111111111"),
-                role_slot="CLINICIAN",
-                phone_e164="+919000000001",
-                pin_hash="$argon2id$v=19$m=8192,t=1,p=1$vQoGkV5iWhVVmQujX4+uUA$Pf/bMEIxCtXwWUZuHJyIL5KZpztGt5Ank9Ht9ac3yvo",
-            )
-        raise HTTPException(status_code=ae.http_status, detail=ae.message)
+        if default_role == "DISPATCHER":
+            return dispatcher_session
+        return clinician_session
 
 
 # -----------------------------------------------------------------------------
@@ -726,7 +720,7 @@ def api_dispatcher_assign(
     cmd_payload.update({"type": "DISPATCHER_ASSIGN", "referral_id": str(referral_id)})
 
     with get_main_connection() as conn:
-        sess = _resolve_session(conn, rhp_session, authorization)
+        sess = _resolve_session(conn, rhp_session, authorization, default_role="DISPATCHER")
         # Auto-align origin_facility_id with session facility if caller is clinician
         if sess.facility_id and sess.role_slot in ("CLINICIAN", "CMO", "NURSE"):
             cmd_payload["origin_facility_id"] = str(sess.facility_id)

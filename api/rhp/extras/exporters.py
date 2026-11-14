@@ -14,6 +14,7 @@ import hashlib
 import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+from uuid import UUID
 from xml.sax.saxutils import escape as xml_escape
 
 from api.rhp.crypto import jcs
@@ -258,8 +259,21 @@ def generate_bsa_section_63_evidence_bundle(
     ref_id = str(referral.get("id", ""))
     events_sorted = sorted(events, key=lambda x: x.get("seq", 0))
 
-    # 1. Canonical JCS JSON of all events
-    canonical_body = jcs({"referral_id": ref_id, "events": events_sorted})
+    # 1. Canonical JCS JSON of all events (sanitize bytes, datetimes, UUIDs)
+    sanitized_events = []
+    for ev in events_sorted:
+        s_ev = {}
+        for k, v in ev.items():
+            if isinstance(v, (bytes, bytearray)):
+                s_ev[k] = v.hex()
+            elif isinstance(v, datetime):
+                s_ev[k] = v.isoformat()
+            elif isinstance(v, UUID):
+                s_ev[k] = str(v)
+            else:
+                s_ev[k] = v
+        sanitized_events.append(s_ev)
+    canonical_body = jcs({"referral_id": ref_id, "events": sanitized_events})
     manifest_sha256 = hashlib.sha256(canonical_body).hexdigest()
 
     # 2. Merkle witness inclusion proof summary

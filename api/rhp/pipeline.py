@@ -66,11 +66,11 @@ class ReferralState:
         self.from_facility_id = self.origin_facility_id
         self.chain = [UUID(str(c)) for c in data.get("chain", [])]
         self.ladder_cursor = int(data.get("ladder_cursor", 0))
-        self.lease_offer_id = UUID(str(data["lease_offer_id"])) if data.get("lease_offer_id") else None
-        self.lease_facility_id = UUID(str(data["lease_facility_id"])) if data.get("lease_facility_id") else None
+        self.lease_offer_id = UUID(str(data["lease_offer_id"])) if data.get("lease_offer_id") and str(data["lease_offer_id"]) != "None" else None
+        self.lease_facility_id = UUID(str(data["lease_facility_id"])) if data.get("lease_facility_id") and str(data["lease_facility_id"]) != "None" else None
         self.lease_epoch = int(data.get("lease_epoch", 0))
         self.open_offers = int(data.get("open_offers", 0))
-        self.tr_facility_id = UUID(str(data["tr_facility_id"])) if data.get("tr_facility_id") else None
+        self.tr_facility_id = UUID(str(data["tr_facility_id"])) if data.get("tr_facility_id") and str(data["tr_facility_id"]) != "None" else None
         self.mgso4_status = str(data.get("mgso4_status", "UNKNOWN"))
         self.profile_id = str(data.get("profile_id", "DEMO_FAST"))
         self.paper_code = str(data.get("paper_code", "DEMO-001"))
@@ -78,7 +78,14 @@ class ReferralState:
         self.head_hash = bytes(data.get("head_hash", GENESIS_PREV_HASH_BYTES))
         self.head_ts = data.get("head_ts", datetime.now(timezone.utc))
         self.outcome = data.get("outcome")
-        self.created_by = UUID(str(data.get("created_by", uuid4())))
+        cb = data.get("created_by")
+        if cb and str(cb) != "None":
+            try:
+                self.created_by = UUID(str(cb))
+            except Exception:
+                self.created_by = uuid4()
+        else:
+            self.created_by = uuid4()
         self.created_at = data.get("created_at", datetime.now(timezone.utc))
         self.closed_at = data.get("closed_at")
 

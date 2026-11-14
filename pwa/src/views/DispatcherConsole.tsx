@@ -174,10 +174,12 @@ export const DispatcherConsole: React.FC = () => {
     }
 
     try {
+      const sessionToken = localStorage.getItem('rhp_session_token') || 'token-dispatcher-demo';
       const resp = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionToken}`,
           'Idempotency-Key': `idem-proxy-${selectedRef.id}-${Date.now()}`,
         },
         body: JSON.stringify(body),

@@ -211,7 +211,10 @@ export const ClinicianCard: React.FC = () => {
           return;
         }
         const errData = await resp.json().catch(() => ({}));
-        setError(errData.detail || `Create failed: HTTP ${resp.status}`);
+        const errMsg = typeof errData.detail === 'string'
+          ? errData.detail
+          : (errData.detail?.message || errData.detail?.reason || `Create failed: HTTP ${resp.status}`);
+        setError(errMsg);
         setLoading(false);
         return;
       }

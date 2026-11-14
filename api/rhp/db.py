@@ -238,12 +238,32 @@ class MockDatabase:
             "valid_from": datetime.now(timezone.utc),
             "valid_to": None,
         }
+        self.rosters["a4444444-0000-0000-0000-000000000004"] = {
+            "id": "a4444444-0000-0000-0000-000000000004",
+            "facility_id": "44444444-4444-4444-4444-444444444444",
+            "role_slot": "CMO",
+            "slot_no": 1,
+            "phone_e164": "+919000000008",
+            "pin_hash": "$argon2id$v=19$m=8192,t=1,p=1$vQoGkV5iWhVVmQujX4+uUA$Pf/bMEIxCtXwWUZuHJyIL5KZpztGt5Ank9Ht9ac3yvo",
+            "valid_from": datetime.now(timezone.utc),
+            "valid_to": None,
+        }
         self.rosters["a5555555-0000-0000-0000-000000000001"] = {
             "id": "a5555555-0000-0000-0000-000000000001",
             "facility_id": "55555555-5555-5555-5555-555555555555",
             "role_slot": "CONSULTANT",
             "slot_no": 1,
             "phone_e164": "+919000000013",
+            "pin_hash": "$argon2id$v=19$m=8192,t=1,p=1$vQoGkV5iWhVVmQujX4+uUA$Pf/bMEIxCtXwWUZuHJyIL5KZpztGt5Ank9Ht9ac3yvo",
+            "valid_from": datetime.now(timezone.utc),
+            "valid_to": None,
+        }
+        self.rosters["a6666666-0000-0000-0000-000000000001"] = {
+            "id": "a6666666-0000-0000-0000-000000000001",
+            "facility_id": "66666666-6666-6666-6666-666666666666",
+            "role_slot": "DISPATCHER",
+            "slot_no": 1,
+            "phone_e164": "+919000000018",
             "pin_hash": "$argon2id$v=19$m=8192,t=1,p=1$vQoGkV5iWhVVmQujX4+uUA$Pf/bMEIxCtXwWUZuHJyIL5KZpztGt5Ank9Ht9ac3yvo",
             "valid_from": datetime.now(timezone.utc),
             "valid_to": None,
