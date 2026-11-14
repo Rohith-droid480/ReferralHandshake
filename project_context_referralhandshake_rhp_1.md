@@ -210,7 +210,7 @@ ReferralHandshake holds a **short-lived handover record**, not a longitudinal el
 | 36 | PIN brute-force / rival lockout DoS | Argon2id in autonomous transaction; lockout scoped to `(session_id \| call_sid)`, never locking out the whole facility (`F7`) |
 | 37 | Unsafe hardcoded escalation timers | Signed write-once profiles with boot-time $T_{max} = F \cdot (A + D + \epsilon) \le B$ validator; demo profiles refuse `REAL_DATA=1` (`F2`, `F3`) |
 | 38 | Single DB host failure in district pilot | AWS Multi-AZ synchronous standby + nightly logical backup + WAL archive + cold-key signed `RESTORE` protocol (`F8`) |
-| 39 | Vibe-coded concurrency defects | Spec-first workflow (3-Gem + Antigravity ring) + `rhp_require_lock` trigger (`I14`) + `race200` gate |
+| 39 | Vibe-coded concurrency defects | Spec-first workflow (2-Gem Milestone Validation workflow) + `rhp_require_lock` trigger (`I14`) + `race200` gate |
 | 40 | Unsettled legal status of automated voice | Outbound-only to $\le 10$ whitelisted trial numbers with synthetic de-identified prompts; `OPEN` for legal review (`L1`) |
 
 ### 5.3 Ranked Residual-Risk Register (Architecture §20)
@@ -226,4 +226,4 @@ ReferralHandshake holds a **short-lived handover record**, not a longitudinal el
 | 7 | AI draft rubber-stamping (`A1`) | `BOUNDED` | Person B (`T2`) | Cognitive Forcing Function (`423 ANCHOR_REQUIRED`), AI off by default | 20-slip seeded-error usability gate ($\le 5\%$ rubber-stamp, $\le 1\%$ omission) |
 | 8 | Android OEM battery-saver kills (`F4`) | `BOUNDED` | Person B (`T2`) | Foreground service + heartbeat staleness alert + PWA manual GPS fallback | 2-hour screen-off device soak test |
 | 9 | Low-volume facility re-identification (`P1`/`P6`) | `BOUNDED` | Person A (`T1`) | Closed enum allowlist `rhp_detail_ok` + $4\text{ h}$ buckets + $k \ge 5$ suppression | Fuzz test `T-F9` + export anonymisation audit |
-| 10 | AI-generated concurrency defects | `BOUNDED` | Both (`T1` & `T2`) | Spec-first 3-Gem ring, `M1–M6` mutation suite, independent Python monitor | Green `T-C1 race200` and `M1–M6` in CI |
+| 10 | AI-generated concurrency defects | `BOUNDED` | Both (`T1` & `T2`) | Spec-first 2-Gem Milestone workflow, `M1–M6` mutation suite, independent Python monitor | Green `T-C1 race200` and `M1–M6` in CI |

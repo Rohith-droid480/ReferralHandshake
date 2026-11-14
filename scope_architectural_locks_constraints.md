@@ -232,7 +232,7 @@ The automated CI linter (`ST-5`) scans all documentation, UI strings, and pitch 
 | `H12–H14` | `race200` barrier test (`T-C1`), Mutation tests `M1`–`M6`, Quint verification | `BROKEN_BUILD=1` scratch DB (`rhp_scratch_broken`) + flashing red banner | **Gate G0 (`T0` Pass)** |
 | `H14–H17` | `COUNTER`, `CONFIRM_COUNTER`, arrival cases `(a)`–`(f)`, `CLOSE` & 9 outcomes | Dispatcher Console (`proxy=true`, `DISPATCHER_ASSIGN`), PWA GPS fallback, Replay Scrubber | **Gate G1 (`T1` Pass)** |
 | `H17–H20` | 8-case Idempotency matrix (`T-F14`), fencing tests, Toxiproxy chaos suite | Outbound Exotel IVR (AMD + Press-1 gate + `%23` PIN), Crockford Base32 (`mod 37`) paper code | **Gate G2 (`T2` Pass)** |
-| `H20–H22` | Fix any defects surfaced by Gate G0–G2 and Gem 3 adversary attacks | Record MP4 fallback clips (`clip A`–`clip D`), execute 30-second proof loop rehearsal $\times 3$ | **Gate G3 (Rehearsal)** |
+| `H20–H22` | Fix any defects surfaced by Gate G0–G2 and Gem 2 Milestone Validation attacks | Record MP4 fallback clips (`clip A`–`clip D`), execute 30-second proof loop rehearsal $\times 3$ | **Gate G3 (Rehearsal)** |
 | `H22–H24` | **HARD CODE FREEZE AT H22** — config-only adjustments | Final stage rehearsal, hotspot LAN QR check, backup laptop standby | **FREEZE** |
 
 ### 7.2 Reconciled 6-Month District Pilot Cloud Cost (`F18`, AWS `ap-south-1` Multi-AZ)
@@ -250,10 +250,9 @@ The automated CI linter (`ST-5`) scans all documentation, UI strings, and pitch 
 | $10\%$ Operational Contingency (on $\$215.00$) | $\$21.50$ | $\$129.00$ | — |
 | **Locked Total Pilot Budget** | **$\$236.50 / \text{month}$** | **$\$1,419.00$ ($\approx \$1,420$)** | Reconciles all earlier estimates into one locked figure (`$1,140–$1,500` band) |
 
-### 7.3 3-Gem + Antigravity Multi-Agent Governance (`ReferralHandshake_3Gem_Antigravity_Workflow.md`)
+### 7.3 2-Gem Milestone Validation Multi-Agent Governance (`ReferralHandshake_3Gem_Antigravity_Workflow.md`)
 1. **Strict Role Separation:**
    - **Gem 1 (`CONDUCTOR`):** Owns the `STATE LEDGER`, step sequence, tier cut decisions, and emits `AG-PROMPT`s. Never writes product code.
    - **Google Antigravity (`BUILDER`):** The only agent permitted to write product code. Must touch only files listed in `FILES YOU MAY TOUCH`, tag every step `step-<ID>-loop<n>`, and paste raw terminal/test output in the `BUILD REPORT`.
-   - **Gem 2 (`AUDITOR`):** Verifies raw test output, line-by-line spec conformance, `I1`–`I16` enforcement, and lock order. Treats any "tests pass" claim without raw output as an automatic `FAIL`.
-   - **Gem 3 (`ADVERSARY`):** Turns every red-team attack into a runnable test specification for the next `AG-PROMPT` and audits claims against the Claims Register.
+   - **Gem 2 (`MILESTONE VALIDATOR`):** Combined Spec Auditor & Red-Team Adversary. Invoked ONLY at complete feature or milestone/gate completion (or S1 fix). Verifies raw test output, line-by-line spec conformance, `I1`–`I16` enforcement, turns every red-team attack into a runnable test specification `A-1..A-k`, and emits the `DECISION PACKET` directly for Gem 1. (Gem 3 is retired).
 2. **Protected Files (`CODEOWNERS`):** `spec/transitions.yaml`, `spec/rhp1.qnt`, `db/schema.sql`, `spec/profiles.json`, and `monitor/` are human-owned and hash-pinned in CI. Coding agents are strictly forbidden from modifying specifications, database triggers, or monitor assertions to make a failing build pass.

@@ -24,7 +24,7 @@ This document is the authoritative failure, threat, loophole, chaos, and red-tea
 | `BOUNDED` | Weakness Status | Cannot be reduced to zero in software; carries a stated quantitative/technical residual bound and an active monitor/operator alarm. |
 | `OPEN` | Weakness Status | Requires external legal opinion, hardware HSM/KMS, or field pilot validation; assigned an explicit owner and closing evidence criteria. |
 
-### 0.2 Defect Severity Taxonomy (3-Gem + Antigravity Workflow)
+### 0.2 Defect Severity Taxonomy (2-Gem Milestone Validation Workflow)
 
 | Severity | Classification | Gate Impact |
 |---|---|---|
@@ -397,14 +397,14 @@ Every scenario below is mapped to a deterministic conformance vector (`V-SC01`�
 | 36 | Rival locks out receiving facility by spamming wrong PINs (Lockout-DoS) | Argon2id failure counter and $120\text{ s}$ lockout scoped strictly to `(session_id \| call_sid)` | `F7`, `I3` | `CLOSED` |
 | 37 | Unsafe hardcoded demo timers accidentally deployed in clinical pilot | Four cold-key signed profiles; `DEMO_FAST` and `DEMO_VOICE` refuse boot when `REAL_DATA=1` | `F2`, `T6`, `I13` | `CLOSED` |
 | 38 | Single database host failure in pilot loses active referrals | Pilot uses AWS Multi-AZ managed PostgreSQL with synchronous standby (`synchronous_commit=on`) and cold-key signed `RESTORE` drill | `T5`, `F2`, `F8` | `BOUNDED` |
-| 39 | Vibe-coded concurrency or lock-order bug introduced during 24h build | Enforced 3-Gem + Antigravity loop, `rhp_require_lock` DB trigger (`I14`), `race200`, and `M1`–`M6` gate checks | `C5`, `F1`, `I14` | `CLOSED` |
+| 39 | Vibe-coded concurrency or lock-order bug introduced during 24h build | Enforced 2-Gem Milestone Validation workflow, `rhp_require_lock` DB trigger (`I14`), `race200`, and `M1`–`M6` gate checks | `C5`, `F1`, `I14` | `CLOSED` |
 | 40 | Unsettled legality of automated voice calls reading clinical summaries | Sandbox + $\le 10$ whitelisted team numbers + de-identified pre-recorded audio in prototype; legal sign-off required before real use `[GAP]` | `L1` | `OPEN` |
 
 ---
 
-## 8. Executable Chaos, Concurrency & Mutation Test Specifications (Gem 3 Red-Team Suite)
+## 8. Executable Chaos, Concurrency & Mutation Test Specifications (Milestone Validation Red-Team Suite)
 
-Per the **3-Gem + Antigravity Workflow**, every red-team attack from Gem 3 (ADVERSARY) must compile into a runnable test with explicit inputs, execution steps, and measurable pass conditions.
+Per the **2-Gem Milestone Validation Workflow**, every red-team attack from Gem 2 (MILESTONE VALIDATOR) must compile into a runnable test with explicit inputs, execution steps, and measurable pass conditions.
 
 ### 8.1 Six Mutation Tests (`M1`–`M6` + Track-Gating Mutation) [F17]
 

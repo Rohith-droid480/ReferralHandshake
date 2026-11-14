@@ -9,7 +9,7 @@
 
 ## 1. Strict Input Precedence & Tag Discipline (Non-Negotiable)
 
-All AI agents (Google Antigravity, Gemini Pro, Gem 1 CONDUCTOR, Gem 2 AUDITOR, Gem 3 ADVERSARY) operating in this repository must resolve any conflict or ambiguity using this exact hierarchy:
+All AI agents (Google Antigravity, Gemini Pro, Gem 1 CONDUCTOR & MASTER VALIDATION AUDITOR) operating in this repository must resolve any conflict or ambiguity using this exact hierarchy:
 
 1. **`ReferralHandshake_LOCKED_Problem_Statement_v7.md`:** Highest authority on problem framing, evidence register, operational scope, and claims discipline.
 
@@ -23,7 +23,7 @@ All AI agents (Google Antigravity, Gemini Pro, Gem 1 CONDUCTOR, Gem 2 AUDITOR, G
 4. **`ReferralHandshake_FINAL_LOCKED_Architecture.md`:** Ultimate technical authority on F1–F20 closures, I1–I16 invariants, the 24-table PostgreSQL 16 DDL, the 10-step `apply_command()` pipeline, timing math, Quint specification (`rhp1.qnt`), independent Python runtime monitor, and T0–T3 feature tiers.
 
 
-5. **`ReferralHandshake_3Gem_Antigravity_Workflow.md` & `AGENTS.md`:** Authority on the 3-Gem + Antigravity build loop, lane isolation, packet formats, and verification gates.
+5. **`ReferralHandshake_3Gem_Antigravity_Workflow.md` & `AGENTS.md`:** Authority on the 1-Gem Direct Post-Build Validation Loop, lane isolation, packet formats, and verification gates.
 
 
 
@@ -128,16 +128,13 @@ Anything outside `(a)`, `(b)`, or `(c)` is **strictly out of scope** and must be
 
 ---
 
-## 3. Multi-Agent Governance: The 3-Gem + Antigravity Ring
+## 3. Multi-Agent Governance: The 1-Gem Direct Post-Build Validation Loop
 
-Development is governed by a four-agent separation of powers across two human-operated parallel lanes:
+All 12 modules (`MODULE 1` through `MODULE 12`) are built. The repository operates under the direct **1-Gem Loop (`Gem 1 <-> Antigravity`)** focused on post-build validation, testing, bug fixing, and integration completion.
 
-* **Lane A (Person A — Backend & Formal Spec):** Owns PostgreSQL DDL (`db/schema.sql`), `spec/transitions.yaml`, `spec/rhp1.qnt`, FastAPI `apply_command()` pipeline, 2-phase poller, outbox relay, hash chain, Merkle witness/signer, and concurrency/mutation test suites.
-
+* **Lane A (Person A — Backend & Formal Spec):** Owns PostgreSQL DDL (`db/01_schema.sql`), `spec/transitions.yaml`, `spec/rhp1.qnt`, FastAPI `apply_command()` pipeline, 2-phase poller, outbox relay, hash chain, Merkle witness/signer, and concurrency/mutation test suites.
 
 * **Lane B (Person B — Clients, Reach & Independent Monitor):** Owns the independent Python runtime monitor (`monitor/`), React PWA desks, SSE consumer, pure-JS browser verifier, `BROKEN_BUILD` scratch orchestration, dispatcher console, Exotel IVR & paper code adapters, and demo fallbacks.
-
-
 
 ### 3.1 Common-Mode Failure Independence (`F17`)
 
@@ -145,48 +142,22 @@ To prevent the server and runtime monitor from sharing a common-mode bug:
 
 * **Person A** writes the backend server, `spec/transitions.yaml`, and the Quint specification (`spec/rhp1.qnt`).
 
-
 * **Person B** writes the Python runtime monitor (`monitor/`) in a **separate Antigravity workspace/conversation** derived strictly from the prose invariants in §3 of the Architecture spec and the database schema.
-
 
 * The monitor **must never** import server packages, share helper functions with `/api`, or read `/api` source files; it connects exclusively via the read-only PostgreSQL role `rhp_monitor`.
 
-
-
-### 3.2 Agent Responsibilities & Prohibitions
+### 3.2 Agent Responsibilities & Direct Loop
 
 | Agent Role | Owns | Strictly Prohibited From |
 | --- | --- | --- |
-| **Google Antigravity (Builder)** | Executing atomic tasks from the current `AG-PROMPT`, writing implementation code and tests inside `FILES YOU MAY TOUCH`, running commands, pasting raw outputs into the `BUILD REPORT`, committing tags `step-<ID>-loop<n>`.
+| **Google Antigravity (Builder, Fixer & Test Runner)** | Executing surgical tasks from `AG-PROMPT`, diagnosing issues, applying clean fixes inside permitted files, running test/audit commands, pasting raw outputs into the report, committing tags `step-<ID>-loop<n>`, and outputting the single mandatory completion banner. | Deciding architecture, editing `/spec` or `db/01_schema.sql`, claiming tests pass without raw terminal output. |
+| **Gem 1 — CONDUCTOR & MASTER VALIDATION AUDITOR** | Sole reviewing agent (Gem 2 & Gem 3 retired). Maintains the `STATE LEDGER`, sequences validation stages (V1..V5), performs root-cause analysis, writes targeted `AG-PROMPT` fix blocks, and enforces gate acceptance criteria. | Writing product code directly, advancing stages without raw verification output. |
 
- | Deciding architecture, touching `FILES YOU MUST NOT TOUCH`, editing `/spec` or `AGENTS.md`, claiming tests pass without raw terminal output, improvising around spec ambiguities.
+### 3.3 Loop Cadence & Mandatory Banner
 
- |
-| **Gem 1 — CONDUCTOR** | Maintaining the `STATE LEDGER`, sequencing steps (`Phase P` and `Phase E`), selecting loop types (`FULL`/`FAST`/`SHORT-CIRCUIT`), writing `AG-PROMPT` blocks, enforcing the 2-fix-loop cap and tier cut order (`T3 → T2 → T1`; never `T0`).
-
- | Writing product code, advancing a step with open `S1` defects, modifying the spec without a user-approved `SPEC-DEVIATION`.
-
- |
-| **Gem 2 — AUDITOR** | Verifying raw test evidence, line-by-line spec conformance (`MATCH`/`PARTIAL`/`MISSING`/`DEVIATES`), sweeping invariants `I1–I16`, checking lock order and transaction boundaries, issuing `PASS`/`PASS-WITH-NOTES`/`FAIL`/`REJECT` verdicts and `RED-TEAM REQUEST` blocks.
-
- | Writing fixes or product code, planning next steps, assuming unpasted files are correct (must mark `UNVERIFIED`), softening defects.
-
- |
-| **Gem 3 — ADVERSARY** | Designing mechanism-backed attacks (`A-n`) with runnable test specs across concurrency, crashes, partitions, clock steps, auth/PIN, privacy, tamper, and demo integrity; challenging Gem 2's audit; emitting the `DECISION PACKET`.
-
- | Fixing code, deciding scope cuts, claiming an attack `BREAKS` the system without stating the exact technical mechanism.
-
- |
-
-### 3.3 Loop Routing Rules & Time Budgets
-
-* **`FULL` Loop (`G1 → AG → G2 → G3 → G1`, ~20–25 min):** Mandatory for any `HIGH`-risk step, any tier gate (`G0–G3`), or any `S1` blocker fix. `HIGH`-risk includes `apply_command()`, locks/triggers, DDL, idempotency, hash chain/witness/crypto, poller/relay, PIN/session/auth, SSE per-event authz, `BROKEN_BUILD`/`REAL_DATA` guards, and the Exotel voice ACK path.
-
-
-* **`FAST` Loop (`G1 → AG → G2 → G1`, ~12 min):** Used for `LOW`/`MED`-risk steps (UI styling, seed data, copy text, config) or `S2`/`S3` defect fixes.
-
-
-* **`SHORT-CIRCUIT` (`G2 → G1` directly):** Triggered immediately when Gem 2 returns `REJECT` (code does not run, raw test output missing, or forbidden files touched).
+* **Direct Post-Build Loop (`Gem 1 -> Antigravity -> Gem 1`):** Every cycle goes directly between Gem 1 and Antigravity.
+* **Mandatory Antigravity Completion Banner:**
+  `🛑 VALIDATION & FIX STEP COMPLETED — PASTE THIS REPORT DIRECTLY BACK INTO GEM 1!`
 
 
 
@@ -633,12 +604,12 @@ ASSUMPTIONS
 OPEN QUESTIONS
 SELF-RATED RISK + the 3 things most likely to be wrong
 
-=== AUDIT-REQUEST FOR GEM 2 ===
-Step: <id> | Loop: #<n> (<FULL|FAST>)
+=== VALIDATION & FIX REPORT FOR GEM 1 ===
+Step: <id> | Stage: <V1..V5> | Loop: #<n>
 Spec Anchors: <§ numbers, I# invariants, T-# tests>
 Acceptance Criteria: <list from AG-PROMPT>
-<Paste BUILD REPORT above>
-Question: Audit this against the anchors.
+<Paste Report above>
+Banner: 🛑 VALIDATION & FIX STEP COMPLETED — PASTE THIS REPORT DIRECTLY BACK INTO GEM 1!
 
 ```
 

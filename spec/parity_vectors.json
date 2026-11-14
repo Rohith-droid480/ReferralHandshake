@@ -1,0 +1,250 @@
+{
+  "vectors": [
+    {
+      "seq": 1,
+      "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "core": {
+        "seq": 1,
+        "type": "REFERRAL_CREATED",
+        "event_id": "f0000000-0000-0000-0000-000000000001",
+        "referral_id": "018b76a0-5cb0-7a32-9b25-018b76a05cb0",
+        "epoch": 0,
+        "actor_roster_id": "a1111111-0000-0000-0000-000000000002",
+        "facility_id": "11111111-1111-1111-1111-111111111111",
+        "channel": "PWA",
+        "proxy": false,
+        "detail": {
+          "mode": "SEQUENTIAL",
+          "need_class": "OBSTETRIC_EMERGENCY",
+          "chain_len": 3,
+          "profile": "DEMO_FAST",
+          "mgso4": "GIVEN"
+        },
+        "secret_hash": null,
+        "client_ts_ms": 1763000000000,
+        "server_ts_us": 1763000000100000
+      },
+      "canonical_jcs": "{\"actor_roster_id\":\"a1111111-0000-0000-0000-000000000002\",\"channel\":\"PWA\",\"client_ts_ms\":1763000000000,\"detail\":{\"chain_len\":3,\"mgso4\":\"GIVEN\",\"mode\":\"SEQUENTIAL\",\"need_class\":\"OBSTETRIC_EMERGENCY\",\"profile\":\"DEMO_FAST\"},\"epoch\":0,\"event_id\":\"f0000000-0000-0000-0000-000000000001\",\"facility_id\":\"11111111-1111-1111-1111-111111111111\",\"proxy\":false,\"referral_id\":\"018b76a0-5cb0-7a32-9b25-018b76a05cb0\",\"secret_hash\":null,\"seq\":1,\"server_ts_us\":1763000000100000,\"type\":\"REFERRAL_CREATED\"}",
+      "expected_hash": "776555f7feb5f9fef1f802b9ecfe7cc7a184d0c8cd7958a258091fa6fec45965"
+    },
+    {
+      "seq": 2,
+      "prev_hash": "776555f7feb5f9fef1f802b9ecfe7cc7a184d0c8cd7958a258091fa6fec45965",
+      "core": {
+        "seq": 2,
+        "type": "OFFER_CREATED",
+        "event_id": "f0000000-0000-0000-0000-000000000002",
+        "referral_id": "018b76a0-5cb0-7a32-9b25-018b76a05cb0",
+        "epoch": 0,
+        "actor_roster_id": null,
+        "facility_id": "11111111-1111-1111-1111-111111111111",
+        "channel": "SYSTEM",
+        "proxy": false,
+        "detail": {
+          "step": 1,
+          "facility": "22222222-2222-2222-2222-222222222222",
+          "source": "CHAIN",
+          "reason": null
+        },
+        "secret_hash": null,
+        "client_ts_ms": null,
+        "server_ts_us": 1763000000200000
+      },
+      "canonical_jcs": "{\"actor_roster_id\":null,\"channel\":\"SYSTEM\",\"client_ts_ms\":null,\"detail\":{\"facility\":\"22222222-2222-2222-2222-222222222222\",\"reason\":null,\"source\":\"CHAIN\",\"step\":1},\"epoch\":0,\"event_id\":\"f0000000-0000-0000-0000-000000000002\",\"facility_id\":\"11111111-1111-1111-1111-111111111111\",\"proxy\":false,\"referral_id\":\"018b76a0-5cb0-7a32-9b25-018b76a05cb0\",\"secret_hash\":null,\"seq\":2,\"server_ts_us\":1763000000200000,\"type\":\"OFFER_CREATED\"}",
+      "expected_hash": "b415a2a75286f27fa59978d66440614c47bcb4bd2a9f5db28fad1ca849dc0f3f"
+    },
+    {
+      "seq": 3,
+      "prev_hash": "b415a2a75286f27fa59978d66440614c47bcb4bd2a9f5db28fad1ca849dc0f3f",
+      "core": {
+        "seq": 3,
+        "type": "NOTICE_SENT",
+        "event_id": "f0000000-0000-0000-0000-000000000003",
+        "referral_id": "018b76a0-5cb0-7a32-9b25-018b76a05cb0",
+        "epoch": 0,
+        "actor_roster_id": null,
+        "facility_id": "22222222-2222-2222-2222-222222222222",
+        "channel": "SYSTEM",
+        "proxy": false,
+        "detail": {
+          "channel": "PWA",
+          "rung": 0,
+          "slot": 1
+        },
+        "secret_hash": null,
+        "client_ts_ms": null,
+        "server_ts_us": 1763000000300000
+      },
+      "canonical_jcs": "{\"actor_roster_id\":null,\"channel\":\"SYSTEM\",\"client_ts_ms\":null,\"detail\":{\"channel\":\"PWA\",\"rung\":0,\"slot\":1},\"epoch\":0,\"event_id\":\"f0000000-0000-0000-0000-000000000003\",\"facility_id\":\"22222222-2222-2222-2222-222222222222\",\"proxy\":false,\"referral_id\":\"018b76a0-5cb0-7a32-9b25-018b76a05cb0\",\"secret_hash\":null,\"seq\":3,\"server_ts_us\":1763000000300000,\"type\":\"NOTICE_SENT\"}",
+      "expected_hash": "0b56358b2b893ad1e7873b604ebfc69c297c48f77ead58e038e28901f8225f40"
+    },
+    {
+      "seq": 4,
+      "prev_hash": "0b56358b2b893ad1e7873b604ebfc69c297c48f77ead58e038e28901f8225f40",
+      "core": {
+        "seq": 4,
+        "type": "OFFER_ACKED",
+        "event_id": "f0000000-0000-0000-0000-000000000004",
+        "referral_id": "018b76a0-5cb0-7a32-9b25-018b76a05cb0",
+        "epoch": 0,
+        "actor_roster_id": "a2222222-0000-0000-0000-000000000001",
+        "facility_id": "22222222-2222-2222-2222-222222222222",
+        "channel": "PWA",
+        "proxy": false,
+        "detail": {
+          "channel": "PWA"
+        },
+        "secret_hash": null,
+        "client_ts_ms": 1763000000500,
+        "server_ts_us": 1763000000600000
+      },
+      "canonical_jcs": "{\"actor_roster_id\":\"a2222222-0000-0000-0000-000000000001\",\"channel\":\"PWA\",\"client_ts_ms\":1763000000500,\"detail\":{\"channel\":\"PWA\"},\"epoch\":0,\"event_id\":\"f0000000-0000-0000-0000-000000000004\",\"facility_id\":\"22222222-2222-2222-2222-222222222222\",\"proxy\":false,\"referral_id\":\"018b76a0-5cb0-7a32-9b25-018b76a05cb0\",\"secret_hash\":null,\"seq\":4,\"server_ts_us\":1763000000600000,\"type\":\"OFFER_ACKED\"}",
+      "expected_hash": "d285dfff9ca5a5936a81d479c0d03f40819777a9340e2667f34a465bc3f46d06"
+    },
+    {
+      "seq": 5,
+      "prev_hash": "d285dfff9ca5a5936a81d479c0d03f40819777a9340e2667f34a465bc3f46d06",
+      "core": {
+        "seq": 5,
+        "type": "RESOURCE_CONFIRMED",
+        "event_id": "f0000000-0000-0000-0000-000000000005",
+        "referral_id": "018b76a0-5cb0-7a32-9b25-018b76a05cb0",
+        "epoch": 0,
+        "actor_roster_id": "a2222222-0000-0000-0000-000000000001",
+        "facility_id": "22222222-2222-2222-2222-222222222222",
+        "channel": "PWA",
+        "proxy": false,
+        "detail": {
+          "capability": "OT"
+        },
+        "secret_hash": null,
+        "client_ts_ms": 1763000000800,
+        "server_ts_us": 1763000000900000
+      },
+      "canonical_jcs": "{\"actor_roster_id\":\"a2222222-0000-0000-0000-000000000001\",\"channel\":\"PWA\",\"client_ts_ms\":1763000000800,\"detail\":{\"capability\":\"OT\"},\"epoch\":0,\"event_id\":\"f0000000-0000-0000-0000-000000000005\",\"facility_id\":\"22222222-2222-2222-2222-222222222222\",\"proxy\":false,\"referral_id\":\"018b76a0-5cb0-7a32-9b25-018b76a05cb0\",\"secret_hash\":null,\"seq\":5,\"server_ts_us\":1763000000900000,\"type\":\"RESOURCE_CONFIRMED\"}",
+      "expected_hash": "ac8de0896a6a8c45f7b11fd3b837ce4d013a3a2b0c9a014e79ed9e425df76d65"
+    },
+    {
+      "seq": 6,
+      "prev_hash": "ac8de0896a6a8c45f7b11fd3b837ce4d013a3a2b0c9a014e79ed9e425df76d65",
+      "core": {
+        "seq": 6,
+        "type": "RESOURCE_CONFIRMED",
+        "event_id": "f0000000-0000-0000-0000-000000000006",
+        "referral_id": "018b76a0-5cb0-7a32-9b25-018b76a05cb0",
+        "epoch": 0,
+        "actor_roster_id": "a2222222-0000-0000-0000-000000000001",
+        "facility_id": "22222222-2222-2222-2222-222222222222",
+        "channel": "PWA",
+        "proxy": false,
+        "detail": {
+          "capability": "BLOOD"
+        },
+        "secret_hash": null,
+        "client_ts_ms": 1763000001000,
+        "server_ts_us": 1763000001100000
+      },
+      "canonical_jcs": "{\"actor_roster_id\":\"a2222222-0000-0000-0000-000000000001\",\"channel\":\"PWA\",\"client_ts_ms\":1763000001000,\"detail\":{\"capability\":\"BLOOD\"},\"epoch\":0,\"event_id\":\"f0000000-0000-0000-0000-000000000006\",\"facility_id\":\"22222222-2222-2222-2222-222222222222\",\"proxy\":false,\"referral_id\":\"018b76a0-5cb0-7a32-9b25-018b76a05cb0\",\"secret_hash\":null,\"seq\":6,\"server_ts_us\":1763000001100000,\"type\":\"RESOURCE_CONFIRMED\"}",
+      "expected_hash": "1af486e0a81454bbf5be4654d72e4a97a578edd71f629c306eded1a3ae22d9cc"
+    },
+    {
+      "seq": 7,
+      "prev_hash": "1af486e0a81454bbf5be4654d72e4a97a578edd71f629c306eded1a3ae22d9cc",
+      "core": {
+        "seq": 7,
+        "type": "OFFER_ACCEPTED",
+        "event_id": "f0000000-0000-0000-0000-000000000007",
+        "referral_id": "018b76a0-5cb0-7a32-9b25-018b76a05cb0",
+        "epoch": 0,
+        "actor_roster_id": "a2222222-0000-0000-0000-000000000001",
+        "facility_id": "22222222-2222-2222-2222-222222222222",
+        "channel": "PWA",
+        "proxy": false,
+        "detail": {
+          "facility": "22222222-2222-2222-2222-222222222222",
+          "epoch": 0,
+          "reason": null
+        },
+        "secret_hash": null,
+        "client_ts_ms": 1763000001300,
+        "server_ts_us": 1763000001400000
+      },
+      "canonical_jcs": "{\"actor_roster_id\":\"a2222222-0000-0000-0000-000000000001\",\"channel\":\"PWA\",\"client_ts_ms\":1763000001300,\"detail\":{\"epoch\":0,\"facility\":\"22222222-2222-2222-2222-222222222222\",\"reason\":null},\"epoch\":0,\"event_id\":\"f0000000-0000-0000-0000-000000000007\",\"facility_id\":\"22222222-2222-2222-2222-222222222222\",\"proxy\":false,\"referral_id\":\"018b76a0-5cb0-7a32-9b25-018b76a05cb0\",\"secret_hash\":null,\"seq\":7,\"server_ts_us\":1763000001400000,\"type\":\"OFFER_ACCEPTED\"}",
+      "expected_hash": "902809e7f0758894f32cdf9615ae3e6f6171792a6de5aa36bcd01a5b80a62f6b"
+    },
+    {
+      "seq": 8,
+      "prev_hash": "902809e7f0758894f32cdf9615ae3e6f6171792a6de5aa36bcd01a5b80a62f6b",
+      "core": {
+        "seq": 8,
+        "type": "LEASE_GRANTED",
+        "event_id": "f0000000-0000-0000-0000-000000000008",
+        "referral_id": "018b76a0-5cb0-7a32-9b25-018b76a05cb0",
+        "epoch": 1,
+        "actor_roster_id": null,
+        "facility_id": "22222222-2222-2222-2222-222222222222",
+        "channel": "SYSTEM",
+        "proxy": false,
+        "detail": {
+          "facility": "22222222-2222-2222-2222-222222222222",
+          "epoch": 1,
+          "reason": null
+        },
+        "secret_hash": null,
+        "client_ts_ms": null,
+        "server_ts_us": 1763000001500000
+      },
+      "canonical_jcs": "{\"actor_roster_id\":null,\"channel\":\"SYSTEM\",\"client_ts_ms\":null,\"detail\":{\"epoch\":1,\"facility\":\"22222222-2222-2222-2222-222222222222\",\"reason\":null},\"epoch\":1,\"event_id\":\"f0000000-0000-0000-0000-000000000008\",\"facility_id\":\"22222222-2222-2222-2222-222222222222\",\"proxy\":false,\"referral_id\":\"018b76a0-5cb0-7a32-9b25-018b76a05cb0\",\"secret_hash\":null,\"seq\":8,\"server_ts_us\":1763000001500000,\"type\":\"LEASE_GRANTED\"}",
+      "expected_hash": "72a59f5ff6a5c012e83239b32ad27bb281b7407048c0b2f58b876515e16dca03"
+    },
+    {
+      "seq": 9,
+      "prev_hash": "72a59f5ff6a5c012e83239b32ad27bb281b7407048c0b2f58b876515e16dca03",
+      "core": {
+        "seq": 9,
+        "type": "TR_UPDATED",
+        "event_id": "f0000000-0000-0000-0000-000000000009",
+        "referral_id": "018b76a0-5cb0-7a32-9b25-018b76a05cb0",
+        "epoch": 1,
+        "actor_roster_id": "a2222222-0000-0000-0000-000000000001",
+        "facility_id": "22222222-2222-2222-2222-222222222222",
+        "channel": "PWA",
+        "proxy": false,
+        "detail": {
+          "tr_state": "HANDED_OVER",
+          "source": "PWA",
+          "dwell_s": 120
+        },
+        "secret_hash": null,
+        "client_ts_ms": 1763000002000,
+        "server_ts_us": 1763000002100000
+      },
+      "canonical_jcs": "{\"actor_roster_id\":\"a2222222-0000-0000-0000-000000000001\",\"channel\":\"PWA\",\"client_ts_ms\":1763000002000,\"detail\":{\"dwell_s\":120,\"source\":\"PWA\",\"tr_state\":\"HANDED_OVER\"},\"epoch\":1,\"event_id\":\"f0000000-0000-0000-0000-000000000009\",\"facility_id\":\"22222222-2222-2222-2222-222222222222\",\"proxy\":false,\"referral_id\":\"018b76a0-5cb0-7a32-9b25-018b76a05cb0\",\"secret_hash\":null,\"seq\":9,\"server_ts_us\":1763000002100000,\"type\":\"TR_UPDATED\"}",
+      "expected_hash": "2055c3d96f3a643e9d59d742d28596d3fd511ec1400158dbec75c6de15780e51"
+    },
+    {
+      "seq": 10,
+      "prev_hash": "2055c3d96f3a643e9d59d742d28596d3fd511ec1400158dbec75c6de15780e51",
+      "core": {
+        "seq": 10,
+        "type": "CLOSED",
+        "event_id": "f0000000-0000-0000-0000-000000000010",
+        "referral_id": "018b76a0-5cb0-7a32-9b25-018b76a05cb0",
+        "epoch": 1,
+        "actor_roster_id": "a2222222-0000-0000-0000-000000000001",
+        "facility_id": "22222222-2222-2222-2222-222222222222",
+        "channel": "PWA",
+        "proxy": false,
+        "detail": {
+          "outcome": "ADMITTED_STABLE",
+          "reason": null
+        },
+        "secret_hash": null,
+        "client_ts_ms": 1763000002500,
+        "server_ts_us": 1763000002600000
+      },
+      "canonical_jcs": "{\"actor_roster_id\":\"a2222222-0000-0000-0000-000000000001\",\"channel\":\"PWA\",\"client_ts_ms\":1763000002500,\"detail\":{\"outcome\":\"ADMITTED_STABLE\",\"reason\":null},\"epoch\":1,\"event_id\":\"f0000000-0000-0000-0000-000000000010\",\"facility_id\":\"22222222-2222-2222-2222-222222222222\",\"proxy\":false,\"referral_id\":\"018b76a0-5cb0-7a32-9b25-018b76a05cb0\",\"secret_hash\":null,\"seq\":10,\"server_ts_us\":1763000002600000,\"type\":\"CLOSED\"}",
+      "expected_hash": "e4395ad3827563128ed3c3e85ec15cf69648829fe7afabdb93bed4d92f38bf87"
+    }
+  ]
+}

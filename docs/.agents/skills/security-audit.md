@@ -1,7 +1,7 @@
 ---
 name: security-audit
 description: Audit ReferralHandshake (RHP-1) security controls, enrollment tickets, Argon2id per-session PIN lockout, SSE per-event grant revocation, AES-256-GCM envelope encryption and crypto-shredding, separate-OS-user witness signing, DPDP/BSA/TRAI/CERT-In legal posture, and Claims Register compliance.
-owner_lane: Gem 2 (Auditor), Gem 3 (Adversary), Lane A & Lane B Security Enforcement
+owner_lane: Gem 2 (Milestone Validator), Lane A & Lane B Security Enforcement
 tier_scope: T0, T1, T2, T3
 spec_anchors:
   - ReferralHandshake_FINAL_LOCKED_Architecture.md (§1, §8, §9, §10, §11, §18, §19, §20)
@@ -116,7 +116,7 @@ Every slide, UI label, README, API doc, and pitch script must pass this exact fi
 ### DO
 * **DO** audit every request route for Object-Level Authorization (BOLA), verifying that the caller's `session.roster_id` and `facility_id` have an active relationship (`origin_facility_id`, open/accepted `offer`, or `DISPATCHER`) to the target `referral_id` (`T-I6b`).
 * **DO** verify that `REAL_DATA=0` is enforced in `.env` and that no API keys, Exotel credentials, or private signing keys appear in git commits or agent reports.
-* **DO** challenge any audit report where Gem 2 marks a security control `PASS` without raw test output (`T-F7`, `T-F8`, `T-F9`, `T-F10`, `T-F20`).
+* **DO** challenge any audit report where a security control is marked `PASS` without raw test output (`T-F7`, `T-F8`, `T-F9`, `T-F10`, `T-F20`).
 
 ### DO NOT
 * **DO NOT** permit PIN lockout counters to be stored on `roster` or `facility` where an attacker can trigger a facility-wide Denial of Service (`D12` / `F7`).

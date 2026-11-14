@@ -176,12 +176,11 @@ During solution ideation (`ReferralHandshake_v8_LOCKED_Solution.md` §1.3), 13 d
 | **Adoption incentives & who physically holds the receiving device** | **Valid, foundational** | Offers target a rostered **duty role** (`NURSE`, `CMO`, `CONSULTANT`), not an individual; documented `DECLINE` for a missing resource is treated as a valid capacity signal, never penalized (§11). |
 | **"Observations merge freely, but defaults overwrite" inconsistency** | **Valid** | Resolved by making `telemetry` (`GPS`, `OBS`) strictly append-only with `event_id UNIQUE` set-union merging (`ON CONFLICT DO NOTHING`) (§7). |
 
-### 6.2 3-Gem + Antigravity Build Governance Decisions
-1. **Separation of Planning, Auditing, and Red-Teaming:**
-   - **Gem 1 (`CONDUCTOR`):** Owns the build sequence, `STATE LEDGER`, tier cut decisions, and emits atomic `AG-PROMPT` specifications. Never writes product code.
-   - **Gem 2 (`AUDITOR`):** Verifies raw command output, line-by-line spec conformance, lock ordering (`referral > offer > deadline > outbox`), and invariant mechanisms (`I1`–`I16`). Rejects any report lacking raw test output.
-   - **Gem 3 (`ADVERSARY`):** Translates every theoretical attack (races, partitions, clock steps, PIN lockouts, tamper/restore) into a concrete runnable test specification for the next build loop and audits claims discipline.
-2. **Adaptive Loop Routing:**
-   - **FULL Loop (`G1 -> AG -> G2 -> G3 -> G1`):** Mandatory for all `HIGH`-risk modules (`apply_command`, DDL, locks, crypto, poller/relay, auth, SSE grant revocation, `BROKEN_BUILD`, voice ACK) and all Tier Gate steps (`G0`–`G3`).
-   - **FAST Loop (`G1 -> AG -> G2 -> G1`):** Used for `LOW`/`MED`-risk UI styling, seed data, and documentation steps.
-   - **SHORT-CIRCUIT (`G2 -> G1`):** Triggered immediately if a build fails to execute or touches files outside `FILES YOU MAY TOUCH`.
+### 6.2 2-Gem Milestone Validation Workflow Governance Decisions
+1. **2-Gem Milestone Validation Governance:**
+   - **Gem 1 (`CONDUCTOR`):** Owns the build sequence, `STATE LEDGER`, tier cut decisions, and emits atomic `AG-PROMPT` specifications. Fast-advances with Antigravity during sub-steps. Accepts `DECISION PACKET` inputs upon milestone completion. Never writes product code.
+   - **Gem 2 (`MILESTONE VALIDATOR`):** Combined Spec Auditor & Red-Team Adversary role. Validates ONLY when a complete feature or milestone/gate is achieved (or S1 fix). Verifies raw command output, line-by-line spec conformance, lock ordering (`referral -> offer -> deadline -> outbox`), invariant mechanisms (`I1`–`I16`), designs concrete runnable attack tests `A-1..A-k`, and emits the definitive `DECISION PACKET` directly to Gem 1. (Gem 3 is retired).
+2. **Milestone Loop Routing:**
+   - **MILESTONE VALIDATION Loop (`Gem 1 -> Antigravity -> Gem 2 -> Gem 1`):** Mandatory for all complete features and Tier Gates (`G0`–`G3`), or validating S1 fixes (15–20 min).
+   - **SUB-STEP FAST-ADVANCE Loop (`Gem 1 <-> Antigravity`):** Used during iterative sub-steps within a feature (5–10 min).
+   - **SHORT-CIRCUIT (`Gem 2 -> Gem 1`):** Triggered immediately if a build fails to execute, lacks raw test output, or touches forbidden files (~5 min).

@@ -132,7 +132,7 @@ No tier counts as complete until its Gate Prompt outputs raw measured numbers pa
 ## 6. Explicit DO / DO NOT Guardrails
 
 ### DO
-* **DO** write an executable regression test for every Red-Team attack (`A-n`) produced by Gem 3 before marking any fix loop complete.
+* **DO** write an executable regression test for every Red-Team attack (`A-n`) produced by Gem 2 (Milestone Validator) before marking any fix loop complete.
 * **DO** run `monitor/monitor.py` under user ID `1001` connected strictly as `rhp_monitor`.
 * **DO** test all 28 real-world scenarios from Solution v8 §4.8 as deterministic conformance vectors.
 

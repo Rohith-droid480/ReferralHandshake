@@ -16,7 +16,7 @@ Every ambiguity across project artifacts is resolved in this exact order of auth
 2. **Primary Research Findings tagged `[V]`** — Verified quantitative and regulatory facts inside the source documents.
 3. **`ReferralHandshake_v8_LOCKED_Solution.md`** — Authority on D1–D20 defect closures, 28 conformance scenarios, 40-item loophole ledger, and clinical/district operating model.
 4. **`ReferralHandshake_FINAL_LOCKED_Architecture.md`** — Ultimate technical authority on F1–F20 architectural closures, I1–I16 invariants, 24-table PostgreSQL 16 DDL, 10-step `apply_command()` pipeline, timing math, Quint specification (`rhp1.qnt`), independent Python runtime monitor, and T0–T3 build tiers.
-5. **`ReferralHandshake_3Gem_Antigravity_Workflow.md`** — Authority on multi-agent governance (`Gem 1 -> Antigravity -> Gem 2 -> Gem 3 -> Gem 1`), `AGENTS.md`, `STATE LEDGER`, and Lane A / Lane B separation.
+5. **`ReferralHandshake_3Gem_Antigravity_Workflow.md`** — Authority on multi-agent governance (2-Gem Milestone Validation Workflow: `Gem 1 Conductor <-> Antigravity`, routing to `Gem 2 Milestone Validator` upon milestone completion), `AGENTS.md`, `STATE LEDGER`, and Lane A / Lane B separation.
 
 ### 1.2 Status & Evidence Tags
 - **`[V]`**: Verified from primary research or official technical documentation.
@@ -45,10 +45,10 @@ Every ambiguity across project artifacts is resolved in this exact order of auth
 
 ---
 
-## 2. Multi-Agent Build Governance: The 3-Gem + Antigravity Ring
+## 2. Multi-Agent Build Governance: The 2-Gem Milestone Validation Workflow
 
 ### 2.1 Ring Topology & Division of Labor
-To prevent LLM self-grading, hallucinated test passes, and silent spec drift during the 24-hour build, all product code is written by **Google Antigravity** under the supervision of a three-Gem verification ring:
+To eliminate copy-paste overhead during the 24-hour hackathon while preserving 100% of the verification and red-team rigor, all product code is written by **Google Antigravity** under the supervision of a two-Gem Milestone Validation workflow:
 
 ```
                         +----------------------------------------------+
@@ -56,99 +56,97 @@ To prevent LLM self-grading, hallucinated test passes, and silent spec drift dur
                         |      Courier + Final Spec/Cut Authority      |
                         +----------------------------------------------+
 
-  +-----------+  (1) AG-PROMPT   +---------------+  (2) BUILD REPORT +   +-----------+
-  |   GEM 1   |----------------->|  ANTIGRAVITY  |      AUDIT-REQUEST    |   GEM 2   |
-  | CONDUCTOR |                  | (Sole Builder)|---------------------->|  AUDITOR  |
-  +-----------+                  +---------------+                       +-----------+
-        ^                                                                      |
-        |  (4) DECISION PACKET                     (3) RED-TEAM REQUEST        |
-        |      (Attack tests + Fix list +              (Verdict + Defects +    v
-        |       Ledger delta)                           Attack surfaces) +-----------+
-        +----------------------------------------------------------------|   GEM 3   |
-                                                                         | ADVERSARY |
-                                                                         +-----------+
+  +-----------+  (1) AG-PROMPT   +---------------+  (2) ONLY WHEN FEATURE/MILESTONE COMPLETED  +-----------+
+  |   GEM 1   |----------------->|  ANTIGRAVITY  |-------------------------------------------->|   GEM 2   |
+  | CONDUCTOR |                  | (Sole Builder)|   (BUILD REPORT + VALIDATION-REQUEST)       | VALIDATOR |
+  +-----------+                  +---------------+                                             |(Audit+Atk)|
+        ^                               │                                                      +-----------+
+        │                               │ (2a) Sub-step only (feature not yet done):                 │
+        │                               │      FAST-ADVANCE PACKET (skip Gem 2)                      │
+        │                               v                                                            │
+        +───────────────────────────────┴────────────────────────────────────────────────────────────+
+                                         (3) PROMPT FOR GEM 1 (DECISION PACKET)
 ```
 
 | Role | Owns | Input | Output | Strictly Prohibited From |
 |---|---|---|---|---|
-| **Gem 1 — CONDUCTOR** | Build sequence, step scoping, tier gates, scope cuts, `AG-PROMPT` generation, `STATE LEDGER` maintenance | `DECISION PACKET` from Gem 3 (or `SHORT-CIRCUIT` from Gem 2) | Updated `STATE LEDGER` + next `AG-PROMPT` | Writing product code; advancing with open `S1` defects; silently altering the spec. |
-| **Antigravity — BUILDER** | Writing code, migrations, tests, and executing verification commands inside its assigned lane branch | `AG-PROMPT` from Gem 1 + repo `AGENTS.md` | Git commit/tag + `BUILD REPORT` + `AUDIT-REQUEST` | Touching files outside `FILES YOU MAY TOUCH`; claiming tests pass without raw output; editing `/spec`. |
-| **Gem 2 — AUDITOR** | Line-by-line spec conformance, invariant mechanism check, lock-order review, test quality verification | `BUILD REPORT` + `AUDIT-REQUEST` + raw diffs/code | Audit table + `RED-TEAM REQUEST` (or `REJECT` short-circuit) | Writing code or fixes; planning next steps; approving anything without raw command output (`UNVERIFIED`). |
-| **Gem 3 — ADVERSARY** | Concurrency/chaos/security red-teaming, challenging Gem 2's assumptions, claims linting, runnable attack test specs | `RED-TEAM REQUEST` from Gem 2 + HIGH-risk code | `DECISION PACKET` (`ADVANCE`, `FIX-THEN-ADVANCE`, `REDO`, `SPEC-QUESTION`) | Writing production code; changing scope; claiming `BREAKS` without an exact failure mechanism + runnable test. |
+| **Gem 1 — CONDUCTOR (Unchanged)** | Build sequence, step scoping, tier gates, scope cuts, `AG-PROMPT` generation, `STATE LEDGER` maintenance | `DECISION PACKET` from Gem 2 (or `FAST-ADVANCE PACKET` for sub-steps) | Updated `STATE LEDGER` + next `AG-PROMPT` | Writing product code; advancing with open `S1` defects; silently altering the spec. |
+| **Antigravity — BUILDER** | Writing code, migrations, tests, and executing verification commands inside its assigned lane branch; explicitly routing user via mandatory banners | `AG-PROMPT` from Gem 1 + repo `AGENTS.md` | Git commit/tag + `BUILD REPORT` + routing banner (to Gem 2 on milestone completion, or Gem 1 on sub-step) | Touching files outside `FILES YOU MAY TOUCH`; claiming tests pass without raw output; routing to Gem 2 before milestone completion. |
+| **Gem 2 — MILESTONE VALIDATOR (Merged Auditor + Adversary)** | Invoked **ONLY on completed features or milestones/gates**. Performs line-by-line spec conformance auditing, invariant sweeps (`I1–I16`), lock-order checks, high-impact red-team attacks (`A-n`), and claims integrity validation | `BUILD REPORT + VALIDATION-REQUEST` from Antigravity (**milestones only**) | Milestone Validation Audit + copy-pasteable `DECISION PACKET` prompt for Gem 1 | Writing code or fixes; validating half-built micro-steps; approving without raw test output. (Gem 3 is retired). |
 
-### 2.2 Loop Selection & Time Budgets
-Gem 1 selects the loop mode and stamps it in the `AG-PROMPT` header:
-1. **`FULL` Loop (`G1 -> AG -> G2 -> G3 -> G1`, target $20\text{–}25\text{ min}$):** Mandatory for all `HIGH` risk steps, all Tier Gate steps (`G0`, `G1`, `G2`, `G3`), and any `S1` blocker fix.
-   - *HIGH-risk surfaces:* `apply_command()`, lock order / triggers, PostgreSQL DDL, idempotency, hash chain / witness / crypto, poller / outbox relay, PIN / session / enrollment auth, SSE per-event grant filtering, `BROKEN_BUILD` / `REAL_DATA` guards, Exotel voice ACK path.
-2. **`FAST` Loop (`G1 -> AG -> G2 -> G1`, target $\approx 12\text{ min}$):** Permitted only for `LOW`/`MED` risk steps (UI styling, synthetic seed data, static copy, documentation) or `S2`/`S3` non-blocker fixes.
-3. **`SHORT-CIRCUIT` (`G2 -> G1` directly, target $\approx 5\text{ min}$):** Triggered automatically whenever Gem 2 returns `VERDICT: REJECT` (code fails to run, raw test output missing, or forbidden files modified).
+### 2.2 Loop Selection & Antigravity Mandatory Banners
+Gem 1 selects the feature/milestone scope, and Antigravity enforces the mandatory routing banner at the end of every run:
+
+1. **Milestone Validation (`G1 -> AG -> G2 -> G1`, target $10\text{–}14\text{ min}$):**
+   - Used **ONLY when a complete Feature or Milestone/Gate (`P1–P6`, `E0–E8`, `G0–G3`) is completed**, or when verifying an S1 fix.
+   - *Antigravity mandatory banner:*
+     `🛑 FEATURE / MILESTONE COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!`
+2. **Sub-Step Fast-Advance (`G1 -> AG -> G1`):**
+   - Used when a sub-step/task is completed but the full feature/milestone is NOT yet finished, or for pure docs/config/seed tweaks. Skips Gem 2.
+   - *Antigravity mandatory banner:*
+     `🟢 SUB-STEP COMPLETE (FEATURE / MILESTONE NOT YET FINISHED) — DO NOT GO TO GEM 2 YET. Paste the FAST-ADVANCE PACKET below directly into Gem 1.`
+3. **Reject Short-Circuit (`G2 -> G1`):**
+   - Triggered automatically whenever Gem 2 returns `VERDICT: REJECT` (code fails to run, raw test output missing, or forbidden files modified). Gem 2 outputs an immediate REDO `DECISION PACKET` for Gem 1.
 
 ### 2.3 Two Parallel Lanes & Common-Mode Isolation (F17)
-- **Lane A (Person A / T1 — Protocol, Backend & Formal Proof):** Runs chat threads `G1-A`, `G2-A`, `G3-A` and Antigravity workspace branch `lane-a`. Owns `db/`, `spec/`, `api/`, `witness/`, Quint model (`rhp1.qnt`), and concurrency/mutation test suites.
-- **Lane B (Person B / T2 — Clients, Reach, Independent Monitor & Demo Ops):** Runs chat threads `G1-B`, `G2-B`, `G3-B` and two separate Antigravity workspaces:
+- **Lane A (Person A / T1 — Protocol, Backend & Formal Proof):** Runs chat threads `G1-A`, `G2-A` and Antigravity workspace branch `lane-a`. Owns `db/`, `spec/`, `api/`, `witness/`, Quint model (`rhp1.qnt`), and concurrency/mutation test suites.
+- **Lane B (Person B / T2 — Clients, Reach, Independent Monitor & Demo Ops):** Runs chat threads `G1-B`, `G2-B` and two separate Antigravity workspaces:
   - `lane-b-monitor`: Isolated workspace for `monitor/` (Person B). **Must never have access to `api/` server source code**; reads only the PostgreSQL schema (§7), `transitions.yaml`, and Section 3 invariant prose.
   - `lane-b-clients`: Workspace for `pwa/`, Exotel voice adapter, paper code utility, and Guarantee Arena UI.
+- Gem 3 chat threads (`G3-A`, `G3-B`) are retired.
 
 ---
 
 ## 3. Copy-Paste Agent Configuration & Packet Templates
 
-### 3.1 Knowledge Base Upload (All 3 Gems)
-Before starting Phase P or Phase E, upload these exact four files into the Knowledge drawer of **Gem 1**, **Gem 2**, and **Gem 3**:
+### 3.1 Knowledge Base Upload (Both Gems)
+Before starting Phase P or Phase E, upload these exact authoritative files into the Knowledge drawer of **Gem 1** and **Gem 2**:
 1. `ReferralHandshake_LOCKED_Problem_Statement_v7.md`
 2. `ReferralHandshake_v8_LOCKED_Solution.md`
 3. `ReferralHandshake_FINAL_LOCKED_Architecture.md`
-4. `AGENTS.md` (copied from Section 3.3 below)
+4. `ReferralHandshake_3Gem_Antigravity_Workflow.md` (updated to 2-Gem Milestone Workflow)
+5. `AGENTS.md` and `GEMINI.md`
+6. `Master Verification & Test Plan.md`
 
 ### 3.2 Gem System Instructions (Copy-Paste Verbatim)
 
-#### Gem 1 — CONDUCTOR System Instructions
+#### Gem 1 — CONDUCTOR System Instructions (Unchanged)
 ```text
 You are CONDUCTOR for ReferralHandshake (team MAHA YODHAS, Colossus 3.0, 24-hour build, 2 students). Knowledge files are the LOCKED spec. Precedence: Problem v7 > Solution v8 > Architecture FINAL. Never contradict them. If something is not in them, say "NOT IN SPEC" and ask; never guess.
 
 JOB: plan the build, write prompts for Google Antigravity (the only builder), keep the STATE LEDGER, decide advance/fix/cut. You NEVER write product code.
 
-EVERY REPLY = (1) the updated STATE LEDGER, (2) one AG-PROMPT, (3) one line telling the user where to paste the result (Antigravity -> Gem 2).
+EVERY REPLY = (1) the updated STATE LEDGER, (2) one AG-PROMPT, (3) one line telling the user where to paste the result (Antigravity -> Gem 2 on milestone completion, or direct to Gem 1 on sub-step).
 
-AG-PROMPT must contain: header (STEP id, LANE A/B, LOOP FULL/FAST, RISK, loop count n), GOAL (1 sentence), SPEC ANCHORS (exact section numbers, invariant ids I1-I16, test ids T-xx), INPUT STATE (branch, last good commit), TASKS (numbered, atomic), FILES MAY TOUCH, FILES MUST NOT TOUCH, TESTS TO WRITE+RUN, MEASURABLE ACCEPTANCE, STOP CONDITIONS (ambiguity or failing test = stop and report, do not improvise), and the REQUIRED OUTPUT: a BUILD REPORT with raw command output pasted, then an AUDIT-REQUEST block for Gem 2.
+AG-PROMPT must contain: header (STEP id, LANE A/B, LOOP FULL/FAST, RISK, loop count n), GOAL (1 sentence), SPEC ANCHORS (exact section numbers, invariant ids I1-I16, test ids T-xx), INPUT STATE (branch, last good commit), TASKS (numbered, atomic), FILES MAY TOUCH, FILES MUST NOT TOUCH, TESTS TO WRITE+RUN, MEASURABLE ACCEPTANCE, STOP CONDITIONS (ambiguity or failing test = stop and report, do not improvise), and the REQUIRED OUTPUT: a BUILD REPORT with raw command output pasted, then the appropriate routing block.
 
-INPUT YOU RECEIVE: a DECISION PACKET from Gem 3. Rules: advance only if zero open S1 defects and every MUST-FIX is closed with evidence. Turn every Gem 3 ATTACK into a test task in the next AG-PROMPT. Max 2 fix loops per step; on the 3rd, cut scope by tier order (T3, T2, T1; T0 never) or raise a SPEC-QUESTION to the user. Spec changes only via a SPEC-DEVIATION the user approves. Respect pre-event vs at-event work and the code freeze at H22. Keep real data out (REAL_DATA=0), never ask for secrets/keys in chat.
+INPUT YOU RECEIVE: a DECISION PACKET from Gem 2 (after milestone completion) or a FAST-ADVANCE PACKET from Antigravity. Rules: advance only if zero open S1 defects and every MUST-FIX is closed with evidence. Turn every Gem 2 ATTACK into a test task in the next AG-PROMPT. Max 2 fix loops per step; on the 3rd, cut scope by tier order (T3, T2, T1; T0 never) or raise a SPEC-QUESTION to the user. Spec changes only via a SPEC-DEVIATION the user approves. Respect pre-event vs at-event work and the code freeze at H22. Keep real data out (REAL_DATA=0), never ask for secrets/keys in chat.
 
 Use the step catalogue in the user's WORKFLOW file. Be terse. No praise.
 ```
 
-#### Gem 2 — AUDITOR System Instructions
+#### Gem 2 — MILESTONE VALIDATOR System Instructions (Merged Auditor + Adversary)
 ```text
-You are AUDITOR for ReferralHandshake. Knowledge files are the LOCKED spec (Problem v7 > Solution v8 > Architecture FINAL). You audit ONLY what is pasted/attached; anything not shown to you is UNVERIFIED, never assumed OK. You NEVER write code or fixes and never plan next steps.
+You are GEM 2 — MILESTONE VALIDATOR (Combined Spec Auditor & Red-Team Adversary) for ReferralHandshake (Team MAHA YODHAS, Colossus 3.0, 24-hour build, 2 students). Knowledge files are the LOCKED spec (Problem v7 > Solution v8 > Architecture FINAL). You audit and attack ONLY what is pasted/attached; anything not shown to you is UNVERIFIED, never assumed OK. You NEVER write product code or fixes.
 
-INPUT: a BUILD REPORT + AUDIT-REQUEST from Antigravity (with the AG-PROMPT's spec anchors).
+WHEN INVOKED: You are used ONLY when a feature or milestone/gate is completed. You perform both Spec Conformance Auditing and Red-Team Adversarial Validation in a single pass, and output a ready-to-paste DECISION PACKET prompt for Gem 1 (Conductor).
+
+INPUT: a BUILD REPORT + VALIDATION-REQUEST (or AUDIT-REQUEST) from Antigravity covering a completed feature or milestone.
 
 DO, in order:
-1. EVIDENCE CHECK: raw test output present? commands shown? any "passes" with no output = FAIL. List what you could not verify.
-2. SPEC CONFORMANCE: for every anchor in the AG-PROMPT, a row: anchor | requirement (quote or exact section) | what code does (file:line) | MATCH / PARTIAL / MISSING / DEVIATES.
-3. INVARIANT SWEEP: for every invariant I1-I16 the step touches, name the enforcement mechanism in the code (index, trigger, lock, check) or flag it absent.
-4. CODE REVIEW: lock order (referral > offer > deadline > outbox), transaction boundaries, idempotency position, error paths, hard-coded secrets/real data, banned tech (blockchain, Kafka, Redis, Kubernetes, WhatsApp, on-device LLM, CRDT for authoritative state), scope creep beyond FILES MAY TOUCH.
-5. TEST QUALITY: do the tests actually fail when the invariant is broken? Name any test that cannot fail.
-6. DEFECT LIST: id D-n, severity S1 blocker (breaks an invariant or demo) / S2 major / S3 minor / S4 note, spec reference, expected behavior, evidence.
+1. EVIDENCE CHECK: raw test output present? commands shown? any "passes" with no output = FAIL. List what is UNVERIFIED.
+2. SPEC CONFORMANCE: for every anchor in the AG-PROMPT, a row: anchor | requirement | what code does (file:line) | MATCH / PARTIAL / MISSING / DEVIATES.
+3. INVARIANT SWEEP: for every invariant I1-I16 the feature/milestone touches, name the enforcement mechanism in the code (index, trigger, lock, check) or flag it ABSENT.
+4. CODE & ARCHITECTURE REVIEW: lock order (referral > offer > deadline > outbox), apply_command() single write path, transaction boundaries, idempotency position, error paths, REAL_DATA=0, no hard-coded secrets, no banned tech (blockchain, Kafka, Redis, Kubernetes, WhatsApp, on-device LLM, CRDT for authoritative state), Lane B monitor independence (F17: never imports server code), test non-vacuity.
+5. TARGETED RED-TEAM & CLAIMS INTEGRITY:
+   - Identify the top 3-5 high-impact attack scenarios for this milestone (or FULL sweep at Gates G0-G3): concurrency/races (race200, double timeout, outbox redelivery), crash mid-tx, partition/replay, clock steps, stale/offline commands, PIN/session/SSE authz abuse, PHI leaks, tamper/broken-build isolation.
+   - Format each attack: A-n | scenario | targets I#/§ | expected per spec | BREAKS / HOLDS / UNKNOWN + exact mechanism | runnable test spec (inputs, steps, pass condition).
+   - Claims & Demo Integrity: flag any simulated/pre-computed metric or violation of "every number shown live is measured live".
+6. DEFECT LIST: id D-n, severity S1 blocker (breaks invariant or demo) / S2 major / S3 minor / S4 note, spec reference, expected behavior, evidence required to close.
 
-VERDICT: PASS / PASS-WITH-NOTES / FAIL / REJECT (REJECT = does not run or wrong scope; tell the user to SHORT-CIRCUIT back to Gem 1).
-
-OUTPUT: the audit, then a RED-TEAM REQUEST block for Gem 3 containing: step id, loop type, verdict, defect list, UNVERIFIED list, the 5 most dangerous attack surfaces you see, and the ledger line. Terse and exact. Never soften a defect.
-```
-
-#### Gem 3 — ADVERSARY System Instructions
-```text
-You are ADVERSARY for ReferralHandshake. Knowledge files are the LOCKED spec. You cannot run code; you reason from the spec and the pasted code, and you turn every attack into a RUNNABLE TEST for Antigravity. You NEVER fix code or decide scope.
-
-INPUT: a RED-TEAM REQUEST from Gem 2 (verdict, defects, unverified list, attack surfaces).
-
-DO:
-1. ATTACK. For each attack: id A-n | scenario | which invariant/section it targets | expected behavior per spec | prediction BREAKS / HOLDS / UNKNOWN with the exact mechanism | a runnable test spec (inputs, steps, pass condition). Cover as relevant: concurrency/races (200-way accept, double timeout fire, outbox redelivery), crash/restart mid-transaction, network partition and replay, clock steps, stale/offline commands, idempotency edge cases, auth/PIN/session abuse, privacy leaks (PHI in logs/push/SSE), tamper and restore, broken-build isolation from real data.
-2. CHALLENGE THE AUDITOR: what did Gem 2 miss, over-trust, or mark PASS without evidence? Name it.
-3. CLAIMS + DEMO INTEGRITY: any claim, number or UI element that could be shown as real but is simulated or pre-computed? Anything breaking "every number shown live is measured live", or implying mortality / time-saved impact? Flag against the Claims Register.
-4. FULL vs QUICK: at gates run FULL attack (all categories). Otherwise QUICK (top 5 attacks for this step).
-
-OUTPUT = DECISION PACKET for Gem 1: verdict ADVANCE / FIX-THEN-ADVANCE / REDO / SPEC-QUESTION; merged fix list tagged MUST-FIX / SHOULD-FIX / LOG (each with severity S1-S4, spec reference, and the evidence that would close it); the attack tests to implement; any approved-risk candidates; ledger delta. Never report BREAKS without a mechanism. No praise.
+OUTPUT:
+Part A: Concise Milestone Validation Audit (Steps 1-6).
+Part B: A single copy-pasteable block titled "=== PROMPT FOR GEM 1 (COPY AND PASTE THIS ENTIRE BLOCK INTO GEM 1) ===" containing the exact "=== DECISION PACKET ===" (VERDICT: ADVANCE / FIX-THEN-ADVANCE / REDO / SPEC-QUESTION, ATTACKS, AUDITOR SELF-CHECK, CLAIMS/DEMO INTEGRITY, FIX LIST [MUST-FIX S1 / SHOULD-FIX S2-S3 / LOG S4], RISK-ACCEPT CANDIDATES, LEDGER DELTA, and explicit instructions for Gem 1's next AG-PROMPT).
 ```
 
 ### 3.3 Repository `AGENTS.md` & `CODEOWNERS`
@@ -165,6 +163,7 @@ OUTPUT = DECISION PACKET for Gem 1: verdict ADVANCE / FIX-THEN-ADVANCE / REDO / 
 7. If you deviate from the spec in any way, list it under DEVIATIONS in the report. Silent deviation is a failure.
 8. Contract writes go only through `apply_command()` following global lock order `referral -> offer (ORDER BY id) -> deadline (ORDER BY id) -> outbox`; no other path writes referral/offer/deadline/event state.
 9. The Python monitor (`monitor/`, Lane B) must NOT import or read server code (`api/`); it reads only the DB event log (`rhp_monitor` read-only role) and §3 prose.
+10. 2-Gem Milestone Routing Discipline: Explicitly instruct the user to go to Gem 2 (Milestone Validator) ONLY when a complete feature or milestone/gate is finished. For in-progress sub-steps, output the FAST-ADVANCE block to return directly to Gem 1.
 
 ## BUILD REPORT Format (End Every Task With This Exact Order)
 STEP / LOOP / commit hash
@@ -177,7 +176,7 @@ DEVIATIONS FROM SPEC (or "none")
 ASSUMPTIONS
 OPEN QUESTIONS
 SELF-RATED RISK + the 3 things most likely to be wrong
-Then output the `=== AUDIT-REQUEST FOR GEM 2 ===` block.
+Then output the mandatory routing banner (Case A for sub-step, Case B for completed feature/milestone).
 ```
 
 #### `.github/CODEOWNERS` (Enforces F17 & Reward-Hacking Prevention)
@@ -225,37 +224,63 @@ STOP IF: spec is ambiguous, a test cannot pass, or you need to touch a forbidden
 LEDGER: <one-line ledger summary>
 WHEN DONE, OUTPUT IN THIS ORDER:
  (1) BUILD REPORT in the format from AGENTS.md (raw outputs pasted; full code of HIGH-risk files),
- (2) a block that starts with the line "=== AUDIT-REQUEST FOR GEM 2 ===" containing: step, loop, spec anchors, acceptance list, the BUILD REPORT, and the prompt "Audit this against the anchors."
+ (2) Mandatory routing banner (Case A for sub-step, Case B for completed feature/milestone).
 ```
 
-#### Packet 2: `RED-TEAM REQUEST` (Gem 2 $\to$ Gem 3)
+#### Packet 2: Antigravity Routing Output Banners & Packets
+
+##### Case A — Sub-Step Only (Feature/Milestone Still in Progress)
 ```text
-=== RED-TEAM REQUEST | STEP <id> | LOOP <FULL|FAST> #<n> ===
-VERDICT: PASS | PASS-WITH-NOTES | FAIL | REJECT
-EVIDENCE CHECK: <ok | exact missing raw outputs>
-CONFORMANCE SUMMARY: <n MATCH / n PARTIAL / n MISSING / n DEVIATES> + full rows for any non-MATCH
-INVARIANTS TOUCHED: <I# -> exact enforcement mechanism in file:line | ABSENT>
-DEFECTS:
- D-1 [S1|S2|S3|S4] <title> | spec <§/I#> | evidence <file:line> | expected <behavior>
-UNVERIFIED (not shown in report): <list>
-TOP 5 ATTACK SURFACES:
- 1. ...
- 2. ...
- 3. ...
- 4. ...
- 5. ...
-ATTACH: full code/diff of HIGH-risk files from the report
-LEDGER: <one-line ledger summary>
+🟢 SUB-STEP COMPLETE (FEATURE / MILESTONE NOT YET FINISHED) — DO NOT GO TO GEM 2 YET!
+Skip Gem 2 and paste the block below directly into Gem 1 (Conductor) to continue building.
+
+=== DECISION PACKET (SUB-STEP FAST-ADVANCE FOR GEM 1) | STEP <id> | LOOP #<n> ===
+VERDICT: ADVANCE
+ATTACKS: none (sub-step; full milestone validation deferred to Gem 2 upon feature/milestone completion)
+AUDITOR CHALLENGE: none
+CLAIMS/DEMO INTEGRITY: clean
+FIX LIST:
+ MUST-FIX   [S1] none
+ SHOULD-FIX [S2/S3] none
+ LOG        [S4] Sub-step completed with raw test output verified locally.
+LEDGER DELTA: Advance sub-step <id> (tag <step-ID-loopN>) toward milestone completion.
 ```
 
-#### Packet 3: `DECISION PACKET` (Gem 3 $\to$ Gem 1)
+##### Case B — Feature or Milestone IS Completed (Route to Gem 2)
 ```text
-=== DECISION PACKET | STEP <id> | LOOP #<n> | MODE <FULL|QUICK> ===
+🛑 FEATURE / MILESTONE COMPLETED — GO TO GEM 2 (VALIDATION GEM) NOW!
+Copy and paste the entire block below into Gem 2 for Milestone Validation.
+
+=== VALIDATION-REQUEST FOR GEM 2 (AUDIT-REQUEST FOR GEM 2) ===
+STEP / MILESTONE: <id> | LANE: <A|B> | LOOP: #<n> | COMMIT/TAG: <hash / step-ID-loopN>
+SPEC ANCHORS: <§ sections, I# invariants, F# closures, T-# tests>
+ACCEPTANCE CRITERIA: <copied from AG-PROMPT>
+FILES CHANGED (git diff --stat):
+<pasted output>
+HIGH-RISK CODE / DIFFS:
+<full text or diff of HIGH-risk files>
+COMMANDS RUN + RAW OUTPUT:
+<exact commands + raw terminal output>
+TESTS SUMMARY: <name | pass/fail | measured numbers>
+DEVIATIONS / ASSUMPTIONS / OPEN QUESTIONS: <none or details>
+SELF-RATED RISK + TOP 3 FAILURE SURFACES: <...>
+LEDGER: <one-line ledger>
+QUESTION FOR GEM 2: Validate this completed feature/milestone against all spec anchors and invariants, run the targeted red-team & claims integrity check, and output the DECISION PACKET prompt for Gem 1.
+```
+
+#### Packet 3: `DECISION PACKET` (Gem 2 $\to$ Gem 1)
+```text
+=== PROMPT FOR GEM 1 (COPY AND PASTE THIS ENTIRE BLOCK INTO GEM 1) ===
+Milestone/Feature Validation completed by Gem 2. Process this DECISION PACKET, update the STATE LEDGER, and generate the next AG-PROMPT.
+
+=== DECISION PACKET | STEP/MILESTONE <id> | LOOP #<n> | MODE <MILESTONE-VALIDATION | GATE-FULL> ===
 VERDICT: ADVANCE | FIX-THEN-ADVANCE | REDO | SPEC-QUESTION
+EVIDENCE & CONFORMANCE SUMMARY: <n MATCH / n PARTIAL / n MISSING / n DEVIATES>
+INVARIANTS VERIFIED: <I# -> mechanism verified | ABSENT>
 ATTACKS:
  A-1 | <scenario> | targets <I#/§> | spec says <...> | BREAKS/HOLDS/UNKNOWN because <exact mechanism>
      TEST SPEC: inputs <...>; steps <...>; pass condition <...>
-AUDITOR CHALLENGE: <what Gem 2 missed, over-trusted, or marked PASS without raw evidence>
+AUDITOR CHALLENGE / SELF-CHECK: <what remained unverified or edge cases to watch>
 CLAIMS/DEMO INTEGRITY: <flags against §19 Claims Register or "clean">
 FIX LIST:
  MUST-FIX   [S1] <issue> | spec <§> | closes when <measurable test evidence>
@@ -263,6 +288,7 @@ FIX LIST:
  LOG        [S4] <issue>
 RISK-ACCEPT CANDIDATES: <items for human approval with stated technical bound>
 LEDGER DELTA: <updates to apply to STATE LEDGER>
+NEXT INSTRUCTION FOR GEM 1: <Emit AG-PROMPT for next feature/milestone or S1 targeted fix>
 ```
 
 ### 3.5 Kickoff Messages (Start Here)
@@ -578,7 +604,7 @@ If the PostgreSQL primary must be restored from a backup or WAL archive point pr
 | **7** | Clinician rubber-stamping of AI drafts (`A1`) | `BOUNDED` | Person B (T2) | Cognitive Forcing Function (`423 ANCHOR_REQUIRED`), manual re-entry, AI off by default | 20-slip seeded-error usability gate ($\le 5\%$ rubber-stamp, $\le 1\%$ omission) |
 | **8** | Android OEM battery-savers killing GPS (`F4-I`) | `BOUNDED` | Person B (T2) | Foreground location service, $30\text{ s}$ staleness indicator, manual update button | 2-hour screen-off soak test on target OEM handset |
 | **9** | Re-identification risk at low-volume clinics (`P1`) | `BOUNDED` | Person A (T1) | Closed `event.detail` enums, $4\text{-hour}$ timestamp bucketing, $k \ge 5$ cell suppression | Export privacy audit + fuzz test (`T-F9`) |
-| **10** | AI-generated concurrency defects during build | `BOUNDED` | Both (T1 & T2) | Frozen spec, `CODEOWNERS`, 3-Gem ring, 6 mutation tests (`M1–M6`), independent monitor | Gate `G0` raw output (`race200` + `M1–M6` green) |
+| **10** | AI-generated concurrency defects during build | `BOUNDED` | Both (T1 & T2) | Frozen spec, `CODEOWNERS`, 2-Gem Milestone Validation loop, 6 mutation tests (`M1–M6`), independent monitor | Gate `G0` raw output (`race200` + `M1–M6` green) |
 
 ### 10.4 Hard Judge Questions — Exact Prepared Responses
 1. **"What if every hospital in the district is full? Your software doesn't create ICU beds or obstetricians."**
