@@ -370,3 +370,18 @@ async def stream_events(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+# -----------------------------------------------------------------------------
+# Static Production Bundle Mount (Phase 4 Demo Hardening)
+# -----------------------------------------------------------------------------
+_pwa_dist = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "pwa",
+    "dist",
+)
+if os.path.isdir(_pwa_dist):
+    from fastapi.staticfiles import StaticFiles
+
+    app.mount("/app", StaticFiles(directory=_pwa_dist, html=True), name="pwa_static")
+
