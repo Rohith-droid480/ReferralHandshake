@@ -338,6 +338,21 @@ def api_accept_referral(
         if "candidate_pin" not in cmd_payload:
             cmd_payload["candidate_pin"] = "1234"
 
+        cur_ref = conn.execute("SELECT hs_state FROM referral WHERE id = %s;", (str(referral_id),))
+        ref_row = cur_ref.fetchone() if cur_ref else None
+        ref_hs = ref_row[0] if ref_row else None
+
+        # If referral is escalated or caller is dispatcher with no open offer, delegate to dispatcher-assign
+        if (sess.role_slot == "DISPATCHER" or ref_hs == "ESCALATED_TO_DISPATCHER") and "offer_id" not in cmd_payload:
+            target_fac = cmd_payload.get("target_facility_id") or "22222222-2222-2222-2222-222222222222"
+            return api_dispatcher_assign(
+                referral_id=referral_id,
+                body={"target_facility_id": str(target_fac), "reason": cmd_payload.get("reason", "PHONE_CONFIRMED_BY_CONSULTANT")},
+                idempotency_key=idem,
+                authorization=authorization,
+                rhp_session=rhp_session,
+            )
+
         if "offer_id" not in cmd_payload:
             cur = conn.execute(
                 "SELECT id FROM offer WHERE referral_id = %s AND status IN ('OPEN', 'ACKED', 'SOFT_OPEN') ORDER BY step LIMIT 1;",
@@ -346,6 +361,14 @@ def api_accept_referral(
             row = cur.fetchone() if cur else None
             if row:
                 cmd_payload["offer_id"] = str(row[0])
+            else:
+                cur_any = conn.execute(
+                    "SELECT id FROM offer WHERE referral_id = %s ORDER BY step DESC, created_at DESC LIMIT 1;",
+                    (str(referral_id),),
+                )
+                row_any = cur_any.fetchone() if cur_any else None
+                if row_any:
+                    cmd_payload["offer_id"] = str(row_any[0])
 
         code, resp = apply_command(conn, cmd_payload, session_token=sess, idem_key=idem)
         if code >= 400:
@@ -394,6 +417,23 @@ def api_decline_referral(
             cmd_payload["candidate_pin"] = cmd_payload.pop("pin")
         if "candidate_pin" not in cmd_payload:
             cmd_payload["candidate_pin"] = "1234"
+
+        if "offer_id" not in cmd_payload:
+            cur = conn.execute(
+                "SELECT id FROM offer WHERE referral_id = %s AND status IN ('OPEN', 'ACKED', 'SOFT_OPEN', 'COUNTERED') ORDER BY step LIMIT 1;",
+                (str(referral_id),),
+            )
+            row = cur.fetchone() if cur else None
+            if row:
+                cmd_payload["offer_id"] = str(row[0])
+            else:
+                cur_any = conn.execute(
+                    "SELECT id FROM offer WHERE referral_id = %s ORDER BY step DESC, created_at DESC LIMIT 1;",
+                    (str(referral_id),),
+                )
+                row_any = cur_any.fetchone() if cur_any else None
+                if row_any:
+                    cmd_payload["offer_id"] = str(row_any[0])
 
         code, resp = apply_command(conn, cmd_payload, session_token=sess, idem_key=idem)
         if code >= 400:

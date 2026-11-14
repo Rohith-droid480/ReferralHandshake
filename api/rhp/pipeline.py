@@ -215,10 +215,18 @@ def apply_command(
     actor_id = session.roster_id
 
     # Parse and validate command payload with extra='forbid'
-    if isinstance(cmd_or_dict, BaseCommand):
-        cmd = cmd_or_dict
-    else:
-        cmd = parse_command(cmd_or_dict)
+    try:
+        if isinstance(cmd_or_dict, BaseCommand):
+            cmd = cmd_or_dict
+        else:
+            cmd = parse_command(cmd_or_dict)
+    except TransitionReject as tre:
+        return tre.http_status, {
+            "status": "REJECTED",
+            "reason": tre.reason_code,
+            "message": tre.message,
+            "command": cmd_or_dict.get("type", "UNKNOWN") if isinstance(cmd_or_dict, dict) else "UNKNOWN",
+        }
     cmd_type = cmd.type
 
     # Canonical request hash via RFC 8785 JCS canonical bytes

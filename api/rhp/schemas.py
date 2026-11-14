@@ -120,6 +120,7 @@ class BaseCommand(BaseModel):
     channel: Literal["PWA", "ANDROID", "VOICE", "SMS_LINK", "PAPER", "DISPATCHER_PROXY", "SYSTEM"] = "PWA"
     proxy: bool = False
     proxy_for: Optional[UUID] = None
+    reason: Optional[str] = None
     client_ts_ms: Optional[int] = None
     candidate_pin: Optional[str] = None
     secret_hash: Optional[Union[bytes, str]] = None
@@ -167,7 +168,7 @@ class ResourceConfirmCmd(BaseCommand):
 class AcceptCmd(BaseCommand):
     type: Literal["ACCEPT"] = "ACCEPT"
     referral_id: UUID
-    offer_id: UUID
+    offer_id: Optional[UUID] = None
 
     @property
     def needs_pin(self) -> bool:
@@ -195,8 +196,8 @@ class ConfirmCounterCmd(BaseCommand):
 class DeclineCmd(BaseCommand):
     type: Literal["DECLINE"] = "DECLINE"
     referral_id: UUID
-    offer_id: UUID
-    reason: str
+    offer_id: Optional[UUID] = None
+    reason: Optional[str] = None
 
     @property
     def needs_pin(self) -> bool:

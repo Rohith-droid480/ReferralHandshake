@@ -160,15 +160,14 @@ export const DispatcherConsole: React.FC = () => {
       proxy_for: proxyForRosterId,
       reason: proxyReason,
       pin,
+      target_facility_id: targetFacilityId,
     };
-
-    if (proxyAction === 'DISPATCHER_ASSIGN') {
-      body.target_facility_id = targetFacilityId;
-    }
 
     let endpoint = `/v1/referrals/${selectedRef.id}/dispatcher-assign`;
     if (proxyAction === 'ACCEPT') {
-      endpoint = `/v1/referrals/${selectedRef.id}/accept`;
+      endpoint = selectedRef.hs_state === 'ESCALATED_TO_DISPATCHER'
+        ? `/v1/referrals/${selectedRef.id}/dispatcher-assign`
+        : `/v1/referrals/${selectedRef.id}/accept`;
     } else if (proxyAction === 'DECLINE') {
       endpoint = `/v1/referrals/${selectedRef.id}/decline`;
     }
