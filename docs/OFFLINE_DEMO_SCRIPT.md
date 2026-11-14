@@ -41,3 +41,4 @@
 - **Visual:** Pure-JS `@noble` browser verifier confirms Ed25519 Merkle checkpoints. Clicking "Inject Tamper" immediately flags `TAMPER DETECTED` in red.
 - **Script:** *"Finally, every state change is hash-chained and signed every 5 seconds. The browser verifier validates the proof with zero trust in the server. If an administrative record is altered in SQL, the browser instantly catches the drift."*
 - **Judge Takeaway:** Invariant I5 (Tamper-evident audit) & Section 63 BSA compliance.
+

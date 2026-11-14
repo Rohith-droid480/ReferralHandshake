@@ -1,4 +1,4 @@
-﻿# =============================================================================
+# =============================================================================
 # ReferralHandshake (Protocol RHP-1) — 1-Command Live Demonstration Launcher
 # Windows PowerShell Launcher
 # =============================================================================
@@ -75,3 +75,4 @@ Write-Host "  * FastAPI Backend Docs : http://localhost:8000/docs" -ForegroundCo
 Write-Host "  * Runtime Monitor UI   : http://localhost:8001/status" -ForegroundColor White
 Write-Host "  * Android EMT APK      : http://localhost:8000/v1/download/apk" -ForegroundColor Green
 Write-Host "=================================================================`n" -ForegroundColor Cyan
+

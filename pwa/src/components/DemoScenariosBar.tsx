@@ -359,3 +359,4 @@ export const DemoScenariosBar: React.FC = () => {
     </div>
   );
 };
+

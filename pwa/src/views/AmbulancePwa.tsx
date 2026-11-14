@@ -65,7 +65,7 @@ export const AmbulancePwa: React.FC = () => {
           setActiveRef((prev) => prev || data[data.length - 1]);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     const unsub = sseClient.subscribe((state) => {
       const list = Object.values(state.referrals);
@@ -443,8 +443,8 @@ export const AmbulancePwa: React.FC = () => {
             <div
               key={wp.name}
               className={`p-2.5 rounded-lg border text-xs transition ${currentLat >= wp.lat - 0.05 && currentLat <= wp.lat + 0.05
-                  ? 'bg-emerald-950/70 border-emerald-500 text-white'
-                  : 'bg-slate-950 border-slate-800 text-slate-400'
+                ? 'bg-emerald-950/70 border-emerald-500 text-white'
+                : 'bg-slate-950 border-slate-800 text-slate-400'
                 }`}
             >
               <span className="text-[9px] font-mono px-1.5 py-0.5 bg-slate-800 text-slate-300 rounded block w-fit mb-1">
@@ -478,8 +478,8 @@ export const AmbulancePwa: React.FC = () => {
             type="button"
             onClick={toggleLiveHighwayDrive}
             className={`py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition ${isDriving
-                ? 'bg-red-600 hover:bg-red-500 text-white animate-pulse'
-                : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+              ? 'bg-red-600 hover:bg-red-500 text-white animate-pulse'
+              : 'bg-emerald-600 hover:bg-emerald-500 text-white'
               }`}
           >
             {isDriving ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}

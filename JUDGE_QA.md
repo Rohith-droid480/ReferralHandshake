@@ -127,3 +127,4 @@
 
 #### Q30: Why should ReferralHandshake win Colossus 3.0?
 `[STRONG]` Most hackathon health projects build superficial chatbot interfaces or dashboard mockups over unverified assumptions. ReferralHandshake built an end-to-end, mathematically bounded, cryptographic protocol backed by 24 PostgreSQL tables, an independent runtime monitor, 255 passing tests, and 8 responsive clinical views. We addressed the single most fatal operational gap in Indian public maternal healthcare—the Referral Carousel—with uncompromising engineering discipline.
+

@@ -49,3 +49,4 @@ echo "  * FastAPI Backend Docs : http://localhost:8000/docs"
 echo "  * Runtime Monitor UI   : http://localhost:8001/status"
 echo "  * Android EMT APK      : http://localhost:8000/v1/download/apk"
 echo "================================================================="
+

@@ -92,3 +92,4 @@
 | **Wi-Fi or Network Drops** | Switch to localhost: `http://localhost:8080/`. The platform runs 100% offline-first. | Show the offline paper slip handover (Scenario S4) to demonstrate offline resilience! |
 | **Browser Verifier reports stale** | Click **"Reset State"** on the Demo Scenarios Bar or run `python scripts/seed_demo_scenarios.py`. | Refer to the pre-rendered offline script at `docs/OFFLINE_DEMO_SCRIPT.md`. |
 | **Screen sharing freezes** | Open `docs/screenshots/` and present the high-resolution step-by-step screenshots. | Follow the 60–90s script in `docs/OFFLINE_DEMO_SCRIPT.md`. |
+
