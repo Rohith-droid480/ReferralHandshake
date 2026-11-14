@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { ModeBanner } from './components/ModeBanner';
 import { DemoRoleSwitcher } from './components/DemoRoleSwitcher';
+import { GuidedDemoBanner } from './components/GuidedDemoBanner';
 import { DemoScenariosBar } from './components/DemoScenariosBar';
 import { ArenaBigScreen } from './views/ArenaBigScreen';
 import { JudgeJoin } from './views/JudgeJoin';
@@ -37,25 +38,31 @@ const NavigationNav: React.FC = () => {
   ];
 
   return (
-    <nav className="bg-slate-900 border-b border-slate-800 px-4 py-2 flex items-center gap-1 overflow-x-auto text-xs">
-      {navItems.map((item) => {
-        const Icon = item.icon;
-        const active = location.pathname === item.path;
-        return (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium whitespace-nowrap transition ${
-              active
-                ? 'bg-indigo-600 text-white shadow'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-            }`}
-          >
-            <Icon className="w-3.5 h-3.5" />
-            {item.label}
-          </Link>
-        );
-      })}
+    <nav className="bg-slate-900 border-b border-slate-800 px-4 py-2 flex items-center justify-between gap-1 overflow-x-auto text-xs">
+      <div className="flex items-center gap-1">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const active = location.pathname === item.path;
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-medium whitespace-nowrap transition ${
+                active
+                  ? 'bg-teal-700 text-white font-bold'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
+      <div className="flex items-center gap-2 pl-4 text-[11px] font-mono text-slate-400 flex-shrink-0">
+        <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
+        <span className="text-teal-300 font-semibold">Live SSE Push</span>
+      </div>
     </nav>
   );
 };
@@ -65,6 +72,7 @@ export const App: React.FC = () => {
     <BrowserRouter>
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
         <ModeBanner />
+        <GuidedDemoBanner />
         <DemoRoleSwitcher />
         <DemoScenariosBar />
         <NavigationNav />
