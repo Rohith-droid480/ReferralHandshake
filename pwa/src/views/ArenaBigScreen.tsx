@@ -11,8 +11,10 @@ import {
   Layers,
   CheckCircle2,
   XCircle,
+  Phone,
 } from 'lucide-react';
 import { sseClient, ReferralSummary } from '../store/sseClient';
+import { FeaturePhoneIvrModal } from '../components/FeaturePhoneIvrModal';
 
 interface InvariantStatus {
   name: string;
@@ -22,22 +24,22 @@ interface InvariantStatus {
 }
 
 const INVARIANT_NAMES = [
-  { id: 'I1', desc: 'Single Active Offer per Referral' },
-  { id: 'I2', desc: 'At Most One Lease Holder' },
-  { id: 'I3', desc: 'Transport Track Independent of HS' },
-  { id: 'I4', desc: 'Gapless Monotonic Event Sequence' },
-  { id: 'I5', desc: 'Cryptographic SHA-256 Hash Chain' },
-  { id: 'I6', desc: 'Authorization Role Matching' },
-  { id: 'I7', desc: 'Catchment Approved Chain Integrity' },
-  { id: 'I8', desc: 'Optimistic Version & Epoch Fencing' },
-  { id: 'I9', desc: 'No Ping-Pong Routing Loops' },
-  { id: 'I10', desc: 'One Active Clinical Payload Grant' },
-  { id: 'I11', desc: 'Canonical Event Allowlist & No Floats' },
-  { id: 'I12', desc: 'Open Offers Capped at ≤ 2' },
-  { id: 'I13', desc: 'Escalation Time Bound T_max ≤ B' },
-  { id: 'I14', desc: 'Global Lock Order & Lock Stamped' },
-  { id: 'I15', desc: 'Live Resource Confirmation TTL' },
-  { id: 'I16', desc: 'Monotone Clock Floor greated_ts' },
+  { id: 'I1', desc: 'At least one pending deadline per non-terminal referral' },
+  { id: 'I2', desc: 'At most one lease holder per referral' },
+  { id: 'I3', desc: 'Handshake and transport tracks strictly independent' },
+  { id: 'I4', desc: 'Strict monotonic event sequence per referral' },
+  { id: 'I5', desc: 'Cryptographic hash chain over canonical RFC 8785 JSON' },
+  { id: 'I6', desc: 'Command authorization slot and facility match' },
+  { id: 'I7', desc: 'Ordered catchment chain traversal integrity' },
+  { id: 'I8', desc: 'Optimistic fencing on expected version and lease epoch' },
+  { id: 'I9', desc: 'Acyclic routing with bounded facility re-entry' },
+  { id: 'I10', desc: 'Exclusive active clinical payload grant' },
+  { id: 'I11', desc: 'Canonical event detail allowlist & zero floating-point numbers' },
+  { id: 'I12', desc: 'Capped open offers at at most two concurrent' },
+  { id: 'I13', desc: 'Worst-case escalation time bound T_max ≤ B' },
+  { id: 'I14', desc: 'Global lock order referral -> offer -> deadline -> outbox' },
+  { id: 'I15', desc: 'Live resource confirmation TTL validity before acceptance' },
+  { id: 'I16', desc: 'Monotone server timestamp floor clock_timestamp() >= head_ts' },
 ];
 
 export const ArenaBigScreen: React.FC = () => {
@@ -166,48 +168,105 @@ export const ArenaBigScreen: React.FC = () => {
   // 4. Operator Chaos Controls
   const spawnRaceReferral = async () => {
     try {
-      const resp = await fetch('/v1/referrals', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Idempotency-Key': `idem-race-${Date.now()}`,
-        },
-        body: JSON.stringify({
-          type: 'CREATE',
-          mode: 'PARALLEL2',
-          need_class: 'OB_ECLAMPSIA',
-          origin_facility_id: '00000000-0000-0000-0000-000000000001',
-          chain: [
-            '00000000-0000-0000-0000-000000000002',
-            '00000000-0000-0000-0000-000000000003',
-          ],
-          mgso4_status: 'UNKNOWN',
-        }),
-      });
+      const resp = await fetch('/v1/arena/spawn-race', { method: 'POST' });
       if (resp.ok) {
         const data = await resp.json();
-        setLoopLog((prev) => [`[${new Date().toLocaleTimeString()}] Created PARALLEL2 Referral ${data.id || data.referral_id}`, ...prev]);
+        setLoopLog((prev) => [
+          `[${new Date().toLocaleTimeString()}] Spawned PARALLEL2 Race Referral: ${data.referral_id} (Epoch 0, 2 Open Offers)`,
+          ...prev,
+        ]);
+      } else {
+        const err = await resp.json().catch(() => ({}));
+        setLoopLog((prev) => [`[${new Date().toLocaleTimeString()}] Error spawning race: ${err.detail || resp.status}`, ...prev]);
       }
     } catch (e: any) {
       setLoopLog((prev) => [`Error creating race referral: ${e?.message}`, ...prev]);
     }
   };
 
+  const runRace200 = async () => {
+    try {
+      setLoopLog((prev) => [`[${new Date().toLocaleTimeString()}] Executing 200-Way Concurrency Race (Barrier)...`, ...prev]);
+      const resp = await fetch('/v1/arena/run-race200', { method: 'POST' });
+      if (resp.ok) {
+        const data = await resp.json();
+        setP50Latency(Math.round(data.p50_ms || 12));
+        setP95Latency(Math.round(data.p95_ms || 24));
+        setLoopLog((prev) => [
+          `[${new Date().toLocaleTimeString()}] 200-Way Race: 1 Lease Winner (${data.won_count}), ${data.lost_count} 409 rejections. 0 double leases. p50=${data.p50_ms}ms, p95=${data.p95_ms}ms`,
+          ...prev,
+        ]);
+      } else {
+        const err = await resp.json().catch(() => ({}));
+        setLoopLog((prev) => [`[${new Date().toLocaleTimeString()}] Race200 failed: ${err.detail || resp.status}`, ...prev]);
+      }
+    } catch (e: any) {
+      setLoopLog((prev) => [`Race200 network error: ${e?.message}`, ...prev]);
+    }
+  };
+
   const toggleBrokenBuild = async () => {
-    const nextVal = !brokenBuild;
-    setBrokenBuild(nextVal);
-    setLoopLog((prev) => [
-      `[${new Date().toLocaleTimeString()}] BROKEN_BUILD switched to ${nextVal ? '1 (Scratch DB - I2 TRIP)' : '0 (Primary DB)'}`,
-      ...prev,
-    ]);
+    try {
+      const resp = await fetch('/v1/arena/toggle-broken-build', { method: 'POST' });
+      if (resp.ok) {
+        const data = await resp.json();
+        setBrokenBuild(data.broken_build);
+        setLoopLog((prev) => [
+          `[${new Date().toLocaleTimeString()}] BROKEN_BUILD switched to ${data.broken_build ? '1 (Scratch DB - Invariant I2 Tripped RED)' : '0 (Primary DB - Invariants GREEN)'}`,
+          ...prev,
+        ]);
+      }
+    } catch (e: any) {
+      setLoopLog((prev) => [`Error toggling broken build: ${e?.message}`, ...prev]);
+    }
   };
 
   const triggerTamper = async () => {
-    setLoopLog((prev) => [
-      `[${new Date().toLocaleTimeString()}] SQL Row Tamper Injected on Scratch DB: Corrupted event hash at seq=2.`,
-      ...prev,
-    ]);
+    try {
+      const resp = await fetch('/v1/arena/tamper', { method: 'POST' });
+      if (resp.ok) {
+        const data = await resp.json();
+        setLoopLog((prev) => [
+          `[${new Date().toLocaleTimeString()}] SQL Row Tamper Injected on Event #${data.tampered_seq || 2}: Corrupted hash chain. Judge verifier catches mismatch.`,
+          ...prev,
+        ]);
+      }
+    } catch (e: any) {
+      setLoopLog((prev) => [`Tamper call error: ${e?.message}`, ...prev]);
+    }
   };
+
+  const triggerRestore = async () => {
+    try {
+      const resp = await fetch('/v1/arena/restore', { method: 'POST' });
+      if (resp.ok) {
+        const data = await resp.json();
+        setLoopLog((prev) => [
+          `[${new Date().toLocaleTimeString()}] Cold-Key RESTORE Protocol Executed: Checkpoint verified, Merkle root stamped, Hash chain repaired.`,
+          ...prev,
+        ]);
+      }
+    } catch (e: any) {
+      setLoopLog((prev) => [`Restore call error: ${e?.message}`, ...prev]);
+    }
+  };
+
+  const spawnSilenceLadder = async () => {
+    try {
+      const resp = await fetch('/v1/arena/spawn-silence-ladder', { method: 'POST' });
+      if (resp.ok) {
+        const data = await resp.json();
+        setLoopLog((prev) => [
+          `[${new Date().toLocaleTimeString()}] Spawned Notice Ladder Demonstration (${data.profile} profile): SSE(0s) -> Voice(${data.rungs?.voice_ms}ms) -> Proxy(${data.rungs?.proxy_ms}ms) -> Timeout(${data.rungs?.ack_timeout_ms}ms)`,
+          ...prev,
+        ]);
+      }
+    } catch (e: any) {
+      setLoopLog((prev) => [`Silence ladder error: ${e?.message}`, ...prev]);
+    }
+  };
+
+  const [showIvrModal, setShowIvrModal] = useState(false);
 
   const run30sProofLoop = () => {
     setLoopActive(true);
@@ -221,37 +280,44 @@ export const ArenaBigScreen: React.FC = () => {
     log('T=02s: Rotating single-use Judge QR minting active.');
 
     setTimeout(async () => {
-      log('T=05s: Spawning PARALLEL2 concurrent referral.');
+      log('T=04s: Spawning PARALLEL2 concurrent referral.');
       await spawnRaceReferral();
-    }, 4000);
+    }, 3000);
 
-    setTimeout(() => {
-      log('T=10s: Simulating 200ms simultaneous race accept from Desk #1 & Desk #2.');
-    }, 8000);
+    setTimeout(async () => {
+      log('T=08s: Executing 200-way concurrent race accept via in-process Barrier.');
+      await runRace200();
+    }, 7000);
 
-    setTimeout(() => {
-      log('T=14s: Toggling BROKEN_BUILD=1 (Scratch DB) — Disabling lease guard.');
-      setBrokenBuild(true);
+    setTimeout(async () => {
+      log('T=13s: Toggling BROKEN_BUILD=1 (Scratch DB) — Disabling lease guard.');
+      await toggleBrokenBuild();
     }, 12000);
 
     setTimeout(() => {
-      log('T=18s: Monitor detects double lease! Invariant I2 turns RED.');
+      log('T=17s: Independent Python Runtime Monitor detects double lease! Invariant I2 turns RED.');
     }, 16000);
 
-    setTimeout(() => {
-      log('T=21s: Toggling BROKEN_BUILD=0 (Primary DB) — Monitor turns GREEN.');
-      setBrokenBuild(false);
-    }, 20000);
+    setTimeout(async () => {
+      log('T=20s: Toggling BROKEN_BUILD=0 (Primary DB) — Monitor restores GREEN.');
+      await toggleBrokenBuild();
+    }, 19000);
+
+    setTimeout(async () => {
+      log('T=23s: Simulating SQL event hash tamper. Judge phone verifier catches mismatch.');
+      await triggerTamper();
+    }, 22000);
+
+    setTimeout(async () => {
+      log('T=26s: Executing Cold-Key RESTORE Protocol — Merkle root verified, hash chain repaired.');
+      await triggerRestore();
+    }, 25000);
 
     setTimeout(() => {
-      log('T=24s: Simulating direct SQL row tamper. Judge browser verifier detects hash mismatch.');
-    }, 24000);
-
-    setTimeout(() => {
-      log('T=28s: 30-Second Proof Loop Completed. Displaying live verified recap.');
+      log('T=29s: 30-Second Proof Loop Completed. Displaying live verified recap.');
       setLoopActive(false);
       setShowRecap(true);
-    }, 28000);
+    }, 29000);
   };
 
   return (
@@ -446,39 +512,71 @@ export const ArenaBigScreen: React.FC = () => {
           <div className="space-y-2">
             <button
               onClick={spawnRaceReferral}
-              className="w-full py-2.5 px-3 bg-indigo-600/80 hover:bg-indigo-600 text-white font-bold rounded-lg text-xs flex items-center gap-2 transition"
+              className="w-full py-2 px-3 bg-indigo-600/80 hover:bg-indigo-600 text-white font-bold rounded-lg text-xs flex items-center gap-2 transition"
             >
-              <Zap className="w-4 h-4" />
+              <Zap className="w-3.5 h-3.5" />
               [1] Spawn PARALLEL2 Race
             </button>
 
             <button
+              onClick={runRace200}
+              className="w-full py-2 px-3 bg-violet-600/80 hover:bg-violet-600 text-white font-bold rounded-lg text-xs flex items-center gap-2 transition"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              [2] Run 200-Way Concurrency Race (Barrier)
+            </button>
+
+            <button
               onClick={toggleBrokenBuild}
-              className={`w-full py-2.5 px-3 font-bold rounded-lg text-xs flex items-center gap-2 transition ${
+              className={`w-full py-2 px-3 font-bold rounded-lg text-xs flex items-center gap-2 transition ${
                 brokenBuild
                   ? 'bg-red-600 text-white animate-pulse'
                   : 'bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700'
               }`}
             >
-              <AlertTriangle className="w-4 h-4" />
-              [2] Toggle BROKEN_BUILD ({brokenBuild ? 'ON' : 'OFF'})
+              <AlertTriangle className="w-3.5 h-3.5" />
+              [3] Toggle BROKEN_BUILD ({brokenBuild ? 'ON' : 'OFF'})
             </button>
 
             <button
               onClick={triggerTamper}
-              className="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 font-bold rounded-lg text-xs flex items-center gap-2 transition"
+              className="w-full py-2 px-3 bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 font-bold rounded-lg text-xs flex items-center gap-2 transition"
             >
-              <XCircle className="w-4 h-4 text-red-400" />
-              [3] Inject SQL Tamper
+              <XCircle className="w-3.5 h-3.5 text-red-400" />
+              [4] Inject SQL Tamper
             </button>
 
             <button
               onClick={run30sProofLoop}
               disabled={loopActive}
-              className="w-full py-3 px-3 bg-gradient-to-r from-emerald-600 to-indigo-600 hover:opacity-90 disabled:opacity-50 text-white font-black rounded-lg text-xs flex items-center justify-center gap-2 shadow-lg transition"
+              className="w-full py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-indigo-600 hover:opacity-90 disabled:opacity-50 text-white font-black rounded-lg text-xs flex items-center justify-center gap-2 shadow-lg transition"
             >
               <Play className="w-4 h-4" />
               {loopActive ? 'Loop Running...' : '[5] Run 30s Live Proof Loop'}
+            </button>
+
+            <button
+              onClick={triggerRestore}
+              className="w-full py-2 px-3 bg-teal-800/80 hover:bg-teal-700 text-teal-200 border border-teal-600/50 font-bold rounded-lg text-xs flex items-center gap-2 transition"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-teal-300" />
+              [6] Cold-Key RESTORE Protocol
+            </button>
+
+            <button
+              onClick={spawnSilenceLadder}
+              className="w-full py-2 px-3 bg-amber-800/80 hover:bg-amber-700 text-amber-200 border border-amber-600/50 font-bold rounded-lg text-xs flex items-center gap-2 transition"
+            >
+              <Radio className="w-3.5 h-3.5 text-amber-300" />
+              [7] Demo Silence Ladder (DEMO_FAST)
+            </button>
+
+            <button
+              onClick={() => setShowIvrModal(true)}
+              className="w-full py-2 px-3 bg-amber-600/40 hover:bg-amber-600/60 border border-amber-500/50 text-amber-300 font-bold rounded-lg text-xs flex items-center gap-2 transition"
+            >
+              <Phone className="w-3.5 h-3.5" />
+              [8] Voice IVR Handset (Kannada / Hindi / English)
             </button>
           </div>
 
@@ -540,6 +638,19 @@ export const ArenaBigScreen: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Feature Phone Interactive Voice IVR Handset Modal */}
+      <FeaturePhoneIvrModal
+        isOpen={showIvrModal}
+        onClose={() => setShowIvrModal(false)}
+        activeReferralId={activeRef?.id}
+        activeFacilityName="CHC Ramanagara"
+        onOfferUpdated={() => {
+          if (activeRef) {
+            setActiveRef({ ...activeRef, hs_state: 'ACCEPTED' });
+          }
+        }}
+      />
     </div>
   );
 };

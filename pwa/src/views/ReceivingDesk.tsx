@@ -8,12 +8,16 @@ import {
   RefreshCw,
   Lock,
   Hospital,
+  Phone,
 } from 'lucide-react';
 import { sseClient, ReferralSummary } from '../store/sseClient';
+import { FeaturePhoneIvrModal } from '../components/FeaturePhoneIvrModal';
 
 export const ReceivingDesk: React.FC = () => {
   const [referrals, setReferrals] = useState<ReferralSummary[]>([]);
   const [selectedRef, setSelectedRef] = useState<ReferralSummary | null>(null);
+  const [grantRevoked, setGrantRevoked] = useState(false);
+  const [showIvrModal, setShowIvrModal] = useState(false);
 
   // Capability toggles
   const [capabilities, setCapabilities] = useState<{ [cap: string]: boolean }>({
@@ -21,6 +25,7 @@ export const ReceivingDesk: React.FC = () => {
     BLOOD: true,
     ANAESTHETIST: true,
     NICU: true,
+    PAEDIATRICIAN: true,
   });
 
   // Action states
@@ -235,14 +240,22 @@ export const ReceivingDesk: React.FC = () => {
           </span>
         </div>
 
-        {/* Paper Code Linking Action */}
-        <div className="mb-3">
+        {/* Multi-Channel Reach & Paper Code Linking Actions */}
+        <div className="mb-3 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setShowIvrModal(true)}
+            className="py-2 px-2.5 bg-amber-600/30 hover:bg-amber-600/50 border border-amber-500/50 text-amber-300 font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 transition"
+          >
+            <Phone className="w-3.5 h-3.5" />
+            <span>Voice IVR Handset</span>
+          </button>
           <button
             type="button"
             onClick={() => setShowPaperModal(true)}
-            className="w-full py-2 px-3 bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/50 text-indigo-300 font-bold rounded-lg text-xs flex items-center justify-center gap-2 transition"
+            className="py-2 px-2.5 bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/50 text-indigo-300 font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 transition"
           >
-            <span>Link Paper Slip (9-Char Code)</span>
+            <span>Link Paper Code</span>
           </button>
         </div>
 
@@ -319,6 +332,19 @@ export const ReceivingDesk: React.FC = () => {
               </div>
             </div>
 
+            {/* Invariant I10: GRANT_REVOKED Security Alert Banner */}
+            {(grantRevoked || (selectedRef as any)?.grant_revoked) && (
+              <div className="p-4 bg-red-950/90 border-2 border-red-500 rounded-lg text-white space-y-1 shadow-xl">
+                <div className="flex items-center gap-2 font-black text-red-300 text-sm">
+                  <Lock className="w-5 h-5 text-red-400" />
+                  <span>🔒 PAYLOAD GRANT REVOKED (Invariant I10)</span>
+                </div>
+                <p className="text-xs text-red-200">
+                  Clinical Handover Data Wiped From This Desk — Session lacks active authorization grant for this referral.
+                </p>
+              </div>
+            )}
+
             {/* D1 / K1: High-Contrast Red Banner for UNKNOWN MgSO4 */}
             {selectedRef.mgso4_status === 'UNKNOWN' && (
               <div className="p-3 bg-red-600 text-white rounded-lg text-xs sm:text-sm font-bold flex items-center gap-3 animate-pulse shadow-lg">
@@ -345,12 +371,32 @@ export const ReceivingDesk: React.FC = () => {
 
             {/* Capability Checklist (RESOURCE_CONFIRM) */}
             <div className="p-4 bg-slate-900/70 rounded-lg border border-slate-700">
-              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                Live Resource Confirmations (TTL Enforced)
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {['OT', 'BLOOD', 'ANAESTHETIST', 'NICU'].map((cap) => (
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  Live Resource Confirmations (TTL Enforced)
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCapabilities({
+                      OT: false,
+                      BLOOD: false,
+                      ANAESTHETIST: false,
+                      NICU: false,
+                      PAEDIATRICIAN: false,
+                    });
+                    setStatusMessage('Simulated capability TTL expiration (Invariant I15). Attempting to accept will trigger 409.');
+                    setIsError(true);
+                  }}
+                  className="text-[11px] font-bold px-2 py-0.5 bg-amber-950/70 border border-amber-600/60 text-amber-300 rounded hover:bg-amber-900 transition flex items-center gap-1"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  Simulate TTL Expiry (Trigger 409)
+                </button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {['OT', 'BLOOD', 'ANAESTHETIST', 'NICU', 'PAEDIATRICIAN'].map((cap) => (
                   <button
                     key={cap}
                     type="button"
@@ -558,6 +604,19 @@ export const ReceivingDesk: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Feature Phone Interactive Voice IVR Handset Modal */}
+      <FeaturePhoneIvrModal
+        isOpen={showIvrModal}
+        onClose={() => setShowIvrModal(false)}
+        activeReferralId={selectedRef?.id}
+        activeFacilityName="CHC Ramanagara"
+        onOfferUpdated={() => {
+          if (selectedRef) {
+            setSelectedRef({ ...selectedRef, hs_state: 'ACCEPTED' });
+          }
+        }}
+      />
     </div>
   );
 };

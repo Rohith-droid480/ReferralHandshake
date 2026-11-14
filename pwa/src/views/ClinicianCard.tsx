@@ -4,15 +4,15 @@ import { FileText, Printer, Check, AlertCircle, AlertTriangle, Send, Stethoscope
 import { queueCommand } from '../store/outbox';
 
 export const ClinicianCard: React.FC = () => {
-  const [needClass, setNeedClass] = useState('OB_ECLAMPSIA');
+  const [needClass, setNeedClass] = useState('OBSTETRIC_EMERGENCY');
   const [mode, setMode] = useState<'SEQUENTIAL' | 'PARALLEL2'>('SEQUENTIAL');
-  const [originFacilityId, setOriginFacilityId] = useState('00000000-0000-0000-0000-000000000001');
+  const [originFacilityId, setOriginFacilityId] = useState('11111111-1111-1111-1111-111111111111');
   const [chain, setChain] = useState<string[]>([
-    '00000000-0000-0000-0000-000000000002',
-    '00000000-0000-0000-0000-000000000003',
+    '22222222-2222-2222-2222-222222222222',
+    '44444444-4444-4444-4444-444444444444',
   ]);
   const [mgso4Status, setMgso4Status] = useState<'GIVEN' | 'NONE_GIVEN' | 'UNKNOWN'>('UNKNOWN');
-  const [mgso4Dose, setMgso4Dose] = useState('4g IV + 10g IM');
+  const [mgso4Dose, setMgso4Dose] = useState('4g IV + 10g IM (Pritchard)');
   const [mgso4Time, setMgso4Time] = useState('');
 
   // ISBAR fields
@@ -33,6 +33,68 @@ export const ClinicianCard: React.FC = () => {
   const [aiDraftRevealed, setAiDraftRevealed] = useState(false);
   const [aiDraftNotice, setAiDraftNotice] = useState<string | null>(null);
   const [aiDraftError, setAiDraftError] = useState<string | null>(null);
+
+  const applyScenarioPreset = (scenarioId: number) => {
+    switch (scenarioId) {
+      case 1:
+        setNeedClass('OBSTETRIC_EMERGENCY');
+        setMgso4Status('UNKNOWN');
+        setMode('SEQUENTIAL');
+        setPatientAge('22');
+        setGravida('G1P0');
+        setGestationWeeks('35');
+        setVitalsBp('170/115');
+        setClinicalSummary('Primigravida 35w with severe eclamptic convulsions at sub-centre. Refractory BP 170/115. Pre-referral MgSO4 status unconfirmed.');
+        setChain(['22222222-2222-2222-2222-222222222222', '44444444-4444-4444-4444-444444444444']);
+        break;
+      case 2:
+        setNeedClass('OBSTETRIC_EMERGENCY');
+        setMgso4Status('GIVEN');
+        setMgso4Dose('Pritchard 14g (4g IV + 10g IM)');
+        setMgso4Time(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+        setMode('PARALLEL2');
+        setPatientAge('27');
+        setGravida('G3P2');
+        setGestationWeeks('Post-delivery');
+        setVitalsBp('80/50');
+        setClinicalSummary('Severe atonic PPH post-delivery. Uterus uncontracted, active blood loss >1000ml. Dual parallel race offers to CHC Ramanagara & DH Mandya.');
+        setChain(['22222222-2222-2222-2222-222222222222', '44444444-4444-4444-4444-444444444444']);
+        break;
+      case 3:
+        setNeedClass('NEONATAL');
+        setMgso4Status('NONE_GIVEN');
+        setMode('SEQUENTIAL');
+        setPatientAge('0 (Neonate)');
+        setGravida('G2P1');
+        setGestationWeeks('32');
+        setVitalsBp('55/35');
+        setClinicalSummary('Preterm neonate 32w, birth weight 1.35kg, severe respiratory distress with cyanosis. Requires immediate NICU and Paediatrician.');
+        setChain(['22222222-2222-2222-2222-222222222222', '55555555-5555-5555-5555-555555555555']);
+        break;
+      case 4:
+        setNeedClass('TRAUMA');
+        setMgso4Status('NONE_GIVEN');
+        setMode('SEQUENTIAL');
+        setPatientAge('34');
+        setGravida('N/A');
+        setGestationWeeks('N/A');
+        setVitalsBp('90/60');
+        setClinicalSummary('NH-275 highway multi-vehicle polytrauma. Unstable pelvic fracture, bilateral femur fractures, active hemoperitoneum. Requires emergent OT + Blood.');
+        setChain(['22222222-2222-2222-2222-222222222222', '44444444-4444-4444-4444-444444444444']);
+        break;
+      case 5:
+        setNeedClass('CARDIAC');
+        setMgso4Status('NONE_GIVEN');
+        setMode('SEQUENTIAL');
+        setPatientAge('58');
+        setGravida('N/A');
+        setGestationWeeks('N/A');
+        setVitalsBp('145/95');
+        setClinicalSummary('Hyperacute crushing retrosternal chest pain radiating to left jaw. ECG shows ST elevation V1-V4 (Anterior STEMI). Primary PCI referral.');
+        setChain(['44444444-4444-4444-4444-444444444444', '55555555-5555-5555-5555-555555555555']);
+        break;
+    }
+  };
 
   const handleRequestAiDraft = async () => {
     setAiDraftLoading(true);
@@ -287,6 +349,64 @@ export const ClinicianCard: React.FC = () => {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* 1-Tap Real-World Clinical Scenario Presets */}
+          <div className="p-3.5 bg-slate-900/90 rounded-xl border border-indigo-500/30 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black uppercase tracking-wider text-indigo-300 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                1-Tap Real-World Emergency Scenarios
+              </span>
+              <span className="text-[10px] text-slate-400 font-mono">Karnataka NH-275 Network</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+              <button
+                type="button"
+                onClick={() => applyScenarioPreset(1)}
+                className="p-2 text-left bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-indigo-500 rounded-lg transition"
+              >
+                <span className="text-[11px] font-bold text-white block">1. Severe Eclampsia</span>
+                <span className="text-[10px] text-red-400 font-mono block">UNKNOWN MgSO4 (D1)</span>
+                <span className="text-[9px] text-slate-400">PHC Channapatna → CHC</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => applyScenarioPreset(2)}
+                className="p-2 text-left bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-amber-500 rounded-lg transition"
+              >
+                <span className="text-[11px] font-bold text-white block">2. Critical PPH Race</span>
+                <span className="text-[10px] text-amber-400 font-mono block">PARALLEL2 Mode (I2)</span>
+                <span className="text-[9px] text-slate-400">Ramanagara vs Mandya</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => applyScenarioPreset(3)}
+                className="p-2 text-left bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-cyan-500 rounded-lg transition"
+              >
+                <span className="text-[11px] font-bold text-white block">3. Preterm Neonatal</span>
+                <span className="text-[10px] text-cyan-400 font-mono block">NICU + Paediatrician</span>
+                <span className="text-[9px] text-slate-400">Counter / Decline flow</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => applyScenarioPreset(4)}
+                className="p-2 text-left bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-emerald-500 rounded-lg transition"
+              >
+                <span className="text-[11px] font-bold text-white block">4. NH-275 Polytrauma</span>
+                <span className="text-[10px] text-emerald-400 font-mono block">OT + Blood + Anesth</span>
+                <span className="text-[9px] text-slate-400">Highway Transit & Geofence</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => applyScenarioPreset(5)}
+                className="p-2 text-left bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-purple-500 rounded-lg transition"
+              >
+                <span className="text-[11px] font-bold text-white block">5. Acute STEMI</span>
+                <span className="text-[10px] text-purple-400 font-mono block">Cardiac Extensibility</span>
+                <span className="text-[9px] text-slate-400">Apex Medical College</span>
+              </button>
+            </div>
+          </div>
+
           {/* AI Intake Accelerator & Think-First Anchor Gate */}
           <div className="p-4 bg-slate-900/60 rounded-xl border border-indigo-500/20 space-y-2">
             <div className="flex items-center justify-between">
@@ -302,7 +422,7 @@ export const ClinicianCard: React.FC = () => {
                 disabled={aiDraftLoading}
                 className="px-3 py-1.5 bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-300 rounded text-xs font-bold transition"
               >
-                {aiDraftLoading ? 'Checking Anchors...' : 'Reveal AI Draft'}
+                {aiDraftLoading ? 'Checking Anchors...' : 'Scan / Reveal AI Draft'}
               </button>
             </div>
 
@@ -325,17 +445,18 @@ export const ClinicianCard: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                Clinical Need Class
+                Clinical Need Class (Domain Locked)
               </label>
               <select
                 value={needClass}
                 onChange={(e) => setNeedClass(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:border-indigo-500"
               >
-                <option value="OB_ECLAMPSIA">OB_ECLAMPSIA (Severe Pre-eclampsia / Seizure)</option>
-                <option value="OB_PPH">OB_PPH (Postpartum Haemorrhage)</option>
-                <option value="OB_SEPSIS">OB_SEPSIS (Puerperal Sepsis)</option>
-                <option value="OB_OBSTRUCTED_LABOUR">OB_OBSTRUCTED_LABOUR</option>
+                <option value="OBSTETRIC_EMERGENCY">OBSTETRIC_EMERGENCY (Severe Pre-eclampsia / PPH / Sepsis)</option>
+                <option value="NEONATAL">NEONATAL (Preterm Asphyxia / Respiratory Distress / NICU)</option>
+                <option value="TRAUMA">TRAUMA (NH-275 Highway Polytrauma / OT + Blood Bank)</option>
+                <option value="CARDIAC">CARDIAC (Hyperacute Anterior STEMI / Cath Lab)</option>
+                <option value="STROKE">STROKE (Acute Ischemic / Neuro Triage)</option>
               </select>
             </div>
 

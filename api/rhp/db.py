@@ -15,7 +15,7 @@ import contextlib
 import os
 import sys
 import threading
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Generator, Optional, Set, Tuple, Union
 from uuid import UUID
 
@@ -263,7 +263,7 @@ class MockDatabase:
             "lease_facility_id": None,
             "lease_epoch": 0,
             "open_offers": 2,
-            "paper_code": "4K8M2T91*",
+            "paper_code": "4K8M2T91J",
             "head_seq": 1,
             "head_hash": bytes(32),
             "head_ts": datetime.now(timezone.utc),
@@ -285,7 +285,7 @@ class MockDatabase:
             "lease_facility_id": "55555555-5555-5555-5555-555555555555",
             "lease_epoch": 1,
             "open_offers": 0,
-            "paper_code": "9X7P3N18~",
+            "paper_code": "9X7P3N18X",
             "head_seq": 4,
             "head_hash": bytes(32),
             "head_ts": datetime.now(timezone.utc),
@@ -295,13 +295,19 @@ class MockDatabase:
 
         # Seed initial component heartbeats for health check
         now = datetime.now(timezone.utc)
-        for comp in ["POLLER", "RELAY", "MONITOR", "WITNESS"]:
-            self.heartbeats[(comp.lower(), f"{comp.lower()}-1")] = {
+        for comp in ["POLLER", "RELAY", "MONITOR"]:
+            self.heartbeats[(comp.upper(), f"{comp.lower()}-1")] = {
                 "subject_kind": comp,
                 "subject_id": f"{comp.lower()}-1",
                 "last_seen": now,
                 "ntp_offset_ms": 0,
             }
+        self.heartbeats[("WITNESS", "rhp1-witness-2026-11")] = {
+            "subject_kind": "WITNESS",
+            "subject_id": "rhp1-witness-2026-11",
+            "last_seen": now,
+            "ntp_offset_ms": 0,
+        }
 
 
 class MockCursor:
@@ -331,18 +337,252 @@ class MockCursor:
                 self.result = [(True,)]
             return
 
-        # 2. Lock Referral: SELECT * FROM referral WHERE id = %s FOR UPDATE
+        # Insert Referral
+        if "INSERT INTO REFERRAL" in nq:
+            r_id = str(p[0])
+            ref_dict = {
+                "id": r_id,
+                "version": p[1],
+                "hs_state": p[2],
+                "tr_state": p[3],
+                "mode": p[4],
+                "need_class": p[5],
+                "from_facility_id": str(p[6]),
+                "origin_facility_id": str(p[6]),
+                "chain": p[7],
+                "ladder_cursor": p[8],
+                "lease_offer_id": None,
+                "lease_facility_id": None,
+                "lease_epoch": p[9],
+                "open_offers": p[10],
+                "tr_facility_id": None,
+                "mgso4_status": p[11],
+                "profile_id": p[12],
+                "profile_hash": p[13],
+                "paper_code": p[14],
+                "head_seq": p[15],
+                "head_hash": p[16],
+                "head_ts": p[17],
+                "outcome": None,
+                "created_by": str(p[18]),
+                "created_at": p[19],
+                "closed_at": None,
+            }
+            self.db.referrals[r_id] = ref_dict
+            return
+
+        # Insert Offer Resource Confirmation
+        if "INSERT INTO OFFER_RESOURCE_CONFIRMATION" in nq:
+            o_id = str(p[0])
+            cap = str(p[1])
+            conf_by = str(p[2])
+            conf_at = p[3]
+            exp_at = p[4]
+            if not hasattr(self.db, "offer_confirmations"):
+                self.db.offer_confirmations = {}
+            self.db.offer_confirmations[(o_id, cap)] = {
+                "offer_id": o_id,
+                "capability": cap,
+                "confirmed_by": conf_by,
+                "confirmed_at": conf_at,
+                "expires_at": exp_at,
+            }
+            return
+
+        # Insert Offer
+        if "INSERT INTO OFFER (" in nq:
+            o_id = str(p[0])
+            off_dict = {
+                "id": o_id,
+                "referral_id": str(p[1]),
+                "facility_id": str(p[2]),
+                "step": int(p[3]),
+                "source": str(p[4]) if len(p) > 4 else "DIRECT",
+                "status": str(p[5]) if len(p) > 5 else "OPEN",
+                "counter_round": int(p[6]) if len(p) > 6 else 0,
+                "counter_mask": int(p[7]) if len(p) > 7 else 0,
+                "created_epoch": int(p[8]) if len(p) > 8 else 0,
+                "created_at": p[9] if len(p) > 9 else datetime.now(timezone.utc),
+            }
+            self.db.offers[o_id] = off_dict
+            return
+
+        # Query need_class_requirement LEFT JOIN offer_resource_confirmation
+        if "FROM NEED_CLASS_REQUIREMENT" in nq:
+            off_id = str(p[0])
+            nc = str(p[1]) if len(p) > 1 else "OBSTETRIC_EMERGENCY"
+            req_caps = ["OT", "BLOOD", "ANAESTHETIST", "NICU"]
+            res = []
+            future_dt = datetime.now(timezone.utc) + timedelta(minutes=60)
+            for cap in req_caps:
+                conf = getattr(self.db, "offer_confirmations", {}).get((off_id, cap))
+                exp = conf["expires_at"] if conf else future_dt
+                res.append((cap, exp))
+            self.result = res
+            return
+
+        # Select Offers for referral / count offers
+        if "FROM OFFER WHERE REFERRAL_ID" in nq:
+            ref_id = str(p[0])
+            if "COUNT(*)" in nq:
+                cnt = 0
+                for o in self.db.offers.values():
+                    if str(o.get("referral_id")) == ref_id:
+                        if "STATUS = 'ACCEPTED'" in nq:
+                            if o.get("status") == "ACCEPTED":
+                                cnt += 1
+                        else:
+                            cnt += 1
+                self.result = [(cnt,)]
+                return
+            fac_id = str(p[1]) if len(p) > 1 else None
+            matching = []
+            for o in self.db.offers.values():
+                if str(o.get("referral_id")) == ref_id:
+                    if fac_id is None or str(o.get("facility_id")) == fac_id:
+                        matching.append((
+                            o["id"],
+                            str(o.get("referral_id")),
+                            str(o.get("facility_id")),
+                            o.get("step", 1),
+                            o.get("source", "DIRECT"),
+                            o.get("status", "OPEN"),
+                            o.get("counter_round", 0),
+                            o.get("counter_mask", 0),
+                            o.get("counter_note"),
+                            o.get("created_epoch", 0),
+                            o.get("created_at", datetime.now(timezone.utc)),
+                            o.get("acked_at"),
+                            o.get("acked_by"),
+                            o.get("decided_at"),
+                            o.get("decided_by"),
+                            o.get("decline_reason"),
+                            o.get("redirect_facility_id"),
+                        ))
+            self.result = matching
+            return
+
+        # 2. Lock Referral: SELECT ... FROM referral WHERE id = %s FOR UPDATE
         if "FROM REFERRAL WHERE ID" in nq and "FOR UPDATE" in nq:
             ref_id = str(p[0])
+            row_lock = self.db.get_row_lock(ref_id)
+            if row_lock not in self.connection.held_row_locks:
+                row_lock.acquire()
+                self.connection.held_row_locks.append(row_lock)
             ref = self.db.referrals.get(ref_id)
             if ref:
                 self.result = [(
-                    ref["id"], ref["from_facility_id"], ref["need_class"],
-                    ref["mgso4_status"], ref["hs_state"], ref["tr_state"],
-                    ref["head_seq"], ref["head_hash"], ref["head_ts"], ref["version"]
+                    ref["id"],
+                    ref.get("version", 1),
+                    ref.get("hs_state", "OFFERED"),
+                    ref.get("tr_state", "REQUESTED"),
+                    ref.get("mode", "SEQUENTIAL"),
+                    ref.get("need_class", "OBSTETRIC_EMERGENCY"),
+                    ref.get("origin_facility_id") or ref.get("from_facility_id"),
+                    ref.get("chain", []),
+                    ref.get("ladder_cursor", 0),
+                    ref.get("lease_offer_id"),
+                    ref.get("lease_facility_id"),
+                    ref.get("lease_epoch", 0),
+                    ref.get("open_offers", 1),
+                    ref.get("tr_facility_id"),
+                    ref.get("mgso4_status", "UNKNOWN"),
+                    ref.get("profile_id", "DEMO_FAST"),
+                    ref.get("profile_hash", b"\x00" * 32),
+                    ref.get("paper_code", "4K8M2T91J"),
+                    ref.get("head_seq", 0),
+                    ref.get("head_hash", b"\x00" * 32),
+                    ref.get("head_ts", datetime.now(timezone.utc)),
+                    ref.get("outcome"),
+                    ref.get("created_by"),
+                    ref.get("created_at", datetime.now(timezone.utc)),
+                    ref.get("closed_at"),
                 )]
             else:
                 self.result = []
+            return
+
+        # Update Referral
+        if "UPDATE REFERRAL" in nq:
+            ref_id = str(p[-1])
+            if ref_id in self.db.referrals:
+                ref = self.db.referrals[ref_id]
+                if "VERSION =" in nq and len(p) >= 15:
+                    ref["version"] = p[0]
+                    ref["hs_state"] = p[1]
+                    ref["tr_state"] = p[2]
+                    ref["ladder_cursor"] = p[3]
+                    ref["lease_offer_id"] = str(p[4]) if p[4] else None
+                    ref["lease_facility_id"] = str(p[5]) if p[5] else None
+                    ref["lease_epoch"] = p[6]
+                    ref["open_offers"] = p[7]
+                    ref["tr_facility_id"] = str(p[8]) if p[8] else None
+                    ref["head_seq"] = p[9]
+                    ref["head_hash"] = p[10]
+                    ref["head_ts"] = p[11]
+                    ref["outcome"] = p[12]
+                    ref["closed_at"] = p[13]
+                elif "LEASE_OFFER_ID =" in nq:
+                    ref["hs_state"] = "ACCEPTED"
+                    ref["lease_offer_id"] = str(p[0]) if p[0] else None
+                    ref["lease_facility_id"] = str(p[1]) if p[1] else None
+                    ref["lease_epoch"] = p[2]
+                    ref["open_offers"] = 0
+                    ref["tr_facility_id"] = str(p[3]) if p[3] else None
+                elif "HS_STATE = 'ACCEPTED'" in nq:
+                    ref["hs_state"] = "ACCEPTED"
+                elif "HS_STATE = 'ACKNOWLEDGED'" in nq:
+                    ref["hs_state"] = "ACKNOWLEDGED"
+                elif "HS_STATE = 'COUNTERED'" in nq:
+                    ref["hs_state"] = "COUNTERED"
+                elif "HS_STATE = 'CANCELLED'" in nq:
+                    ref["hs_state"] = "CANCELLED"
+                    if len(p) >= 3:
+                        ref["outcome"] = p[0]
+                        ref["closed_at"] = p[1]
+                elif "TR_STATE" in nq:
+                    if len(p) >= 2:
+                        ref["tr_state"] = p[0]
+            return
+
+        # Update Offer
+        if "UPDATE OFFER" in nq:
+            if "STATUS = 'ACCEPTED'" in nq:
+                off_id = str(p[1])
+                if off_id in self.db.offers:
+                    target_ref_id = str(self.db.offers[off_id].get("referral_id"))
+                    from api.rhp.config import get_settings
+                    if not get_settings().BROKEN_BUILD:
+                        for existing_off in self.db.offers.values():
+                            if (
+                                str(existing_off.get("referral_id")) == target_ref_id
+                                and existing_off.get("status") == "ACCEPTED"
+                                and existing_off["id"] != off_id
+                            ):
+                                raise Exception("duplicate key value violates unique constraint 'one_lease'")
+                    self.db.offers[off_id]["status"] = "ACCEPTED"
+                    self.db.offers[off_id]["decided_at"] = p[0]
+            elif "STATUS = 'SUPERSEDED'" in nq:
+                target_ref_id = str(p[0])
+                keep_off_id = str(p[1])
+                for off in self.db.offers.values():
+                    if str(off.get("referral_id")) == target_ref_id and str(off.get("id")) != keep_off_id:
+                        if off.get("status") in ("OPEN", "ACKED", "COUNTERED", "SOFT_OPEN"):
+                            off["status"] = "SUPERSEDED"
+            elif "STATUS = 'ACKED'" in nq:
+                off_id = str(p[2])
+                if off_id in self.db.offers:
+                    self.db.offers[off_id]["status"] = "ACKED"
+                    self.db.offers[off_id]["acked_at"] = p[0]
+                    self.db.offers[off_id]["acked_by"] = str(p[1])
+            elif "STATUS = 'SOFT_OPEN'" in nq:
+                off_id = str(p[0])
+                if off_id in self.db.offers:
+                    self.db.offers[off_id]["status"] = "SOFT_OPEN"
+            elif "STATUS = 'TIMED_OUT'" in nq:
+                off_id = str(p[0])
+                if off_id in self.db.offers:
+                    self.db.offers[off_id]["status"] = "TIMED_OUT"
             return
 
         # 3. Stamp Referral GUC: SELECT set_config('rhp.locked_referral', %s, true)
@@ -640,7 +880,7 @@ class MockConnection:
         self.held_row_locks.clear()
 
     def close(self) -> None:
-        if self.staged_ticket_inserts or self.staged_device_inserts or self.staged_session_inserts or self.staged_actions:
+        if self.staged_ticket_inserts or self.staged_device_inserts or self.staged_session_inserts or self.staged_actions or self.held_row_locks:
             self.rollback()
 
     def __enter__(self) -> "MockConnection":

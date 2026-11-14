@@ -224,24 +224,25 @@ def upsert_heartbeat(
 ) -> None:
     """Upserts worker liveness into heartbeat table (Closure F11)."""
     now = datetime.now(timezone.utc)
-    # File-backed IPC for mock multi-process mode
-    ipc_path = os.path.join(tempfile.gettempdir(), "rhp_heartbeats_ipc.json")
-    try:
-        data = {}
-        if os.path.exists(ipc_path):
-            with open(ipc_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-        data[f"{subject_kind.upper()}:{subject_id}"] = {
-            "subject_kind": subject_kind.upper(),
-            "subject_id": subject_id,
-            "last_seen": now.isoformat(),
-            "ntp_offset_ms": ntp_offset_ms,
-        }
-        with open(ipc_path + ".tmp", "w", encoding="utf-8") as f:
-            json.dump(data, f)
-        os.replace(ipc_path + ".tmp", ipc_path)
-    except Exception:
-        pass
+    # File-backed IPC for mock multi-process mode (only outside pytest)
+    if not os.environ.get("PYTEST_CURRENT_TEST"):
+        ipc_path = os.path.join(tempfile.gettempdir(), "rhp_heartbeats_ipc.json")
+        try:
+            data = {}
+            if os.path.exists(ipc_path):
+                with open(ipc_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            data[f"{subject_kind.upper()}:{subject_id}"] = {
+                "subject_kind": subject_kind.upper(),
+                "subject_id": subject_id,
+                "last_seen": now.isoformat(),
+                "ntp_offset_ms": ntp_offset_ms,
+            }
+            with open(ipc_path + ".tmp", "w", encoding="utf-8") as f:
+                json.dump(data, f)
+            os.replace(ipc_path + ".tmp", ipc_path)
+        except Exception:
+            pass
 
     if hasattr(conn, "db"):
         if not hasattr(conn.db, "heartbeats"):

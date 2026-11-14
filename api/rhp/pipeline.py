@@ -725,6 +725,20 @@ def apply_command(
             (json.dumps(resp_payload), str(actor_id), str(idem_key)),
         )
 
+        # Instant Server-Sent Events (SSE) broadcast to connected desks (< 200ms)
+        try:
+            from api.rhp.sse import get_sse_hub
+            hub = get_sse_hub()
+            hub.broadcast_outbox_event({
+                "id": str(uuid4()),
+                "referral_id": str(ref_id),
+                "kind": event_type,
+                "payload": json.dumps(core_event),
+                "channel": "SSE",
+            })
+        except Exception:
+            pass
+
         return 200, resp_payload
 
     except TransitionReject as exc:

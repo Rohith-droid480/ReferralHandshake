@@ -171,10 +171,20 @@ def check_boot_guards(settings: Optional[Settings] = None) -> None:
             sys.exit(78)
 
 
-@lru_cache(maxsize=1)
+_settings_singleton: Optional[Settings] = None
+
+
 def get_settings(enforce_guards: bool = True) -> Settings:
     """Returns singleton Settings instance, optionally verifying boot guards."""
-    s = Settings()
-    if enforce_guards:
-        check_boot_guards(s)
-    return s
+    global _settings_singleton
+    if _settings_singleton is None:
+        _settings_singleton = Settings()
+        if enforce_guards:
+            check_boot_guards(_settings_singleton)
+    return _settings_singleton
+
+
+def reset_settings() -> None:
+    """Resets singleton Settings instance for testing."""
+    global _settings_singleton
+    _settings_singleton = None

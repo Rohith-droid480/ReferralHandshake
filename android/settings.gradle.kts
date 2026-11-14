@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "ReferralHandshake-EMT"
 include(":app")
+
