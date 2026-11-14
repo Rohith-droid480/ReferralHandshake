@@ -58,6 +58,15 @@ export const AmbulancePwa: React.FC = () => {
 
   // 1. Subscribe to SSE
   useEffect(() => {
+    fetch('/v1/referrals')
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setActiveRef((prev) => prev || data[data.length - 1]);
+        }
+      })
+      .catch(() => {});
+
     const unsub = sseClient.subscribe((state) => {
       const list = Object.values(state.referrals);
       if (list.length > 0) {

@@ -507,6 +507,33 @@ export const ArenaBigScreen: React.FC = () => {
               Witness & Chaos Controls
             </h2>
 
+            {/* 3 Plain Steps: Signed -> Chained -> Verified in Browser */}
+            <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-2 mb-3">
+              <span className="text-[10px] font-bold text-teal-400 uppercase tracking-wider block">
+                Cryptographic Proof Verification Flow
+              </span>
+              <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
+                <div className="p-1.5 bg-slate-900 rounded border border-slate-800">
+                  <span className="font-bold text-white block">1. Signed</span>
+                  <span className="text-slate-400 text-[9px]">Ed25519 C2SP</span>
+                </div>
+                <div className="p-1.5 bg-slate-900 rounded border border-slate-800">
+                  <span className="font-bold text-white block">2. Chained</span>
+                  <span className="text-slate-400 text-[9px]">SHA-256 Merkle</span>
+                </div>
+                <div className="p-1.5 bg-slate-900 rounded border border-slate-800">
+                  <span className="font-bold text-teal-300 block">3. Verified</span>
+                  <span className="text-slate-400 text-[9px]">Pure-JS @noble</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between pt-1 border-t border-slate-800 text-[11px] font-mono">
+                <span className="text-slate-400">Browser Verifier:</span>
+                <span className={allHolding && !brokenBuild ? "text-emerald-400 font-bold" : "text-red-400 font-bold"}>
+                  {allHolding && !brokenBuild ? "VERIFIED (0 TAMPER)" : "TAMPER DETECTED"}
+                </span>
+              </div>
+            </div>
+
             {/* Checkpoint Display */}
             <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 text-xs font-mono space-y-1 mb-3">
               <span className="text-[10px] text-slate-500 block uppercase font-bold">

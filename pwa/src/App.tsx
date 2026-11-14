@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { ModeBanner } from './components/ModeBanner';
 import { DemoRoleSwitcher } from './components/DemoRoleSwitcher';
+import { DemoScenariosBar } from './components/DemoScenariosBar';
 import { ArenaBigScreen } from './views/ArenaBigScreen';
 import { JudgeJoin } from './views/JudgeJoin';
 import { JudgeDesk } from './views/JudgeDesk';
@@ -65,6 +66,7 @@ export const App: React.FC = () => {
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
         <ModeBanner />
         <DemoRoleSwitcher />
+        <DemoScenariosBar />
         <NavigationNav />
         <main className="flex-1">
           <Routes>

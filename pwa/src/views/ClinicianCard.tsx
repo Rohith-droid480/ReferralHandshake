@@ -423,7 +423,12 @@ export const ClinicianCard: React.FC = () => {
           <div className="p-4 bg-slate-900/60 rounded-xl border border-indigo-500/20 space-y-2">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-indigo-300">AI Intake Accelerator</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-indigo-300">AI Intake Accelerator</span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 bg-slate-800 text-slate-400 border border-slate-700 rounded">
+                    SIMULATED / DEMO MODE
+                  </span>
+                </div>
                 <span className="text-[10px] text-slate-400 block">
                   Cognitive Forcing Function: Commit Need Class & MgSO4 Status before reveal (Closure A1, A2).
                 </span>

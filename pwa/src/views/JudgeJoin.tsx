@@ -123,7 +123,7 @@ export const JudgeJoin: React.FC = () => {
                 Anti-Bot Verification
               </span>
               <span className="text-emerald-400 font-mono text-[11px]">
-                {isLanMode ? 'LAN Bypass Active' : 'Cloudflare Turnstile'}
+                {isLanMode ? 'LAN Bypass (Rotating JTI)' : 'Cloudflare Turnstile [SIMULATED/DEMO MODE]'}
               </span>
             </div>
             <p className="text-[11px] text-slate-400 mt-1">
