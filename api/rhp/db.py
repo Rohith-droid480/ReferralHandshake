@@ -865,22 +865,22 @@ class MockCursor:
 
             target_sess = None
             for s in reversed(self.connection.staged_session_inserts):
-                if s["token_hash"] == token_hash or (s["call_sid"] and s["call_sid"] == str(sid_or_call)):
+                if s.get("token_hash") == token_hash or (s.get("call_sid") and s.get("call_sid") == str(sid_or_call)):
                     target_sess = s
                     break
             if not target_sess:
                 for s in self.db.sessions.values():
-                    if s["token_hash"] == token_hash or (s["call_sid"] and s["call_sid"] == str(sid_or_call)):
+                    if s.get("token_hash") == token_hash or (s.get("call_sid") and s.get("call_sid") == str(sid_or_call)):
                         target_sess = s
                         break
 
             if target_sess:
-                r = self.db.rosters.get(target_sess["roster_id"], {})
+                r = self.db.rosters.get(target_sess.get("roster_id"), {})
                 self.result = [(
-                    target_sess["id"], target_sess["token_hash"], target_sess["roster_id"],
-                    target_sess["device_id"], target_sess["call_sid"], target_sess["created_at"],
-                    target_sess["expires_at"], target_sess["revoked_at"], target_sess["pin_failed"],
-                    target_sess["pin_locked_until"],
+                    target_sess.get("id"), target_sess.get("token_hash"), target_sess.get("roster_id"),
+                    target_sess.get("device_id"), target_sess.get("call_sid"), target_sess.get("created_at"),
+                    target_sess.get("expires_at"), target_sess.get("revoked_at"), target_sess.get("pin_failed", 0),
+                    target_sess.get("pin_locked_until"),
                     r.get("facility_id"), r.get("role_slot"), r.get("phone_e164"), r.get("pin_hash")
                 )]
             else:

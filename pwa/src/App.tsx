@@ -13,7 +13,7 @@ import { DispatcherConsole } from './views/DispatcherConsole';
 import { CommandCentre } from './views/CommandCentre';
 import {
   Tv,
-  QrCode,
+  UserCheck,
   Award,
   Stethoscope,
   Hospital,
@@ -27,7 +27,7 @@ const NavigationNav: React.FC = () => {
 
   const navItems = [
     { path: '/', label: 'Guarantee Arena', icon: Tv },
-    { path: '/judge-join', label: 'QR Join', icon: QrCode },
+    { path: '/judge-join', label: 'Judge Admission', icon: UserCheck },
     { path: '/judge-desk', label: 'Judge Desk', icon: Award },
     { path: '/clinician', label: 'Clinician Card', icon: Stethoscope },
     { path: '/receiving-desk', label: 'Receiving Desk', icon: Hospital },

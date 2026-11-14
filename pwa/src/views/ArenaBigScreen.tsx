@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
 import {
   ShieldCheck,
   AlertTriangle,
@@ -465,17 +464,17 @@ export const ArenaBigScreen: React.FC = () => {
             </div>
           </div>
 
-          {/* Rotating Judge QR Code Widget */}
+          {/* Direct Judge Admission Widget (No QR Code) */}
           <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-xl flex items-center justify-between">
-            <div className="space-y-1 max-w-[260px]">
+            <div className="space-y-1">
               <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block">
                 Live Judge Admission
               </span>
-              <h3 className="text-base font-black text-white">Scan to Join Concurrency Race</h3>
+              <h3 className="text-base font-black text-white">Join Concurrency Race</h3>
               <p className="text-xs text-slate-400">
-                Single-use rotating JTI token. Auto-allocates competing desk.
+                Single-use rotating JTI token. Auto-allocates competing triage desk with 1 click.
               </p>
-              <div className="pt-2 flex flex-col gap-2">
+              <div className="pt-2 flex items-center gap-3">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                   <span className="text-[11px] font-mono text-emerald-400">
@@ -486,15 +485,11 @@ export const ArenaBigScreen: React.FC = () => {
                   href={qrPayload}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center justify-center gap-1.5 py-1 px-2.5 bg-indigo-600/90 hover:bg-indigo-600 text-white rounded text-[11px] font-bold transition shadow"
+                  className="inline-flex items-center justify-center gap-1.5 py-1.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition shadow"
                 >
                   Join as Judge Desk &rarr;
                 </a>
               </div>
-            </div>
-
-            <div className="p-3 bg-white rounded-xl shadow-2xl flex-shrink-0">
-              <QRCodeSVG value={qrPayload} size={110} />
             </div>
           </div>
         </div>

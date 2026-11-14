@@ -1,4 +1,4 @@
-﻿# =============================================================================
+# =============================================================================
 # ReferralHandshake (Protocol RHP-1) — 1-Click Master Demo Launcher (PowerShell)
 # Team MAHA YODHAS | Colossus 3.0 (HealthTech Track) — Bengaluru
 # =============================================================================
@@ -162,3 +162,4 @@ Write-Host "Press Ctrl+C or close this window to keep processes running in backg
 while ($true) {
     Start-Sleep -Seconds 60
 }
+

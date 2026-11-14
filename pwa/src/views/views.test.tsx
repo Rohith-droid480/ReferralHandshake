@@ -64,7 +64,7 @@ describe('Module 7 & 8 Physical React Component Rendering Tests', () => {
     expect(screen.getByText(/GREEN: ALL 16 INVARIANTS HOLDING/i)).toBeDefined();
     expect(screen.getByText(/HANDSHAKE TRACK \(hs_state\)/i)).toBeDefined();
     expect(screen.getByText(/TRANSPORT TRACK \(tr_state — Never blocks on HS\)/i)).toBeDefined();
-    expect(screen.getByText(/Scan to Join Concurrency Race/i)).toBeDefined();
+    expect(screen.getByText(/Join Concurrency Race/i)).toBeDefined();
     expect(screen.getByText(/\[5\] Run 30s Live Proof Loop/i)).toBeDefined();
   });
 

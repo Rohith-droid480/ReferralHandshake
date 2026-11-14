@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserCheck, Shield, KeyRound, Download, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { UserCheck, Shield, KeyRound, RefreshCw, CheckCircle2 } from 'lucide-react';
 
 interface RoleOption {
   key: string;
@@ -132,16 +132,6 @@ export const DemoRoleSwitcher: React.FC = () => {
           <KeyRound className="w-3 h-3 text-amber-400" />
           Demo PIN: <strong className="text-amber-300 font-mono">1234</strong>
         </span>
-
-        <a
-          href="/v1/download/apk"
-          download="rhp-emt-debug.apk"
-          className="flex items-center gap-1 bg-emerald-700/80 hover:bg-emerald-600 text-white px-2 py-0.5 rounded text-[11px] font-medium transition"
-          title="Download standalone installable Android EMT App"
-        >
-          <Download className="w-3 h-3" />
-          <span>Android APK</span>
-        </a>
       </div>
 
       {feedback && (
