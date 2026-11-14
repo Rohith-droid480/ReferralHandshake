@@ -13,7 +13,6 @@ import {
   FileCode,
   Download,
   Trash2,
-  DollarSign,
   CheckCircle,
 } from 'lucide-react';
 import { sseClient, ReferralSummary } from '../store/sseClient';
@@ -121,12 +120,31 @@ export const CommandCentre: React.FC = () => {
   ]);
 
   // Export & Crypto-Shred States
-  const [selectedReferralId, setSelectedReferralId] = useState<string>('00000000-0000-0000-0000-000000000001');
+  const [selectedReferralId, setSelectedReferralId] = useState<string>('00000000-0000-0000-0000-000000000100');
+  const [availableReferrals, setAvailableReferrals] = useState<Array<{ id: string; label: string }>>([
+    { id: '00000000-0000-0000-0000-000000000100', label: 'Ref #1 (PHC Channapatna → Ramanagara CHC)' },
+    { id: '00000000-0000-0000-0000-000000000200', label: 'Ref #2 (En-Route Ambulance KA-05-EM-1082)' },
+    { id: '00000000-0000-0000-0000-000000000300', label: 'Ref #3 (Escalated Eclampsia Emergency)' },
+  ]);
   const [exportPreview, setExportPreview] = useState<{ title: string; content: string } | null>(null);
   const [shredStatus, setShredStatus] = useState<{ status: string; message: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    fetch('/v1/referrals')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list) => {
+        if (Array.isArray(list) && list.length > 0) {
+          const refs = list.map((r: any, idx: number) => ({
+            id: r.id,
+            label: `Ref #${idx + 1} (${r.need_class || 'Emergency'} - ${r.hs_state})`,
+          }));
+          setAvailableReferrals(refs);
+          setSelectedReferralId(refs[0].id);
+        }
+      })
+      .catch(() => {});
+
     const unsub = sseClient.subscribe((state) => {
       const list = Object.values(state.referrals);
       if (list.length > 0) {
@@ -278,16 +296,29 @@ export const CommandCentre: React.FC = () => {
 
       {/* Export & Compliance Suite: FHIR R4, IEEE 1849 XES, BSA 2023 s.63 & DPDP Shredder */}
       <div className="bg-slate-800 rounded-xl border border-slate-700 p-5 shadow-lg space-y-4">
-        <div className="flex flex-wrap items-center justify-between border-b border-slate-700 pb-3 gap-2">
-          <div>
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <FileCode className="w-4 h-4 text-indigo-400" />
-              Verifiable Legal & Standards Exporters (Closure F9)
-            </h3>
-            <p className="text-xs text-slate-400">
-              Target Referral:{' '}
-              <span className="font-mono text-indigo-300 font-bold">{selectedReferralId}</span>
-            </p>
+        <div className="flex flex-wrap items-center justify-between border-b border-slate-700 pb-3 gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <FileCode className="w-4 h-4 text-indigo-400" />
+                Verifiable Legal & Standards Exporters (Closure F9)
+              </h3>
+              <p className="text-xs text-slate-400">
+                Target Referral:{' '}
+                <span className="font-mono text-indigo-300 font-bold">{selectedReferralId}</span>
+              </p>
+            </div>
+            <select
+              value={selectedReferralId}
+              onChange={(e) => setSelectedReferralId(e.target.value)}
+              className="px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-xs focus:outline-none focus:border-indigo-500"
+            >
+              {availableReferrals.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.label} ({r.id.slice(0, 8)}...)
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Action Buttons */}
@@ -372,7 +403,7 @@ export const CommandCentre: React.FC = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Capability Attestations with Age (Never 'live beds') */}
         <div className="bg-slate-800 rounded-xl border border-slate-700 p-5 shadow-lg space-y-4">
           <div className="flex items-center justify-between border-b border-slate-700 pb-3">
@@ -429,52 +460,6 @@ export const CommandCentre: React.FC = () => {
                 </span>
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* Reconciled 6-Month AWS Multi-AZ Production Infrastructure Budget */}
-        <div className="bg-slate-800 rounded-xl border border-slate-700 p-5 shadow-lg space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-700 pb-3">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-emerald-400" />
-              Reconciled 6-Month District Pilot Budget (AWS ap-south-1)
-            </h3>
-            <span className="text-[10px] font-mono text-emerald-400 font-bold">$1,419 Total</span>
-          </div>
-
-          <p className="text-xs text-slate-400">
-            Multi-AZ PostgreSQL 16 + ECS Fargate + Exotel IVR. Designed for district health budgets:
-          </p>
-
-          <div className="space-y-2 text-xs font-mono">
-            <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-700 flex justify-between items-center">
-              <div>
-                <span className="font-bold text-white block">Base Tier (RDS Multi-AZ + Fargate)</span>
-                <span className="text-[10px] text-slate-500">db.t4g.medium + 2 ECS tasks + ALB</span>
-              </div>
-              <span className="font-bold text-indigo-300">$140.00 / mo</span>
-            </div>
-
-            <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-700 flex justify-between items-center">
-              <div>
-                <span className="font-bold text-white block">Application Tier (Metrics & Retention)</span>
-                <span className="text-[10px] text-slate-500">CloudWatch Logs + Read Replica + Secrets</span>
-              </div>
-              <span className="font-bold text-indigo-300">$190.00 / mo</span>
-            </div>
-
-            <div className="p-2.5 bg-emerald-950/60 rounded-lg border border-emerald-500/50 flex justify-between items-center">
-              <div>
-                <span className="font-bold text-emerald-300 block">Full Pilot Tier (+ Telephony & Contingency)</span>
-                <span className="text-[10px] text-slate-400">+$25/mo Exotel voice + 10% contingency buffer</span>
-              </div>
-              <span className="font-bold text-emerald-300">$236.50 / mo</span>
-            </div>
-
-            <div className="pt-2 flex justify-between items-center text-xs font-sans text-slate-300 border-t border-slate-750">
-              <span className="font-bold">6-Month District Pilot Total (Full Tier):</span>
-              <span className="font-mono font-black text-emerald-400 text-sm">$1,419.00 (≈ $1,420)</span>
-            </div>
           </div>
         </div>
       </div>

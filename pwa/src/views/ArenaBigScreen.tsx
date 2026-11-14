@@ -475,11 +475,21 @@ export const ArenaBigScreen: React.FC = () => {
               <p className="text-xs text-slate-400">
                 Single-use rotating JTI token. Auto-allocates competing desk.
               </p>
-              <div className="pt-2 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span className="text-[11px] font-mono text-emerald-400">
-                  Rotates in: {qrSecondsLeft}s
-                </span>
+              <div className="pt-2 flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span className="text-[11px] font-mono text-emerald-400">
+                    Rotates in: {qrSecondsLeft}s
+                  </span>
+                </div>
+                <a
+                  href={qrPayload}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-1.5 py-1 px-2.5 bg-indigo-600/90 hover:bg-indigo-600 text-white rounded text-[11px] font-bold transition shadow"
+                >
+                  Join as Judge Desk &rarr;
+                </a>
               </div>
             </div>
 

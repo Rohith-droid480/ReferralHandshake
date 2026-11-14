@@ -122,6 +122,7 @@ class BaseCommand(BaseModel):
     proxy_for: Optional[UUID] = None
     client_ts_ms: Optional[int] = None
     candidate_pin: Optional[str] = None
+    secret_hash: Optional[Union[bytes, str]] = None
 
     def body_for_hash(self) -> Dict[str, Any]:
         """Returns canonical dictionary for idempotency hash computation (Closure F14)."""

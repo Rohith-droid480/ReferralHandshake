@@ -34,6 +34,16 @@ export const ClinicianCard: React.FC = () => {
   const [aiDraftNotice, setAiDraftNotice] = useState<string | null>(null);
   const [aiDraftError, setAiDraftError] = useState<string | null>(null);
 
+  React.useEffect(() => {
+    const updateFromStorage = () => {
+      const facId = localStorage.getItem('rhp_facility_id');
+      if (facId) setOriginFacilityId(facId);
+    };
+    updateFromStorage();
+    window.addEventListener('rhp-session-changed', updateFromStorage);
+    return () => window.removeEventListener('rhp-session-changed', updateFromStorage);
+  }, []);
+
   const applyScenarioPreset = (scenarioId: number) => {
     switch (scenarioId) {
       case 1:
@@ -155,6 +165,16 @@ export const ClinicianCard: React.FC = () => {
     setLoading(true);
     setError(null);
 
+    const clinicalPayload = {
+      patient_age: patientAge,
+      gravida,
+      gestation_weeks: gestationWeeks,
+      vitals_bp: vitalsBp,
+      summary: clinicalSummary,
+      mgso4_dose: mgso4Status === 'GIVEN' ? mgso4Dose : undefined,
+      mgso4_time: mgso4Status === 'GIVEN' ? mgso4Time : undefined,
+    };
+
     const cmd = {
       type: 'CREATE',
       mode,
@@ -162,15 +182,7 @@ export const ClinicianCard: React.FC = () => {
       origin_facility_id: originFacilityId,
       chain,
       mgso4_status: mgso4Status,
-      isbar: {
-        patient_age: patientAge,
-        gravida,
-        gestation_weeks: gestationWeeks,
-        vitals_bp: vitalsBp,
-        summary: clinicalSummary,
-        mgso4_dose: mgso4Status === 'GIVEN' ? mgso4Dose : undefined,
-        mgso4_time: mgso4Status === 'GIVEN' ? mgso4Time : undefined,
-      },
+      clinical_payload: clinicalPayload,
     };
 
     try {

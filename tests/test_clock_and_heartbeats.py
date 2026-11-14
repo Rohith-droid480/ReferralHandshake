@@ -72,6 +72,8 @@ def test_healthz_and_metrics_amber_on_stale_component():
     """GET /healthz returns 503 AMBER and alarms when any component heartbeat is > 15s stale."""
     with get_main_connection() as conn:
         now = datetime.now(timezone.utc)
+        if hasattr(conn, "db") and hasattr(conn.db, "heartbeats"):
+            conn.db.heartbeats.clear()
         # Fresh components
         upsay_func = upsert_heartbeat
         upsay_func(conn, "POLLER", "poller-1", ntp_offset_ms=0)
@@ -112,6 +114,8 @@ def test_healthz_and_metrics_amber_on_stale_component():
 def test_healthz_and_metrics_amber_on_ntp_drift():
     """GET /healthz returns 503 AMBER and triggers clock slew alarm when NTP offset > 2000ms."""
     with get_main_connection() as conn:
+        if hasattr(conn, "db") and hasattr(conn.db, "heartbeats"):
+            conn.db.heartbeats.clear()
         now = datetime.now(timezone.utc)
         for comp in ["POLLER", "RELAY", "MONITOR"]:
             upsert_heartbeat(conn, comp, f"{comp.lower()}-1", ntp_offset_ms=10)

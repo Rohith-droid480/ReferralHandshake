@@ -45,8 +45,26 @@ export const DispatcherConsole: React.FC = () => {
     eventType: 'CREATED',
   });
 
-  // 1. Subscribe to SSE
+  // 1. Initial Fetch and Subscribe to SSE
   useEffect(() => {
+    fetch('/v1/referrals')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list) => {
+        if (Array.isArray(list) && list.length > 0) {
+          const esc = list.filter(
+            (r) =>
+              r.hs_state === 'ESCALATED_TO_DISPATCHER' ||
+              r.hs_state === 'OFFERED' ||
+              r.tr_state === 'ARRIVED'
+          );
+          const queue = esc.length > 0 ? esc : list;
+          setEscalatedQueue(queue);
+          const prio = queue.find((r) => r.hs_state === 'ESCALATED_TO_DISPATCHER') || queue[0];
+          setSelectedRef(prio);
+        }
+      })
+      .catch(() => {});
+
     const unsub = sseClient.subscribe((state) => {
       const list = Object.values(state.referrals);
       // Escalated or attention queue
@@ -60,13 +78,14 @@ export const DispatcherConsole: React.FC = () => {
       if (selectedRef) {
         setSelectedRef(state.referrals[selectedRef.id] || null);
       } else if (list.length > 0) {
-        setSelectedRef(list[0]);
+        const prio = list.find((r) => r.hs_state === 'ESCALATED_TO_DISPATCHER') || list[0];
+        setSelectedRef(prio);
       }
     });
 
     sseClient.connect();
     return () => unsub();
-  }, [selectedRef]);
+  }, []);
 
   // 2. Fetch Events for selected referral
   useEffect(() => {
@@ -215,31 +234,52 @@ export const DispatcherConsole: React.FC = () => {
           </h2>
 
           <div className="space-y-2 max-h-[500px] overflow-y-auto">
-            {escalatedQueue.map((r) => (
-              <div
-                key={r.id}
-                onClick={() => setSelectedRef(r)}
-                className={`p-3 rounded-lg border cursor-pointer transition ${
-                  selectedRef?.id === r.id
-                    ? 'bg-indigo-950/70 border-indigo-500'
-                    : 'bg-slate-900/60 border-slate-700 hover:border-slate-500'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-white text-xs">{r.need_class || 'OB_ECLAMPSIA'}</span>
-                  <span
-                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                      r.hs_state === 'ESCALATED_TO_DISPATCHER'
-                        ? 'bg-red-900/70 text-red-300 border border-red-500 animate-pulse'
-                        : 'bg-slate-800 text-slate-300'
-                    }`}
-                  >
-                    {r.hs_state}
-                  </span>
-                </div>
-                <div className="text-[10px] font-mono text-slate-400 truncate">ID: {r.id}</div>
+            {escalatedQueue.length === 0 ? (
+              <div className="p-4 bg-slate-900/60 rounded-lg border border-slate-750 text-center space-y-2">
+                <p className="text-xs text-slate-400">All referrals progressing normally within SLA.</p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await fetch('/v1/arena/spawn-silence-ladder', { method: 'POST' });
+                    const res = await fetch('/v1/referrals');
+                    if (res.ok) {
+                      const list = await res.json();
+                      setEscalatedQueue(list);
+                      setSelectedRef(list[0]);
+                    }
+                  }}
+                  className="py-1.5 px-3 bg-indigo-600/80 hover:bg-indigo-600 text-white rounded text-xs font-bold transition"
+                >
+                  Spawn Escalated Case
+                </button>
               </div>
-            ))}
+            ) : (
+              escalatedQueue.map((r) => (
+                <div
+                  key={r.id}
+                  onClick={() => setSelectedRef(r)}
+                  className={`p-3 rounded-lg border cursor-pointer transition ${
+                    selectedRef?.id === r.id
+                      ? 'bg-indigo-950/70 border-indigo-500'
+                      : 'bg-slate-900/60 border-slate-700 hover:border-slate-500'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-white text-xs">{r.need_class || 'OB_ECLAMPSIA'}</span>
+                    <span
+                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                        r.hs_state === 'ESCALATED_TO_DISPATCHER'
+                          ? 'bg-red-900/70 text-red-300 border border-red-500 animate-pulse'
+                          : 'bg-slate-800 text-slate-300'
+                      }`}
+                    >
+                      {r.hs_state}
+                    </span>
+                  </div>
+                  <div className="text-[10px] font-mono text-slate-400 truncate">ID: {r.id}</div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -375,6 +415,16 @@ export const DispatcherConsole: React.FC = () => {
                 </div>
               </div>
             </>
+          )}
+
+          {!selectedRef && (
+            <div className="bg-slate-800 rounded-xl border border-slate-700 p-8 shadow-lg text-center space-y-3">
+              <ShieldAlert className="w-10 h-10 text-indigo-400 mx-auto opacity-70 animate-pulse" />
+              <h3 className="text-sm font-bold text-white">Central Emergency Dispatch Console</h3>
+              <p className="text-xs text-slate-400 max-w-md mx-auto">
+                Select an active case from the Action Queue on the left to activate the Assisted Proxy Action Panel and the Deterministic Time-Scrubber Replay.
+              </p>
+            </div>
           )}
         </div>
       </div>

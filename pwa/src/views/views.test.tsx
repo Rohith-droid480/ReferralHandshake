@@ -108,7 +108,7 @@ describe('Module 7 & 8 Physical React Component Rendering Tests', () => {
   it('renders DispatcherConsole with action queue and command header', async () => {
     render(<DispatcherConsole />);
     expect(screen.getByText(/108 Dispatcher Console & Proxy Hub/i)).toBeDefined();
-    expect(screen.getByText(/Action Queue/i)).toBeDefined();
+    expect(screen.getAllByText(/Action Queue/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Role: DISPATCHER \(Tier T1\)/i)).toBeDefined();
   });
 

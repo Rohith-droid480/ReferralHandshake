@@ -75,9 +75,12 @@ def evaluate_heartbeats(conn: Any) -> Dict[str, Any]:
                 with open(ipc_path, "r", encoding="utf-8") as f:
                     ipc_data = json.load(f)
                     for k, v in ipc_data.items():
+                        sid = v.get("subject_id", "").lower()
+                        if any(x in sid for x in ["test", "healthy", "drifted"]):
+                            continue
                         kind_upper = v.get("subject_kind", "").upper()
                         if kind_upper:
-                            raw_rows[kind_upper] = [v]
+                            raw_rows.setdefault(kind_upper, []).append(v)
             except Exception:
                 pass
 

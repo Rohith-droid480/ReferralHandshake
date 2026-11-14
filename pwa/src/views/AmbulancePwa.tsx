@@ -97,7 +97,7 @@ export const AmbulancePwa: React.FC = () => {
             setLastConfirmedSec(0);
           }
         },
-        () => {},
+        () => { },
         { enableHighAccuracy: true, maximumAge: 10000 }
       );
     }
@@ -433,11 +433,10 @@ export const AmbulancePwa: React.FC = () => {
           {CORRIDOR_WAYPOINTS.map((wp, i) => (
             <div
               key={wp.name}
-              className={`p-2.5 rounded-lg border text-xs transition ${
-                currentLat >= wp.lat - 0.05 && currentLat <= wp.lat + 0.05
+              className={`p-2.5 rounded-lg border text-xs transition ${currentLat >= wp.lat - 0.05 && currentLat <= wp.lat + 0.05
                   ? 'bg-emerald-950/70 border-emerald-500 text-white'
                   : 'bg-slate-950 border-slate-800 text-slate-400'
-              }`}
+                }`}
             >
               <span className="text-[9px] font-mono px-1.5 py-0.5 bg-slate-800 text-slate-300 rounded block w-fit mb-1">
                 {wp.tier}
@@ -469,11 +468,10 @@ export const AmbulancePwa: React.FC = () => {
           <button
             type="button"
             onClick={toggleLiveHighwayDrive}
-            className={`py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition ${
-              isDriving
+            className={`py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition ${isDriving
                 ? 'bg-red-600 hover:bg-red-500 text-white animate-pulse'
                 : 'bg-emerald-600 hover:bg-emerald-500 text-white'
-            }`}
+              }`}
           >
             {isDriving ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
             <span>{isDriving ? 'Pause Highway Drive' : '▶ Start Live NH-275 Drive'}</span>

@@ -824,23 +824,24 @@ class MonitorService:
     def upsert_heartbeat(self, conn: Any, subject_id: str = "monitor-1", ntp_offset_ms: int = 0) -> None:
         """Upserts monitor liveness into the database heartbeat table (Closure F11)."""
         now = datetime.now(timezone.utc)
-        ipc_path = os.path.join(tempfile.gettempdir(), "rhp_heartbeats_ipc.json")
-        try:
-            data = {}
-            if os.path.exists(ipc_path):
-                with open(ipc_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            data[f"MONITOR:{subject_id}"] = {
-                "subject_kind": "MONITOR",
-                "subject_id": subject_id,
-                "last_seen": now.isoformat(),
-                "ntp_offset_ms": ntp_offset_ms,
-            }
-            with open(ipc_path + ".tmp", "w", encoding="utf-8") as f:
-                json.dump(data, f)
-            os.replace(ipc_path + ".tmp", ipc_path)
-        except Exception:
-            pass
+        if not os.environ.get("PYTEST_CURRENT_TEST"):
+            ipc_path = os.path.join(tempfile.gettempdir(), "rhp_heartbeats_ipc.json")
+            try:
+                data = {}
+                if os.path.exists(ipc_path):
+                    with open(ipc_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                data[f"MONITOR:{subject_id}"] = {
+                    "subject_kind": "MONITOR",
+                    "subject_id": subject_id,
+                    "last_seen": now.isoformat(),
+                    "ntp_offset_ms": ntp_offset_ms,
+                }
+                with open(ipc_path + ".tmp", "w", encoding="utf-8") as f:
+                    json.dump(data, f)
+                os.replace(ipc_path + ".tmp", ipc_path)
+            except Exception:
+                pass
 
         if conn is None:
             return

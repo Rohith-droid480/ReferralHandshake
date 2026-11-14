@@ -201,7 +201,10 @@ def apply_command(
     # -------------------------------------------------------------------------
     # STEP 2: Session & Device Validation (Invariant I6, §9)
     # -------------------------------------------------------------------------
-    session = load_session(conn, session_token)
+    if isinstance(session_token, Session):
+        session = session_token
+    else:
+        session = load_session(conn, session_token)
     actor_id = session.roster_id
 
     # Parse and validate command payload with extra='forbid'
